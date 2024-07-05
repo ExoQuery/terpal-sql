@@ -18,7 +18,7 @@ buildscript {
 }
 
 plugins {
-    id("io.exoquery.terpal-plugin") version "2.0.0-0.2.0-local"
+    id("io.exoquery.terpal-plugin") version "2.0.0-0.2.0"
     kotlin("jvm") version "2.0.0"
     kotlin("plugin.serialization") version "2.0.0"
     application
