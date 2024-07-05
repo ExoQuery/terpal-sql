@@ -1,0 +1,15 @@
+# Gradle
+build/
+.gradle/
+.kotlin/
+
+# IDEA
+out/
+.idea/
+.vscode/
+*.iml
+
+terpal_test.db
+
+build-logic/bin
+bin/
