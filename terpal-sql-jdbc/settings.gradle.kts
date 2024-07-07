@@ -1,13 +1,9 @@
-includeBuild("terpal-sql-core")
-includeBuild("terpal-sql-jdbc")
-
-rootProject.name = "terpal-sql"
-
 pluginManagement {
+  includeBuild("../build-logic")
+
   repositories {
     gradlePluginPortal()
     mavenCentral()
     mavenLocal()
   }
 }
-

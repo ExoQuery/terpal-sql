@@ -34,7 +34,7 @@ abstract class JdbcContext(override val database: DataSource): Context<Connectio
   protected val JdbcCoroutineContext = object: CoroutineContext.Key<CoroutineSession<Connection>> {}
   override val sessionKey: CoroutineContext.Key<CoroutineSession<Connection>> = JdbcCoroutineContext
 
-  override open internal suspend fun <T> runTransactionally(block: suspend CoroutineScope.() -> T): T {
+  override open suspend fun <T> runTransactionally(block: suspend CoroutineScope.() -> T): T {
     val session = coroutineContext.get(sessionKey)?.session ?: error("No connection found")
     session.runWithManualCommit {
       val transaction = CoroutineTransaction()

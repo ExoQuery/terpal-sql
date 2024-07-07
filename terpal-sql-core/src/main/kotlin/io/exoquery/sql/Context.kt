@@ -15,7 +15,7 @@ abstract class Context<Session, Database> {
 
   abstract fun closeSession(session: Session): Unit
   abstract fun isClosedSession(session: Session): Boolean
-  abstract internal suspend fun <T> runTransactionally(block: suspend CoroutineScope.() -> T): T
+  abstract suspend fun <T> runTransactionally(block: suspend CoroutineScope.() -> T): T
 
   abstract val sessionKey: CoroutineContext.Key<CoroutineSession<Session>>
 

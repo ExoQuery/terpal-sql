@@ -4,10 +4,10 @@
 # is the directory from where the docker-compose is called and everything under that directory
 # is included in the image. So for example if docker compose in a directory 'foo' then
 # everything under 'foo/*' is included inside including the DB setup scripts. We write these paths based on that.
-export SQLITE_SCRIPT=terpal-sql-core/src/test/resources/db/sqlite-schema.sql
-export MYSQL_SCRIPT=terpal-sql-core/src/test/resources/db/mysql-schema.sql
-export SQL_SERVER_SCRIPT=terpal-sql-core/src/test/resources/db/sqlserver-schema.sql
-export ORACLE_SCRIPT=terpal-sql-core/src/test/resources/db/oracle-schema.sql
+export SQLITE_SCRIPT=terpal-sql-jdbc/src/test/resources/db/sqlite-schema.sql
+export MYSQL_SCRIPT=terpal-sql-jdbc/src/test/resources/db/mysql-schema.sql
+export SQL_SERVER_SCRIPT=terpal-sql-jdbc/src/test/resources/db/sqlserver-schema.sql
+export ORACLE_SCRIPT=terpal-sql-jdbc/src/test/resources/db/oracle-schema.sql
 
 function get_host() {
     if [ -z "$1" ]; then
@@ -21,7 +21,7 @@ function get_host() {
 function setup_sqlite() {
     # DB File in terpal-sql
     echo "Creating sqlite DB File"
-    DB_FILE=terpal-sql-core/terpal_test.db
+    DB_FILE=terpal-sql-jdbc/terpal_test.db
     echo "Removing Previous sqlite DB File (if any)"
     rm -f $DB_FILE
     echo "Creating sqlite DB File"
