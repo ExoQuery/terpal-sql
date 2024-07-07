@@ -37,7 +37,6 @@ class BasicActionSpec : FreeSpec({
   }
 
   "Insert Returning" {
-    // TODO when writing readme need to note how for Oracle specifying returning columns in actionReturning is necessary
     val id1 = Sql("INSERT INTO Person (firstName, lastName, age) VALUES (${joe.firstName}, ${joe.lastName}, ${joe.age})").actionReturning<Int>("id").runOn(ctx);
     val id2 = Sql("INSERT INTO Person (firstName, lastName, age) VALUES (${jim.firstName}, ${jim.lastName}, ${jim.age})").actionReturning<Int>("id").runOn(ctx);
     id1 shouldBe 1
@@ -46,7 +45,6 @@ class BasicActionSpec : FreeSpec({
   }
 
   "Insert Returning Record" {
-    // TODO when writing readme need to explain how by returning all columns via actionReturning we can get the encode the result as the record
     val person1 = Sql("INSERT INTO Person (firstName, lastName, age) VALUES (${joe.firstName}, ${joe.lastName}, ${joe.age})").actionReturning<Person>("id", "firstName", "lastName", "age").runOn(ctx)
     val person2 = Sql("INSERT INTO Person (firstName, lastName, age) VALUES (${jim.firstName}, ${jim.lastName}, ${jim.age})").actionReturning<Person>("id", "firstName", "lastName", "age").runOn(ctx)
     person1 shouldBe joe
