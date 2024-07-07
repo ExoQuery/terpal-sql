@@ -16,4 +16,4 @@ jobs:
         uses: gradle/wrapper-validation-action@v1
       - run: |
           docker-compose build && docker-compose run --rm --service-ports setup; 
-          ./gradlew clean build --stacktrace -PisCI -Pnosign
+          ./gradlew terpal-sql-core:clean terpal-sql-core:build --stacktrace -PisCI -Pnosign
