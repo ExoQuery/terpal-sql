@@ -10,7 +10,6 @@ import io.kotest.core.spec.style.FreeSpec
 import io.kotest.extensions.testcontainers.JdbcDatabaseContainerExtension
 import io.kotest.matchers.shouldBe
 import kotlinx.serialization.Serializable
-import org.testcontainers.containers.PostgreSQLContainer
 
 class TransactionSpec: FreeSpec({
   val ds = TestDatabases.oracle
