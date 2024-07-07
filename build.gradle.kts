@@ -1,23 +1,6 @@
-import com.github.dockerjava.api.command.CreateContainerCmd
-import com.github.dockerjava.api.model.ExposedPort
-import com.github.dockerjava.api.model.PortBinding
-import com.github.dockerjava.api.model.Ports
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
-import org.testcontainers.containers.PostgreSQLContainer
-import java.util.function.Consumer
-
-buildscript {
-    repositories {
-        mavenCentral()
-        mavenLocal()
-    }
-    dependencies {
-        classpath("io.kotest.extensions:kotest-extensions-testcontainers:2.0.2")
-        classpath("org.testcontainers:testcontainers:1.19.8")
-        classpath("org.testcontainers:postgresql:1.19.8")
-    }
-}
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     id("io.exoquery.terpal-plugin") version "2.0.0-0.2.0"
@@ -88,17 +71,35 @@ kotlin {
     jvmToolchain(11)
 }
 
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-    kotlinOptions{
-        freeCompilerArgs = listOf("-Xcontext-receivers")
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile>().configureEach {
+    compilerOptions {
+        freeCompilerArgs.add("-Xcontext-receivers")
         // Otherwise will have: Could not resolve io.exoquery:pprint-kotlin:2.0.1.
         // Incompatible because this component declares a component, compatible with Java 11 and the consumer needed a component, compatible with Java 8
         java {
             sourceCompatibility = JavaVersion.VERSION_11
             targetCompatibility = JavaVersion.VERSION_11
         }
+        // If I remove this I get:
+        //  'compileJava' task (current target is 11) and 'kaptGenerateStubsKotlin' task (current target is 1.8) jvm target compatibility should be set to the same Java version.
+        // Not sure why
+        jvmTarget.set(JvmTarget.JVM_11)
     }
 }
+
+
+// Old way of doing it:
+//tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
+//    kotlinOptions{
+//        freeCompilerArgs = listOf("-Xcontext-receivers")
+//        // Otherwise will have: Could not resolve io.exoquery:pprint-kotlin:2.0.1.
+//        // Incompatible because this component declares a component, compatible with Java 11 and the consumer needed a component, compatible with Java 8
+//        java {
+//            sourceCompatibility = JavaVersion.VERSION_11
+//            targetCompatibility = JavaVersion.VERSION_11
+//        }
+//    }
+//}
 
 repositories {
     mavenCentral()

@@ -24,6 +24,8 @@ object TerpalContext {
         BooleanEncoding<Connection, PreparedStatement, ResultSet> by JdbcBooleanObjectEncoding,
         TimeEncoding<Connection, PreparedStatement, ResultSet> by PostgresTimeEncoding,
         UuidEncoding<Connection, PreparedStatement, ResultSet> by JdbcUuidObjectEncoding {}
+
+    companion object { }
   }
 
   open class PostgresLegacy(override val database: DataSource): Postgres(database) {
@@ -33,6 +35,8 @@ object TerpalContext {
         BooleanEncoding<Connection, PreparedStatement, ResultSet> by JdbcBooleanObjectEncoding,
         TimeEncoding<Connection, PreparedStatement, ResultSet> by JdbcTimeEncodingLegacy,
         UuidEncoding<Connection, PreparedStatement, ResultSet> by JdbcUuidObjectEncoding {}
+
+    companion object { }
   }
 
   open class H2(override val database: DataSource): JdbcContext(database) {
@@ -42,6 +46,8 @@ object TerpalContext {
         BooleanEncoding<Connection, PreparedStatement, ResultSet> by JdbcBooleanObjectEncoding,
         TimeEncoding<Connection, PreparedStatement, ResultSet> by JdbcTimeEncoding(),
         UuidEncoding<Connection, PreparedStatement, ResultSet> by JdbcUuidObjectEncoding {}
+
+    companion object { }
   }
 
   open class Mysql(override val database: DataSource): JdbcContext(database) {
@@ -57,6 +63,8 @@ object TerpalContext {
         BooleanEncoding<Connection, PreparedStatement, ResultSet> by JdbcBooleanObjectEncoding,
         TimeEncoding<Connection, PreparedStatement, ResultSet> by MysqlTimeEncoding,
         UuidEncoding<Connection, PreparedStatement, ResultSet> by JdbcUuidStringEncoding {}
+
+    companion object { }
   }
 
   open class Sqlite(override val database: DataSource): JdbcContext(database) {
@@ -87,6 +95,8 @@ object TerpalContext {
           }
         }
       }
+
+    companion object { }
   }
 
   open class Oracle(override val database: DataSource): JdbcContext(database) {
@@ -114,6 +124,8 @@ object TerpalContext {
         BooleanEncoding<Connection, PreparedStatement, ResultSet> by JdbcBooleanIntEncoding,
         TimeEncoding<Connection, PreparedStatement, ResultSet> by OracleTimeEncoding,
         UuidEncoding<Connection, PreparedStatement, ResultSet> by JdbcUuidStringEncoding {}
+
+    companion object { }
   }
 
   open class SqlServer(override val database: DataSource): JdbcContext(database) {
@@ -153,45 +165,6 @@ object TerpalContext {
         }
       }
 
-
-
-    /*
-    // Scala
-
-      def executeBatchAction(groups: List[BatchGroup])(info: ExecutionInfo, dc: Runner): Result[List[Long]] =
-    withConnectionWrapped { conn =>
-      groups.flatMap { case BatchGroup(sql, prepare) =>
-        val ps = conn.prepareStatement(sql)
-        logger.underlying.debug("Batch: {}", sql)
-        prepare.foreach { f =>
-          val (params, _) = f(ps, conn)
-          logger.logBatchItem(sql, params)
-          ps.addBatch()
-        }
-        ps.executeBatch().map(_.toLong)
-      }
-    }
-
-  def executeBatchActionReturning[T](
-    groups: List[BatchGroupReturning],
-    extractor: Extractor[T]
-  )(info: ExecutionInfo, dc: Runner): Result[List[T]] =
-    withConnectionWrapped { conn =>
-      groups.flatMap { case BatchGroupReturning(sql, returningBehavior, prepare) =>
-        val ps = prepareWithReturning(sql, conn, returningBehavior)
-        logger.underlying.debug("Batch: {}", sql)
-        prepare.foreach { f =>
-          val (params, _) = f(ps, conn)
-          logger.logBatchItem(sql, params)
-          ps.addBatch()
-        }
-        ps.executeBatch()
-        extractResult(ps.getGeneratedKeys, conn, extractor)
-      }
-    }
-     */
+    companion object { }
   }
-
-
-
 }
