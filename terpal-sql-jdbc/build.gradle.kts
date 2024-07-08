@@ -5,9 +5,9 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 plugins {
     id("conventions")
     id("publish")
-    id("io.exoquery.terpal-plugin") version "1.9.10-0.2.0"
-    kotlin("jvm") version "1.9.10"
-    kotlin("plugin.serialization") version "1.9.10"
+    id("io.exoquery.terpal-plugin") version "1.9.0-0.2.0"
+    kotlin("jvm") version "1.9.0"
+    kotlin("plugin.serialization") version "1.9.0"
 }
 
 val thisVersion = version
