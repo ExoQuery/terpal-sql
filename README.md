@@ -5,7 +5,24 @@ in an SQL-injection-safe way. Inspired by Scala libraries such as Doobie and Zio
 delays suspends the "$dollar $sign $variables" in strings in a separate data structure until they can be
 safely inject into an SQL statement.
 
-TODO large diagram about teral variable suspension
+```kotlin
+val ds: DataSource = PGSimpleDataSource(...)
+val ctx = TerpalContext.Postgres(ds)
+
+// Let's try a pesky SQL injection attack:
+val name = "'Joe'; DROP TABLE Person"
+
+// Boom! The `Person` table will be dropped:
+ds.connection.use { conn ->
+  conn.createStatement().execute("SELECT * FROM Person WHERE name = $name")
+}
+
+// No problem! The `Person` table will be safe:
+Sql("SELECT * FROM Person WHERE name = $name").queryOf<Person>().runOn(ctx)
+// Behind the scenes:
+// val query = "SELECT * FROM Person WHERE name = ?", params = listOf(Param(name))
+// conn.prepareStatement(query).use { stmt -> stmt.setString(1, name); stmt.executeQuery() }
+```
 
 In addition Terpal allows you to decode the results of SQL queries into Kotlin data classes using
 the kotlinx-serialization library.
