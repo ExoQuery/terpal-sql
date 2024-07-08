@@ -1,3 +1,7 @@
+<p align="center">
+<img src="https://github.com/deusaquilus/terpal-sql/assets/1369480/24964b82-57f0-4286-ad81-a9ce13d9f0e0" width=50% height=50% >
+</p>
+
 # terpal-sql
 
 Terpal is a Kotlin library that allows you to write SQL queries in Kotlin using interpolated strings
