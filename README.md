@@ -258,15 +258,41 @@ There are several other ways to do this, have a look at the [Custom Serializers]
 
 ### Custom Primitives (a.k.a. Contextual Types)
 
+In some situations, with a custom datatype you may need to control how it is encoded in the database driver.
+Take for example this highly custom type representing input byptes:
+```kotlin
+data class ByteContent(val bytes: InputStream) {
+  companion object {
+    fun bytesFrom(input: InputStream) = ByteContent(ByteArrayInputStream(input.readAllBytes()))
+  }
+}
 
+// Instead of making the ByteContent a serializable type, we mark it as a contextual type.
+@Serializable
+data class Image(val id: Int, @Contextual val content: ByteContent)
 
-## Advanced Decoding
+// Then we provide an encoder and decoder for it on the driver-level (i.e. JDBC) when creating the context:
+val ctx = object: TerpalContext.Postgres(postgres.postgresDatabase) {
+  override val additionalDecoders =
+    super.additionalDecoders + JdbcDecoderAny.fromFunction { ctx, i -> ByteContent(ctx.row.getBinaryStream(i)) }
+  override val additionalEncoders =
+    super.additionalEncoders + JdbcEncoderAny.fromFunction(Types.BLOB) { ctx, v: ByteContent, i -> ctx.stmt.setBinaryStream(i, v.bytes) }
+}
+
+// We can then read the content:
+val customers = ctx.run(Sql("SELECT * FROM images").queryOf<Image>())
+```
+Note that in order to splice a contextual datatype into a `Sql(...)` clause you will need to use `Param.contextual`.
+```kotlin
+val data: ByteContent = ...
+Sql("INSERT INTO images (id, content) VALUES ($id, ${Param.contextual(data)})").action().runOn(ctx)
+```
+
+Have a look at the [Contextual Column Clob](terpal-sql-jdbc/src/test/kotlin/io/exoquery/sql/examples/ContextualColumnCustom.kt) example for more details.
 
 ### Nested Data Classes
 
 ### Wrapped Datatypes
-
-### Custom/Contextual Datatypes
 
 ### Sharing with Kotlinx JSON Serialization
 (i.e. Surrogate Encoders)
