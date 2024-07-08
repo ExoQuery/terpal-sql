@@ -116,8 +116,9 @@ Sql("INSERT INTO Person (firstName, lastName) VALUES ($firstName, $lastName)").a
 ```
 
 ### Actions that return a value
+Use the `actionReturning<Datatype>()` method to run an action that returns a value.
+
 ```kotlin
-// Actions that return a value:
 val firstName = "Joe"
 val lastName = "Bloggs"
 val id = Sql("INSERT INTO Person (firstName, lastName) VALUES ($firstName, $lastName) RETURNING id").actionReturning<Int>().runOn(ctx)
@@ -147,8 +148,6 @@ val id = Sql("INSERT INTO Person (firstName, lastName) OUTPUT INSERTED.id VALUES
 ## Batch Actions
 Terpal batch actions are supported for both regular actions and actions that return a value.
 ```kotlin
-import io.exoquery.sql.examples.Simple_SqlServer
-
 val people = listOf(
   Person(1, "Joe", "Bloggs"),
   Person(2, "Jim", "Roogs")
@@ -165,7 +164,7 @@ val ids = SqlBatch { p: Person ->
 }.values(people).actionReturning<Int>().runOn(ctx)
 ```
 Batch actions can return records. They can also take streaming inputs as well as outputs.
-```
+```kotlin
 // Batch queries can take a stream of values using the `.values(Flow<T>)` method.
 val people: Flow<Person> = flowOf(Person(1, "Joe", "Bloggs"), Person(2, "Jim", "Roogs"), ...)
 // Use stream-on to stream the outputs
@@ -309,7 +308,104 @@ Have a look at the [Contextual Column Clob](terpal-sql-jdbc/src/test/kotlin/io/e
 
 ### Nested Data Classes
 
+Terpal supports nested data classes and will "flatten" the data classes when decoding the results.
+Note that both the outer class and inner class must be annotated with `@Serializable` in most cases.
+```kotlin
+@Serializable
+data class Person(val id: Int, val name: Name, val age: Int)
+@Serializable
+data class Name(val firstName: String, val lastName: String)
+
+// Use a regular table schema. Terpal knows how to flatten the data classes.
+// CREATE TABLE person (id INT, firstName TEXT, lastName TEXT, age INT)
+
+val people: List<Person> = Sql("SELECT * FROM people").queryOf<Person>().runOn(ctx)
+println(people)
+//> Person(id=1, name=Name(firstName=Joe, lastName=Bloggs), age=30)
+```
 
 
 ### Playing well with other Kotlinx Formats
+
+When using Terpal-SQL with kotlinx-serialization with other formats such as JSON in real-world situations, you may
+frequently need either different encodings or even entirely different schemas for the same data. For example, you may
+want to encode a `LocalDate` using the SQL `DATE` type, but when sending the data to a REST API you may want to encode 
+the same `LocalDate` as a `String` in ISO-8601 format (i.e. using DateTimeFormatter.ISO_LOCAL_DATE).
+
+There are several ways to do this in Kotlinx-serialization, I will discuss two of them.
+
+#### Using a Contextual Serializer
+The simplest way to have a different encoding for the same data in different contexts is to use a contextual serializer.
+```kotlin
+@Serializable
+data class Customer(val id: Int, val firstName: String, val lastName: String, @Contextual val createdAt: LocalDate)
+
+// Database Schema:
+// CREATE TABLE customers (id INT, first_name TEXT, last_name TEXT, created_at DATE)
+
+// This Serializer encodes the LocalDate as a String in ISO-8601 format and it will only be used for JSON encoding.
+object DateAsIsoSerializer: KSerializer<LocalDate> {
+  override val descriptor = PrimitiveSerialDescriptor("LocalDate", PrimitiveKind.STRING)
+  override fun serialize(encoder: Encoder, value: LocalDate) = encoder.encodeString(value.format(DateTimeFormatter.ISO_LOCAL_DATE))
+  override fun deserialize(decoder: Decoder): LocalDate = LocalDate.parse(decoder.decodeString(), DateTimeFormatter.ISO_LOCAL_DATE)
+}
+
+// When working with the database, the LocalDate will be encoded as a SQL DATE type. The Terpal Context knows
+// will behave this way by default when a field is marked as @Contextual.
+val ctx = TerpalContext.Postgres.fromConfig("mydb")
+val customer = Customer(1, "Alice", "Smith", LocalDate.of(2021, 1, 1))
+Sql("INSERT INTO customers (first_name, last_name, created_at) VALUES (${customer.firstName}, ${customer.lastName}, ${customer.createdAt})").action().runOn(ctx)
+
+// When encoding the data as JSON, the make sure to specify the DateAsIsoSerializer in the serializers-module.
+val json = Json {
+  serializersModule = SerializersModule {
+    contextual(LocalDate::class, DateAsIsoSerializer)
+  }
+}
+val jsonCustomer = json.encodeToString(Customer.serializer(), customer)
+println(jsonCustomer)
+//> {"id":1,"firstName":"Alice","lastName":"Smith","createdAt":"2021-01-01"}
+```
+See the [Playing Well using Different Encoders](terpal-sql-jdbc/src/test/kotlin/io/exoquery/sql/examples/PlayingWell_DifferentEncoders.kt)
+example for more details.
+
+#### Using Row-Surrogate Encoder
+When the changes in encoding between the Database and JSON are more complex, you may want to use a row-surrogate encoder.
+
+A row-surrogate encoder will take a data-class and copy it into another data-class (i.e. the surrogate data-class) whose schema is appropriate
+for the target format. The surrogate data-class needs to also be serializable and know how to create itself from the original data-class.
+
+```kotlin
+// Create the "original" data class
+@Serializable
+data class Customer(val id: Int, val firstName: String, val lastName: String, @Serializable(with = DateAsIsoSerializer::class) val createdAt: LocalDate)
+
+// Create the "surrogate" data class
+@Serializable
+data class CustomerSurrogate(val id: Int, val firstName: String, val lastName: String, @Contextual val createdAt: LocalDate) {
+  fun toCustomer() = Customer(id, firstName, lastName, createdAt)
+  companion object {
+    fun fromCustomer(customer: Customer): CustomerSurrogate {
+      return CustomerSurrogate(customer.id, customer.firstName, customer.lastName, customer.createdAt)
+    }
+  }
+}
+
+// Create a surrogate serializer which uses the surrogate data-class to encode the original data-class.
+object CustomerSurrogateSerializer: KSerializer<Customer> {
+  override val descriptor = CustomerSurrogate.serializer().descriptor
+  override fun serialize(encoder: Encoder, value: Customer) = encoder.encodeSerializableValue(CustomerSurrogate.serializer(), CustomerSurrogate.fromCustomer(value))
+  override fun deserialize(decoder: Decoder): Customer = decoder.decodeSerializableValue(CustomerSurrogate.serializer()).toCustomer()
+}
+
+// You can then use the surrogate class when reading/writing information from the database:
+val customers = ctx.run(Sql("SELECT * FROM customers").queryOf<Customer>(CustomerSurrogateSerializer))
+
+// ...and use the regular data-class/serializer when encoding/decoding to JSON
+println(Json.encodeToString(ListSerializer(Customer.serializer()), customers))
+//> [{"id":1,"firstName":"Alice","lastName":"Smith","createdAt":"2021-01-01"}]
+```
+
+See the [Playing Well using Row-Surrogate Encoder](terpal-sql-jdbc/src/test/kotlin/io/exoquery/sql/examples/PlayingWell_RowSurrogate.kt)
+section for more details.
 

@@ -15,6 +15,7 @@ import kotlinx.serialization.json.Json
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
 
 // TODO needed otherwise splices will be directly joined to parent string by Kotlin compiler.
 //      need to talk about it in the docs.
@@ -22,15 +23,15 @@ fun <T> id(t: T) = t
 
 object PlayingWell_RowSurrogate {
 
-  object DateAsLongSerialzier: KSerializer<LocalDate> {
-    override val descriptor = PrimitiveSerialDescriptor("Date", PrimitiveKind.LONG)
-    override fun serialize(encoder: Encoder, value: LocalDate) = encoder.encodeLong(value.atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli())
-    override fun deserialize(decoder: Decoder): LocalDate = Instant.ofEpochMilli(decoder.decodeLong()).atZone(ZoneOffset.UTC).toLocalDate()
+  object DateAsIsoSerializer: KSerializer<LocalDate> {
+    override val descriptor = PrimitiveSerialDescriptor("LocalDate", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: LocalDate) = encoder.encodeString(value.format(DateTimeFormatter.ISO_LOCAL_DATE))
+    override fun deserialize(decoder: Decoder): LocalDate = LocalDate.parse(decoder.decodeString(), DateTimeFormatter.ISO_LOCAL_DATE)
   }
 
   // Use this Class/serialziation for Json
   @Serializable
-  data class Customer(val id: Int, val firstName: String, val lastName: String, @Serializable(with = DateAsLongSerialzier::class) val createdAt: LocalDate)
+  data class Customer(val id: Int, val firstName: String, val lastName: String, @Serializable(with = DateAsIsoSerializer::class) val createdAt: LocalDate)
 
   // Use this Class/serialization for SQL
   @Serializable
