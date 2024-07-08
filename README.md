@@ -158,6 +158,16 @@ val outputs: Flow<Person> =
   }.values(people).actionReturning<Int>().streamOn(ctx)
 ```
 
+In each case, the batch action uses the driver-level batch optimization (e.g. JDBC addBatch/executeBatch) wherever possible.
+For example, SQLite does not support batch actions returning values.
+
+> Note that similar to regular actions, the actual syntax of the returning query will very based on your database,
+> for example for Oracle you would use:
+> ```kotlin
+> val ids = SqlBatch { p: Person ->
+>  "INSERT INTO Person (id, firstName, lastName) VALUES (${p.id}, ${p.firstName}, ${p.lastName})")
+> }.values(people).actionReturning<Person>("id", "firstName", "lastName").runOn(ctx)
+
 ## Transactions
 Terpal supports transactions using the `transaction` method. The transaction method takes a lambda that
 contains the actions to be performed in the transaction. If the lambda throws an exception the transaction
@@ -186,7 +196,69 @@ try {
 
 
 ## Custom Parameters
-(list currently supported types)
+When a varible used in a Sql clause e.g. `Sql("... $dollar_sign_variable ...")` it needs
+to be wrapped in a `Param` object.
+
+### Automatic Wrapping
+
+```kotlin
+val id = 123
+val manualWrapped = Sql("SELECT * FROM Person WHERE id = ${Param(id)}").queryOf<Person>().runOn(ctx)
+```
+
+This will happen automatically when using Kotlin primitives and some date-types.
+```kotlin
+val id = 123
+val automaticWrapped = Sql("SELECT * FROM Person WHERE id = $id").queryOf<Person>().runOn(ctx)
+```
+
+The following types are automatically wrapped:
+ - Primitives: String, Int, Long, Short, Byte, Float, Double, Boolean
+ - Time Types: `java.util.Date`, LocalDate, LocalTime, LocalDateTime, ZonedDateTime, Instant, OffsetTime, OffsetDateTime
+ - SQL Time Types: `java.sql.Date`, `java.sql.Timestamp`, `java.sql.Time`
+ - Other: BigDecimal, ByteArray
+
+### Custom Wrapped Types
+
+If you want to use use a custom datatype in an `Sql(...)` clause you need to wrap it in a `Param` object.
+Typically you need to define a primitive wrapper-serializer in order to do this.
+```kotlin
+@JvmInline
+value class Email(val value: String)
+
+val email: Email = Email("...")
+Sql("INSERT INTO customers (firstName, lastName, email) VALUES ($firstName, $lastName, ${email})").action().runOn(ctx)
+//> /my/project/path/NewtypeColumn.kt:46:5 The interpolator Sql does not have a wrap function for the type: my.package.Email.
+
+// Define a serializer for the custom type
+object EmailSerializer : KSerializer<Email> {
+  override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("Email", PrimitiveKind.STRING)
+  override fun serialize(encoder: Encoder, value: Email) = encoder.encodeString(value.value)
+  override fun deserialize(decoder: Decoder) = Email(decoder.decodeString())
+}
+
+// Then use in the Param wrapper (`withSer` is an alias for `withSerializer`) giving it a serializer. 
+Sql("INSERT INTO customers (firstName, lastName, email) VALUES ($firstName, $lastName, ${Param.withSer(email, EmailSerialzier)})").action().runOn(ctx)
+```
+
+Keep in mind that if you want to use this custom datatype in a parent case-class you will need to let kotlinx-serialization
+know that the EmailSerializer needs to be used. The simplest way to do this is to use the `@Serializable(with = ...)` annotation on the parent class.
+```kotlin
+data class Customer(
+  val id: Int, 
+  val firstName: String, val lastName: String, 
+  @Serializable(with = EmailSerializer::class) val email: Email
+)
+
+// The you can query the data class as normal:
+val customers: List<Customer> = Sql("SELECT * FROM customers").queryOf<Customer>().runOn(ctx)
+```
+
+There are several other ways to do this, have a look at the [Custom Serializers](https://github.com/Kotlin/kotlinx.serialization/blob/master/docs/serializers.md#custom-serializers) section kotlinx-serialization documentation for more information.
+
+### Custom Primitives (a.k.a. Contextual Types)
+
+
 
 ## Advanced Decoding
 
