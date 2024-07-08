@@ -43,7 +43,7 @@ val ctx = TerpalContext.Postgres.fromConfig("mydb")
 val person: List<Person> = Sql("SELECT id, firstName, lastName FROM person WHERE id = $id").queryOf<Person>().runOn(ctx)
 ```
 
-# Installation
+# Getting Started
 
 Add the following to your `build.gradle.kts` file:
 
@@ -89,6 +89,7 @@ myPostgresDB {
   dataSource.serverName=localhost 
 }
 ```
+Have a look at the Terpal-SQL [Sample Project](https://github.com/deusaquilus/terpal-sql-example) if anything is unclear.
 
 # Features
 
