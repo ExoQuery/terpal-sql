@@ -32,7 +32,6 @@ object SqlBatch: SqlJdbcBatchBase() {
   fun wrap(value: BigDecimal?): Param<BigDecimal> = Param.contextual(value)
   fun wrap(value: ByteArray?): Param<ByteArray> = Param(value)
 
-  fun wrap(value: java.util.Date?): Param<java.util.Date> = Param(value)
   fun wrap(value: java.sql.Date?): Param<java.sql.Date> = Param(value)
   fun wrap(value: java.sql.Time?): Param<java.sql.Time> = Param(value)
   fun wrap(value: java.sql.Timestamp?): Param<java.sql.Timestamp> = Param(value)

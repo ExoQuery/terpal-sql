@@ -105,7 +105,7 @@ object EncodingSpecData {
     val v8: Float,
     val v9: Double,
     val v10: ByteArray,
-    @Contextual val v11: java.util.Date,
+    @Contextual val v11: java.sql.Date,
     val v12: SerializeableTestType,
     @Contextual val v13: LocalDate,
     @Contextual val v14: UUID,
@@ -119,7 +119,7 @@ object EncodingSpecData {
     val o8: Float?,
     val o9: Double?,
     val o10: ByteArray?,
-    @Contextual val o11: java.util.Date?,
+    @Contextual val o11: java.sql.Date?,
     val o12: SerializeableTestType?,
     @Contextual val o13: LocalDate?,
     @Contextual val o14: UUID?
@@ -216,7 +216,7 @@ object EncodingSpecData {
       34.4f,
       42.0,
       byteArrayOf(1.toByte(), 2.toByte()),
-      Date.from(LocalDateTime.of(2013, 11, 23, 0, 0, 0, 0).toInstant(ZoneOffset.UTC)),
+      java.sql.Date(LocalDateTime.of(2013, 11, 23, 0, 0, 0, 0).toInstant(ZoneOffset.UTC).toEpochMilli()),
       SerializeableTestType("s"),
       LocalDate.of(2013, 11, 23),
       UUID.randomUUID(),
@@ -230,7 +230,7 @@ object EncodingSpecData {
       34.4f,
       42.0,
       byteArrayOf(1.toByte(), 2.toByte()),
-      Date.from(LocalDateTime.of(2013, 11, 23, 0, 0, 0, 0).toInstant(ZoneOffset.UTC)),
+      java.sql.Date(LocalDateTime.of(2013, 11, 23, 0, 0, 0, 0).toInstant(ZoneOffset.UTC).toEpochMilli()),
       SerializeableTestType("s"),
       LocalDate.of(2013, 11, 23),
       UUID.randomUUID()
@@ -298,7 +298,7 @@ object EncodingSpecData {
     e1.v8 shouldBeEqual e2.v8
     e1.v9 shouldBeEqual e2.v9
     e1.v10.toList() shouldBeEqual e2.v10.toList()
-    e1.v11 shouldBeEqual e2.v11
+    e1.v11.toLocalDate() shouldBeEqual e2.v11.toLocalDate()
     e1.v12 shouldBeEqual e2.v12
     e1.v13 shouldBeEqual e2.v13
     e1.v14 shouldBeEqual e2.v14
@@ -313,7 +313,7 @@ object EncodingSpecData {
     e1.o8 shouldBeEqualNullable e2.o8
     e1.o9 shouldBeEqualNullable e2.o9
     (e1.o10?.let { it.toList() } ?: listOf()) shouldBeEqual (e2.o10?.let { it.toList() } ?: listOf())
-    e1.o11 shouldBeEqualNullable e2.o11
+    e1.o11?.toLocalDate() shouldBeEqualNullable e2.o11?.toLocalDate()
     e1.o12 shouldBeEqualNullable e2.o12
     e1.o13 shouldBeEqualNullable e2.o13
     e1.o14 shouldBeEqualNullable e2.o14
