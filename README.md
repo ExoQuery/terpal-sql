@@ -256,7 +256,7 @@ val customers: List<Customer> = Sql("SELECT * FROM customers").queryOf<Customer>
 
 There are several other ways to do this, have a look at the [Custom Serializers](https://github.com/Kotlin/kotlinx.serialization/blob/master/docs/serializers.md#custom-serializers) section kotlinx-serialization documentation for more information.
 
-### Custom Primitives (a.k.a. Contextual Types)
+### Custom Primitives
 
 In some situations, with a custom datatype you may need to control how it is encoded in the database driver.
 Take for example this highly custom type representing input byptes:
@@ -292,11 +292,7 @@ Have a look at the [Contextual Column Clob](terpal-sql-jdbc/src/test/kotlin/io/e
 
 ### Nested Data Classes
 
-### Wrapped Datatypes
-
-### Sharing with Kotlinx JSON Serialization
-(i.e. Surrogate Encoders)
 
 
-
+### Playing well with other Kotlinx Formats
 

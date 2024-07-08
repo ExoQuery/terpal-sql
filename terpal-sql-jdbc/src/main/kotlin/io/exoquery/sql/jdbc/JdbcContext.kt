@@ -4,6 +4,8 @@ import io.exoquery.sql.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.modules.EmptySerializersModule
+import kotlinx.serialization.modules.SerializersModule
 import java.sql.Connection
 import java.sql.PreparedStatement
 import java.sql.ResultSet
@@ -21,6 +23,9 @@ abstract class JdbcContext(override val database: DataSource): Context<Connectio
   protected open val additionalEncoders: Set<SqlEncoder<Connection, PreparedStatement, out Any>> = AdditionaJdbcTimeEncoding.encoders
   protected open val additionalDecoders: Set<SqlDecoder<Connection, ResultSet, out Any>> = AdditionaJdbcTimeEncoding.decoders
   protected open val timezone: TimeZone = TimeZone.getDefault()
+
+  // If you want to use any primitive-wrapped contextual encoders you need to add them here
+  protected open val module: SerializersModule = EmptySerializersModule()
 
   protected abstract val encodingApi: SqlEncoding<Connection, PreparedStatement, ResultSet>
 
@@ -145,7 +150,7 @@ abstract class JdbcContext(override val database: DataSource): Context<Connectio
 
   protected fun <T> KSerializer<T>.makeExtractor() =
     { conn: Connection, rs: ResultSet ->
-      val decoder = JdbcRowDecoder(createDecodingContext(conn, rs), encodingApi, allDecoders, descriptor)
+      val decoder = JdbcRowDecoder(createDecodingContext(conn, rs), module, encodingApi, allDecoders, descriptor)
       deserialize(decoder)
     }
 
