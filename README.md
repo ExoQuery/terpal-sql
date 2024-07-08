@@ -50,13 +50,13 @@ Add the following to your `build.gradle.kts` file:
 
 ```kotlin
 plugins {
-    kotlin("jvm") version "1.9.21" // Currently the plugin is only available for Kotlin-JVM
-    id("io.exoquery.terpal-plugin") version "1.9.21-0.2.0"
-    kotlin("plugin.serialization") version "1.9.21"
+    kotlin("jvm") version "1.9.20" // Currently the plugin is only available for Kotlin-JVM
+    id("io.exoquery.terpal-plugin") version "1.9.20-0.2.0"
+    kotlin("plugin.serialization") version "1.9.20"
 }
 
 dependencies {
-    api("io.exoquery:terpal-sql-jdbc:1.9.21-0.2.0")
+    api("io.exoquery:terpal-sql-jdbc:1.9.20-0.2.0")
 
     api("org.jetbrains.kotlinx:kotlinx-serialization-core:1.6.2")
     api("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
