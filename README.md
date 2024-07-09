@@ -27,6 +27,7 @@ Sql("SELECT * FROM Person WHERE name = $name").queryOf<Person>().runOn(ctx)
 // val query = "SELECT * FROM Person WHERE name = ?", params = listOf(Param(name))
 // conn.prepareStatement(query).use { stmt -> stmt.setString(1, name); stmt.executeQuery() }
 ```
+For a deep dive on how this works, have Have a look at the [Terpal Compiler Plugin](https://github.com/deusaquilus/terpal).
 
 In addition Terpal allows you to decode the results of SQL queries into Kotlin data classes using
 the kotlinx-serialization library.
