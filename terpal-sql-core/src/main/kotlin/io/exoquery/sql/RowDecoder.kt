@@ -5,21 +5,62 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.descriptors.*
 import kotlinx.serialization.encoding.CompositeDecoder
 import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.modules.SerializersModule
+import javax.management.Descriptor
 
 data class ColumnInfo(val name: String, val type: String)
+
+fun SerialDescriptor.isJsonClassAnnotated() =
+  this.annotations.find { it.annotationClass == io.exoquery.sql.SqlJsonValue::class } != null
+
+fun SerialDescriptor.isJsonFieldAnnotated(fieldIndex: Int) =
+  this.getElementAnnotations(fieldIndex).find { it.annotationClass == io.exoquery.sql.SqlJsonValue::class } != null
+
+fun SerialDescriptor.isJsonValue() =
+  this.serialName == "io.exoquery.sql.JsonValue"
+
+fun <A, B> Iterable<IndexedValue<Pair<A, B>>>.flattenEach() =
+  this.map {
+    val (i, ab) = it
+    val (a, b) = ab
+    Triple(i, a, b)
+  }
+
+//fun <A, B, C> Iterable<Pair<A, Pair<B, C>>>.flattenEach() =
+//  this.map {
+//    val (a, bc) = it
+//    val (b, c) = bc
+//    Triple(a, b, c)
+//  }
 
 @OptIn(ExperimentalSerializationApi::class)
 fun SerialDescriptor.verifyColumns(columns: List<ColumnInfo>): Unit {
 
   fun flatDescriptorColumnData(desc: SerialDescriptor): List<Pair<String, String>> =
-    when (desc.kind) {
-      StructureKind.CLASS -> (desc.elementDescriptors.toList().zip(desc.elementNames.toList())) .flatMap { (fieldDesc, fieldName) ->
-        when (fieldDesc.kind) {
-          StructureKind.CLASS -> flatDescriptorColumnData(fieldDesc)
-          else -> listOf(fieldName to fieldDesc.serialName)
+    when {
+      // If the entire record that needs to be decoded is a singular json value
+      desc.isJsonClassAnnotated() || desc.isJsonValue() ->
+        listOf("<unamed>" to desc.serialName)
+
+      desc.kind == StructureKind.CLASS ->
+        (desc.elementDescriptors.toList()
+          .zip(desc.elementNames.toList()))
+          .withIndex()
+          .flattenEach()
+          .flatMap { (i, fieldDesc, fieldName) ->
+        fun plainField() = listOf(fieldName to fieldDesc.serialName)
+        when {
+          // If the field is supposed to be encoded as a json object treat is as a regular column
+          desc.isJsonValue() || fieldDesc.isJsonClassAnnotated() || desc.isJsonFieldAnnotated(i) -> plainField()
+          // otherwise if it is a structural-type flatten the structure inside (since it is supposed to be unpacked in a nested fasion)
+          fieldDesc.kind == StructureKind.CLASS -> flatDescriptorColumnData(fieldDesc)
+          // otherwise its a leaf-value
+          else -> plainField()
         }
       }
+
       else -> listOf("<unamed>" to desc.serialName)
     }
 
@@ -47,10 +88,14 @@ abstract class RowDecoder<Session, Row>(
   val decoders: Set<SqlDecoder<Session, Row, out Any>>,
   val columnInfos: List<ColumnInfo>,
   val type: RowDecoderType,
+  val json: Json,
   val endCallback: (Int) -> Unit
 ): Decoder, CompositeDecoder {
 
   abstract fun cloneSelf(ctx: DecodingContext<Session, Row>, initialRowIndex: Int, type: RowDecoderType, endCallback: (Int) -> Unit): RowDecoder<Session, Row>
+
+  // helper to get column names
+  fun colName(index: Int) = columnInfos[index].name
 
   var rowIndex: Int = initialRowIndex
   var classIndex: Int = 0
@@ -109,10 +154,70 @@ abstract class RowDecoder<Session, Row>(
     endCallback(rowIndex)
   }
 
+  // If the row is null and the descriptor (i.e. the type of the actual column e.g. `MyProduct(myField: MyType?)`) is specified as nullable then
+  // return a null value. Otherwise (if it is not null or is null and the column type is not nullable) then make the decoder deal with it.
+  // See a more detailed discussion in this logic in `decodeBestEffortFromDescriptor`.
+  fun <T> validNullOrElse(desc: SerialDescriptor, index: Int, orElse: () -> T): T? =
+    if (api.isNull(rowIndex, ctx.row) && desc.isNullable) {
+      nextRowIndex(desc, index, "Skipping Null Value at column:${colName(index)}")
+      null
+    } else orElse()
+
+  fun <T> decodeJsonValue(desc: SerialDescriptor, index: Int, deserializer: DeserializationStrategy<T?>): T? {
+    val jsonDecoder = findJsonDecoderOrFail(desc, index)
+    return validNullOrElse(desc, index) {
+      jsonDecoder.decode(ctx, rowIndex)?.let { sqlJson ->
+        // create the json represented inside of the JsonValue
+        val innerValue = json.parseToJsonElement(sqlJson.value)
+        // create the json of the actual JsonValue
+        val outerValue = JsonObject(mapOf("value" to innerValue))
+        // Parse that into a JsonValue
+        val jsonValue = json.decodeFromJsonElement(deserializer, outerValue)
+        jsonValue
+      }
+    }
+  }
+
+  fun <T> decodeJsonValueContent(desc: SerialDescriptor, index: Int, deserializer: DeserializationStrategy<T?>): T? {
+    val jsonDecoder = findJsonDecoderOrFail(desc, index)
+    return validNullOrElse(desc, index) {
+      jsonDecoder.decode(ctx, rowIndex)?.let { sqlJson ->
+        // create the json represented inside of a JsonValue e.g. MyPerson for JsonValue<MyPerson>
+        val innerValue = json.parseToJsonElement(sqlJson.value)
+        // Parse that into a the JsonValue element instance e.g. MyPerson
+        val jsonValue = json.decodeFromJsonElement(deserializer, innerValue)
+        jsonValue
+      }
+    }
+  }
+
+  @Suppress("UNCHECKED_CAST")
+  fun findJsonDecoderOrFail(desc: SerialDescriptor, index: Int): SqlDecoder<Session, Row, SqlJson?> {
+    fun currColName() = colName(index)
+    fun SqlDecoder<Session, Row, out Any>.asNullableIfSpecified() = if (desc.isNullable) asNullable() else this
+    val jsonDecoderRaw = decoders.find { it.type == io.exoquery.sql.SqlJson::class }
+      ?: throw IllegalArgumentException("Error decoding ${currColName()}. Cannot decode the value of the column ${currColName()} with the descriptor ${desc} to Json. A SqlJson encoder was not found.")
+    val jsonDecoder = (jsonDecoderRaw.asNullableIfSpecified() as SqlDecoder<Session, Row, SqlJson?>)
+    return jsonDecoder
+  }
+
+  fun <T> decodeJsonAnnotated(desc: SerialDescriptor, index: Int, deserializer: DeserializationStrategy<T?>): T? {
+    val jsonDecoder = findJsonDecoderOrFail(desc, index)
+    return validNullOrElse(desc, index) {
+      jsonDecoder.decode(ctx, rowIndex)?.let { sqlJson ->
+        json.decodeFromString(deserializer, sqlJson.value)
+      }
+    }
+  }
+
   @ExperimentalSerializationApi
   override fun <T : Any> decodeNullableSerializableElement(descriptor: SerialDescriptor, index: Int, deserializer: DeserializationStrategy<T?>, previousValue: T?): T? {
-    val childDesc = descriptor.elementDescriptors.toList()[index]
 
+    // get the child descriptor (parent might not have one so make it lazy)
+    val childDesc by lazy { descriptor.elementDescriptors.toList()[index] }
+    // helper to get column name for various logging statements
+    fun currColName() = columnInfos[index].name
+    // helper to run the decoding
     fun decodeWithDecoder(decoder: SqlDecoder<Session, Row, T>): T? {
       val rowIndex = nextRowIndex(descriptor, index)
       val decoded = decoder.decode(ctx, rowIndex)
@@ -123,21 +228,31 @@ abstract class RowDecoder<Session, Row>(
     fun SqlDecoder<Session, Row, out Any>.asNullableIfSpecified() = if (childDesc.isNullable) asNullable() else this
 
     return when {
+      // If the parent decoder is a leaf level i.e. if its actually Query<JsonValue<MyPerson>> instead of Query<SomeProduct(...JsonValue<MyPerson>)>
+      descriptor.isJsonValue() ->
+        decodeJsonValueContent(descriptor, index, deserializer)
+
+      childDesc.isJsonValue() ->
+        decodeJsonValue(childDesc, index, deserializer)
+
+      childDesc.isJsonClassAnnotated() || descriptor.isJsonFieldAnnotated(index) ->
+        decodeJsonAnnotated(childDesc, index, deserializer)
+
       childDesc.kind == StructureKind.LIST -> {
         val decoder =
           when {
             // When its contextual, get the decoder for that base on the capturedKClass
             childDesc.capturedKClass != null ->
               decoders.find { it.type == childDesc.capturedKClass }
-                ?: throw IllegalArgumentException("Could not find a decoder for the (contextual) structural list type ${childDesc.capturedKClass} with the descriptor: ${childDesc} because not decoder for ${childDesc.capturedKClass} was found")
+                ?: throw IllegalArgumentException("Error decoding column:${currColName()}. Could not find a decoder for the (contextual) structural list type ${childDesc.capturedKClass} with the descriptor: ${childDesc} because not decoder for ${childDesc.capturedKClass} was found")
 
             childDesc.elementDescriptors.toList().size == 1 && childDesc.elementDescriptors.first().kind is PrimitiveKind.BYTE ->
               // When its not contextual there wont be a captured class, in that case get the first type-parameter from the List descriptor and decode some known types based on that
               decoders.find { it.type == ByteArray::class }
-                ?: throw IllegalArgumentException("Could not find a byte array decoder in the database-context for the list type ${childDesc.capturedKClass}")
+                ?: throw IllegalArgumentException("Error decoding column:${currColName()}. Could not find a byte array decoder in the database-context for the list type ${childDesc.capturedKClass}")
 
             else ->
-              throw IllegalArgumentException("Could not find a decoder for the structural list type ${childDesc.capturedKClass} with the descriptor: ${childDesc}. It had an invalid form.")
+              throw IllegalArgumentException("Error decoding column:${currColName()}. Could not find a decoder for the structural list type ${childDesc.capturedKClass} with the descriptor: ${childDesc}. It had an invalid form.")
           }.asNullableIfSpecified()
 
         // if there is a decoder for the specific array-type use that, otherwise
@@ -166,7 +281,7 @@ abstract class RowDecoder<Session, Row>(
 
       childDesc.kind == SerialKind.CONTEXTUAL -> {
         val decoder = decoders.find { it.type == childDesc.capturedKClass }?.asNullableIfSpecified()
-        if (decoder == null) throw IllegalArgumentException("Could not find a decoder for the contextual type ${childDesc.capturedKClass}")
+        if (decoder == null) throw IllegalArgumentException("Error decoding ${currColName()}. Could not find a decoder for the contextual type ${childDesc.capturedKClass}")
         @Suppress("UNCHECKED_CAST")
         run { decodeWithDecoder(decoder as SqlDecoder<Session, Row, T>) }
       }
@@ -219,21 +334,14 @@ abstract class RowDecoder<Session, Row>(
               // because that would fail downstream. In that case we have no choice but to call deserializer.deserialize(this) and force the deserializer to handle the null-value.
               // For example this is the case in the Oracle StringDecoder since Oracle (very strangely!) automacally converts empty-strings to null-values. Therefore
               // we need to call the deserializer to handle the null-value and return a non-null value (e.g. an empty string) in the case of a null-value.
-              if (api.isNull(rowIndex, ctx.row) && desc.isNullable) {
-                // Advance to the next row (since we know the current one is null)
-                // otherwise the next row lookup will think the element is still this one (i.e. null)
-                //rowIndex += 1
-                // increment to the next index
-                // Note that if this is called from a non-nullable row it will fail during kotlin-serialization construction of the parent object.
-                nextRowIndex(parent, index, "Skipping Null Value")
-                null
-              } else
+              validNullOrElse(desc, index) {
                 alternateDeserializer.deserialize(this)
+              }
             }
           } as T?
         }
       else ->
-        throw IllegalArgumentException("Unsupported kind: ${desc.kind}")
+        throw IllegalArgumentException("Unsupported kind: ${desc.kind} at column:${columnInfos[index]}")
     }
   }
 
@@ -260,7 +368,7 @@ abstract class RowDecoder<Session, Row>(
       element != null -> element
       //now: element == null must be true
       descriptor.getElementDescriptor(index).isNullable -> null as T
-      else -> throw IllegalArgumentException("Found null element at index ${index} of descriptor ${descriptor.getElementDescriptor(index)} (of ${descriptor}) where null values are not allowed.")
+      else -> throw IllegalArgumentException("Error at column ${columnInfos[index]}. Found null element at index ${index} of descriptor ${descriptor.getElementDescriptor(index)} (of ${descriptor}) where null values are not allowed.")
     }
   }
 

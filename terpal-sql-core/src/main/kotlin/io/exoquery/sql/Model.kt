@@ -1,7 +1,24 @@
 package io.exoquery.sql
 
-import kotlinx.serialization.KSerializer
-import kotlinx.serialization.serializer
+import kotlinx.serialization.*
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
+
+@OptIn(ExperimentalSerializationApi::class)
+@SerialInfo
+@Retention(AnnotationRetention.BINARY)
+// TODO this needs to have AnnotationTarget.PROPERTY and not AnnotationTarget.FIELD or AnnotationTarget.VALUE_PARAMETER or else it
+//      will not be retrieveable with getElementAnnotations. See https://github.com/Kotlin/kotlinx.serialization/issues/1001 for more details.
+@Target(AnnotationTarget.CLASS, AnnotationTarget.PROPERTY, AnnotationTarget.TYPE)
+annotation class SqlJsonValue
+
+@Serializable
+data class JsonValue<T>(val value: T)
+
+
 
 data class Statement(val ir: IR.Splice): SqlFragment {
   operator fun plus(other: Statement) = Statement(IR.Splice(listOf(IR.Part.Empty, IR.Part.Empty, IR.Part.Empty), listOf(this.ir, other.ir)))

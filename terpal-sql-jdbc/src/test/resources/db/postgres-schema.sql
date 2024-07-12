@@ -61,3 +61,13 @@ CREATE TABLE EncodingTestEntity(
     o13 DATE,
     o14 UUID
 );
+
+CREATE TABLE JsonbExample(
+    id SERIAL PRIMARY KEY,
+    value JSONB
+);
+
+CREATE TABLE JsonExample(
+    id SERIAL PRIMARY KEY,
+    value JSON
+);

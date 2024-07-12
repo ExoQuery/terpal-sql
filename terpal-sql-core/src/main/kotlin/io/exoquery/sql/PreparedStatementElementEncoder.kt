@@ -5,17 +5,21 @@ import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.descriptors.*
 import kotlinx.serialization.encoding.CompositeEncoder
 import kotlinx.serialization.encoding.Encoder
-import kotlinx.serialization.modules.EmptySerializersModule
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.encodeToJsonElement
+import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.modules.SerializersModule
 
 class PreparedStatementElementEncoder<Session, Stmt>(
   val ctx: EncodingContext<Session, Stmt>,
   val index: Int,
   val api: ApiEncoders<Session, Stmt>,
-  val encoders: Set<SqlEncoder<Session, Stmt, out Any>>
+  val encoders: Set<SqlEncoder<Session, Stmt, out Any>>,
+  val module: SerializersModule,
+  val json: Json
 ): Encoder {
 
-  override val serializersModule: SerializersModule = EmptySerializersModule()
+  override val serializersModule: SerializersModule = module
 
   override fun beginStructure(descriptor: SerialDescriptor): CompositeEncoder =
     if (descriptor.kind == StructureKind.CLASS)
@@ -68,8 +72,33 @@ class PreparedStatementElementEncoder<Session, Stmt>(
     // Note, for decoders I do not think it is possible to know on the level of types whether something is nullable. Need to investigate further.
     //fun SqlEncoder<Session, Stmt, out Any>.asNullableIfSpecified() = if (desc.isNullable) asNullable() else this
 
-    return when (desc.kind) {
-      StructureKind.LIST -> {
+    return when {
+      desc.isJsonValue() -> {
+        encoders.find { it.type == SqlJson::class }?.let {
+          when {
+            value is JsonValue<*>? -> {
+              // This is the json of the whole JsonElement e.g. for JsonValue<MyPerson(name, age)> it would be {"value": {"name": "Alice", "age": 30}}
+              val outerJson = value?.let { json.encodeToJsonElement(serializer, it) }
+              // pull the `value` field out
+              val innerJson = outerJson?.let { it.jsonObject["value"] }
+              val encoder = it.asNullable() as SqlEncoder<Session, Stmt, SqlJson?>
+              encoder.encode(ctx, innerJson?.let { SqlJson(it.toString()) }, index)
+            }
+            else ->
+              throw IllegalArgumentException("Cannot encode ${value} (class: ${value?.let { it::class }}) with the descriptor ${desc} to Json. It was identified as a JsonValue object but was not actually an instance of it.")
+          }
+        } ?: throw IllegalArgumentException("Cannot encode ${value} (class: ${value?.let { it::class }}) with the descriptor ${desc} to Json. A SqlJson encoder was not found.")
+      }
+
+      desc.isJsonClassAnnotated() -> {
+        encoders.find { it.type == SqlJson::class }?.let {
+          val jsonStr = value?.let { json.encodeToString(serializer, it) }
+          val encoder = it.asNullable() as SqlEncoder<Session, Stmt, SqlJson?>
+          encoder.encode(ctx, jsonStr?.let { SqlJson(it) }, index)
+        } ?: throw IllegalArgumentException("Cannot encode ${value} (class: ${value?.let { it::class }}) with the descriptor ${desc} to Json. A SqlJson encoder was not found.")
+      }
+
+      desc.kind == StructureKind.LIST -> {
         val encoder =
           when {
             desc.capturedKClass != null -> {
@@ -84,7 +113,7 @@ class PreparedStatementElementEncoder<Session, Stmt>(
         encoder?.let { (it.asNullable() as SqlEncoder<Session, Stmt, T?> ).encode(ctx, value, index) }
           ?: throw IllegalArgumentException("Could not find a encoder for the structural list type ${desc.capturedKClass} with the descriptor: ${desc}")
       }
-      SerialKind.CONTEXTUAL -> {
+      desc.kind == SerialKind.CONTEXTUAL -> {
         val encoder = encoders.find { it.type == desc.capturedKClass }?.asNullable()
         if (encoder == null) throw IllegalArgumentException("Could not find a encoder for the contextual type ${desc.capturedKClass}")
         @Suppress("UNCHECKED_CAST")
@@ -110,7 +139,7 @@ class PreparedStatementElementEncoder<Session, Stmt>(
           serializer.serialize(this, value)
         }
         else {
-          throw IllegalArgumentException("Unsupported serial-kind: ${desc.kind} could notbe decoded as a Array, Contextual, or Primitive value")
+          throw IllegalArgumentException("Unsupported serial-kind: ${desc.kind} for the value ${value} with the descriptor ${desc} could not be decoded as a Array, Contextual, or Primitive value")
         }
       }
     }
