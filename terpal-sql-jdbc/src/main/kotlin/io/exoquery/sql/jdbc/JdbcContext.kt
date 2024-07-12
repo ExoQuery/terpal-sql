@@ -4,6 +4,7 @@ import io.exoquery.sql.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.EmptySerializersModule
 import kotlinx.serialization.modules.SerializersModule
 import java.sql.Connection
@@ -69,13 +70,14 @@ abstract class JdbcContext(override val database: DataSource): Context<Connectio
 
   protected val allEncoders by lazy { encodingApi.computeEncoders() + additionalEncoders }
   protected val allDecoders by lazy { encodingApi.computeDecoders() + additionalDecoders }
+  protected val json: Json = Json
 
   // Do it this way so we can avoid value casting in the runScoped function
   @Suppress("UNCHECKED_CAST")
   fun <T> Param<T>.write(index: Int, conn: Connection, ps: PreparedStatement): Unit {
     // TODO logging integration
     //println("----- Preparing parameter $index - $value - using $serializer")
-    PreparedStatementElementEncoder(createEncodingContext(conn, ps), index+1, encodingApi, allEncoders).encodeNullableSerializableValue(serializer, value)
+    PreparedStatementElementEncoder(createEncodingContext(conn, ps), index+1, encodingApi, allEncoders, module, json).encodeNullableSerializableValue(serializer, value)
   }
 
   protected open fun makeStmtReturning(sql: String, conn: Connection, returningColumns: List<String>) =
@@ -150,7 +152,7 @@ abstract class JdbcContext(override val database: DataSource): Context<Connectio
 
   protected fun <T> KSerializer<T>.makeExtractor() =
     { conn: Connection, rs: ResultSet ->
-      val decoder = JdbcRowDecoder(createDecodingContext(conn, rs), module, encodingApi, allDecoders, descriptor)
+      val decoder = JdbcRowDecoder(createDecodingContext(conn, rs), module, encodingApi, allDecoders, descriptor, json)
       deserialize(decoder)
     }
 

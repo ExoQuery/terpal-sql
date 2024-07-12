@@ -1,6 +1,12 @@
 package io.exoquery.sql.jdbc
 
 import io.exoquery.sql.*
+import io.exoquery.sql.jdbc.AdditionaJdbcTimeEncoding.SqlDateDecoder
+import io.exoquery.sql.jdbc.AdditionaJdbcTimeEncoding.SqlDateEncoder
+import io.exoquery.sql.jdbc.AdditionaJdbcTimeEncoding.SqlTimeDecoder
+import io.exoquery.sql.jdbc.AdditionaJdbcTimeEncoding.SqlTimeEncoder
+import io.exoquery.sql.jdbc.AdditionaJdbcTimeEncoding.SqlTimestampDecoder
+import io.exoquery.sql.jdbc.AdditionaJdbcTimeEncoding.SqlTimestampEncoder
 import java.math.BigDecimal
 import java.sql.*
 import java.time.*
@@ -93,6 +99,14 @@ open class JdbcEncodingBasic: BasicEncoding<Connection, PreparedStatement, Resul
     JdbcDecoderAny.fromFunction { ctx, i ->
       java.util.Date(ctx.row.getTimestamp(i, Calendar.getInstance(ctx.timeZone)).getTime())
     }
+}
+
+object AdditionalPostgresEncoding {
+  val SqlJsonEncoder: JdbcEncoder<SqlJson> = JdbcEncoderAny.fromFunction(Types.OTHER) { ctx, v, i -> ctx.stmt.setObject(i, v.value, Types.OTHER) }
+  val SqlJsonDecoder: JdbcDecoder<SqlJson> = JdbcDecoderAny.fromFunction { ctx, i -> SqlJson(ctx.row.getString(i)) }
+
+  val encoders = setOf(SqlJsonEncoder)
+  val decoders = setOf(SqlJsonDecoder)
 }
 
 object AdditionaJdbcTimeEncoding {

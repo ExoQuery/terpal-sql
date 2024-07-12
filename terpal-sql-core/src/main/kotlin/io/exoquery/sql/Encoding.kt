@@ -78,6 +78,8 @@ interface ApiDecoders<Session, Row> {
   abstract fun preview(index: Int, row: Row): String?
 }
 
+data class SqlJson(val value: String)
+
 interface BasicEncoding<Session, Stmt, Row> {
   val ByteEncoder: SqlEncoder<Session, Stmt, Byte>
   val CharEncoder: SqlEncoder<Session, Stmt, Char>

@@ -11,8 +11,8 @@ import javax.sql.DataSource
 object TerpalContext {
   open class Postgres(override val database: DataSource): JdbcContext(database) {
     // TODO this setting AdditionaJdbcTimeEncoding.encoders/decoders is already set in the parent class. Try to remove it.
-    override val additionalEncoders = super.additionalEncoders + AdditionaJdbcTimeEncoding.encoders
-    override val additionalDecoders = super.additionalDecoders + AdditionaJdbcTimeEncoding.decoders
+    override val additionalEncoders = super.additionalEncoders + AdditionaJdbcTimeEncoding.encoders + AdditionalPostgresEncoding.encoders
+    override val additionalDecoders = super.additionalDecoders + AdditionaJdbcTimeEncoding.decoders + AdditionalPostgresEncoding.decoders
 
     // Postgres does not support Types.TIME_WITH_TIMEZONE as a JDBC type but does have a `TIME WITH TIMEZONE` datatype this is puzzling.
     object PostgresTimeEncoding: JdbcTimeEncoding() {
