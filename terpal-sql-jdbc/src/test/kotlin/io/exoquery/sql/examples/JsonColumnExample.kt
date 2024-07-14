@@ -16,25 +16,6 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.serializer
 
-//data class JsonValue<T>(val value: T, val serializer: KSerializer<T>) {
-//  companion object {
-//    inline operator fun <reified T> invoke(value: T): JsonValue<T> = JsonValue(value, serializer<T>())
-//  }
-//}
-//
-//object JsonValueSerializer: KSerializer<JsonValue<*>> {
-//  override val descriptor = SerialDescriptor("JsonValue", Seria)
-//  override fun deserialize(decoder: Decoder): JsonValue<*> {
-//    TODO("Not yet implemented")
-//  }
-//
-//  override fun serialize(encoder: Encoder, value: JsonValue<*>) {
-//    TODO("Not yet implemented")
-//  }
-//
-//}
-
-
 object JsonColumnExample1 {
 
   @SqlJsonValue
@@ -50,8 +31,11 @@ object JsonColumnExample1 {
     val ctx = TerpalContext.Postgres(postgres.postgresDatabase)
     val je = JsonbExample(1, MyPerson("Alice", 30))
     Sql("INSERT INTO JsonbExample (id, jsonbValue) VALUES (1, ${Param.withSer(je.jsonbValue, MyPerson.serializer())})").action().runOn(ctx)
-    val customers = Sql("SELECT id, jsonbValue FROM JsonbExample").queryOf<JsonbExample>().runOn(ctx)
-    println(customers)
+    //val customers = Sql("SELECT id, jsonbValue FROM JsonbExample").queryOf<JsonbExample>().runOn(ctx)
+    //println(customers)
+
+    val people = Sql("SELECT jsonbValue FROM JsonbExample").queryOf<MyPerson>().runOn(ctx)
+    println(people)
   }
 }
 
@@ -110,8 +94,8 @@ object JsonColumnExample4 {
     postgres.run("CREATE TABLE JsonbExample(id SERIAL PRIMARY KEY, jsonbValue JSONB)")
     val ctx = TerpalContext.Postgres(postgres.postgresDatabase)
     val je = JsonbExample(1, JsonValue(MyPerson("Alice", 30)))
-    //Sql("INSERT INTO JsonbExample (id, jsonbValue) VALUES (1, ${Param.withSer(je.jsonbValue, MyPerson.serializer())})").action().runOn(ctx)
-    Sql("""INSERT INTO JsonbExample (id, jsonbValue) VALUES (1, '{"name":"Joe", "age":123}')""").action().runOn(ctx)
+    Sql("INSERT INTO JsonbExample (id, jsonbValue) VALUES (1, ${Param.withSer(je.jsonbValue)})").action().runOn(ctx)
+    //Sql("""INSERT INTO JsonbExample (id, jsonbValue) VALUES (1, '{"name":"Joe", "age":123}')""").action().runOn(ctx)
     val customers = Sql("SELECT id, jsonbValue FROM JsonbExample").queryOf<JsonbExample>().runOn(ctx)
     println(customers)
   }
@@ -156,12 +140,11 @@ object JsonColumnExample5 {
 //    //Sql("INSERT INTO JsonbExample (id, jsonbValue) VALUES (1, ${Param.withSer(je.jsonbValue, MyPerson.serializer())})").action().runOn(ctx)
 //    Sql("""INSERT INTO JsonbExample (id, jsonbValue) VALUES (1, '{"name":"Joe", "age":123}')""").action().runOn(ctx)
 //
-//    // TODO try to do the same thing using the other json strategy
 //    val customers = Sql("SELECT jsonbValue FROM JsonbExample").queryOf<@SqlJsonValue MyPerson>().runOn(ctx)
 //    println(customers)
 //  }
 //}
 
 suspend fun main() {
-  JsonColumnExample5.main()
+  JsonColumnExample1.main()
 }

@@ -6,6 +6,8 @@ import kotlinx.serialization.descriptors.*
 import kotlinx.serialization.encoding.CompositeEncoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.encodeToJsonElement
+import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.modules.SerializersModule
 
 class PreparedStatementElementEncoder<Session, Stmt>(
@@ -71,6 +73,23 @@ class PreparedStatementElementEncoder<Session, Stmt>(
     //fun SqlEncoder<Session, Stmt, out Any>.asNullableIfSpecified() = if (desc.isNullable) asNullable() else this
 
     return when {
+      desc.isJsonValue() -> {
+        encoders.find { it.type == SqlJson::class }?.let {
+          when {
+            value is JsonValue<*>? -> {
+              // This is the json of the whole JsonElement e.g. for JsonValue<MyPerson(name, age)> it would be {"value": {"name": "Alice", "age": 30}}
+              val outerJson = value?.let { json.encodeToJsonElement(serializer, it) }
+              // pull the `value` field out
+              val innerJson = outerJson?.let { it.jsonObject["value"] }
+              val encoder = it.asNullable() as SqlEncoder<Session, Stmt, SqlJson?>
+              encoder.encode(ctx, innerJson?.let { SqlJson(it.toString()) }, index)
+            }
+            else ->
+              throw IllegalArgumentException("Cannot encode ${value} (class: ${value?.let { it::class }}) with the descriptor ${desc} to Json. It was identified as a JsonValue object but was not actually an instance of it.")
+          }
+        } ?: throw IllegalArgumentException("Cannot encode ${value} (class: ${value?.let { it::class }}) with the descriptor ${desc} to Json. A SqlJson encoder was not found.")
+      }
+
       desc.isJsonClassAnnotated() -> {
         encoders.find { it.type == SqlJson::class }?.let {
           val jsonStr = value?.let { json.encodeToString(serializer, it) }

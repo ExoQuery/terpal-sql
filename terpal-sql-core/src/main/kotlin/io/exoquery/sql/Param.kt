@@ -25,9 +25,11 @@ data class Param<T>(val serializer: SerializationStrategy<T>, val cls: KClass<*>
     inline fun <reified T: Any> ctx(value: T?): Param<T> = contextual(value)
 
     inline fun <reified T> withSerializer(value: T?, serializer: SerializationStrategy<T>): Param<T> = Param(serializer, T::class, value)
+    inline fun <reified T> withSerializer(value: T?): Param<T> = Param(serializer<T>(), T::class, value)
 
     /** Alias for Param.withSerializer */
     inline fun <reified T> withSer(value: T?, serializer: SerializationStrategy<T>): Param<T> = withSerializer(value, serializer)
+    inline fun <reified T> withSer(value: T?): Param<T> = withSerializer(value)
 
     operator fun invoke(value: String?): Param<String> = Param(String.serializer(), String::class, value)
     operator fun invoke(value: Int?): Param<Int> = Param(Int.serializer(), Int::class, value)

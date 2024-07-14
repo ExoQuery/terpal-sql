@@ -153,7 +153,13 @@ abstract class JdbcContext(override val database: DataSource): Context<Connectio
   protected fun <T> KSerializer<T>.makeExtractor() =
     { conn: Connection, rs: ResultSet ->
       val decoder = JdbcRowDecoder(createDecodingContext(conn, rs), module, encodingApi, allDecoders, descriptor, json)
-      deserialize(decoder)
+      // If this is specifically a top-level class annotated with @SqlJsonValue it needs special decoding
+      if (this.descriptor.isJsonClassAnnotated()) {
+        decoder.decodeJsonAnnotated(descriptor, 0, this) ?:
+          throw SQLException("Error decoding json annotated class of the type: ${this.descriptor}")
+      } else {
+        deserialize(decoder)
+      }
     }
 
   internal open suspend fun <T> stream(query: Query<T>): Flow<T> =

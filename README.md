@@ -328,6 +328,46 @@ println(people)
 //> Person(id=1, name=Name(firstName=Joe, lastName=Bloggs), age=30)
 ```
 
+### JSON Valued Columns
+> NOTE: This is currently only supported in Postgres
+
+In Postgres you can store JSON data in a column. Terpal can automatically decode the JSON data into a Kotlin data class in two ways.
+The first way is to add a `@SqlJsonValue` on the data class field. This will tell Terpal to decode that particular column
+as JSON when the parent-object is queried.
+
+```kotlin
+@Serializeable
+data class Person(val name: String, val value: Int)
+@Serializeable
+data class JsonExample(val id: Int, @SqlJsonValue val person: Person)
+
+Sql("INSERT INTO JsonExample (id, person) VALUES (1, '{"name": "Joe", "value": 30}')").action().runOn(ctx)
+val values: List<JsonExample> = Sql("SELECT id, person FROM JsonExample").queryOf<JsonExample>().runOn(ctx)
+//> List(JsonExample(1, Person(name=Joe, value=30)))
+
+// Note how you cannot query for the `Person` class directly because it is not annotated with `@SqlJsonValue`.
+// Sql("SELECT person FROM JsonExample").queryOf<Person>().runOn(ctx)
+//> 
+// TODO Error message
+```
+
+You can also place the `@SqlJsonValue` annotation on the actual child data-class. The advantage of this is that Terpal
+will know to decode the JSON data into the child data-class when it is queried in any context.
+
+```kotlin
+@SqlJsonValue
+@Serializeable
+data class Person(val name: String, val value: Int)
+@Serializeable
+data class JsonExample(val id: Int, val person: Person)
+
+val person = Person("Joe", 30)
+Sql("INSERT INTO JsonExample (id, person) VALUES (1, ${Param.withSer(person)})").action().runOn(ctx)
+val values: List<JsonExample> = Sql("SELECT id, person FROM JsonExample").queryOf<JsonExample>().runOn(ctx)
+//> List(JsonExample(1, Person(name=Joe, value=30)))
+
+// The advantage of this approach is that you can 
+```
 
 ### Playing well with other Kotlinx Formats
 

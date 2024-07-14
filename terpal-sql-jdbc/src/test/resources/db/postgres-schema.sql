@@ -64,5 +64,10 @@ CREATE TABLE EncodingTestEntity(
 
 CREATE TABLE JsonbExample(
     id SERIAL PRIMARY KEY,
-    jsonbValue JSONB
+    value JSONB
+);
+
+CREATE TABLE JsonExample(
+    id SERIAL PRIMARY KEY,
+    value JSON
 );
