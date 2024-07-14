@@ -6,15 +6,21 @@ import kotlinx.serialization.descriptors.*
 import kotlinx.serialization.encoding.CompositeDecoder
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.modules.SerializersModule
 
 data class ColumnInfo(val name: String, val type: String)
 
-fun SerialDescriptor.isJsonValueClass() =
+fun SerialDescriptor.isJsonClassAnnotated() =
   this.annotations.find { it.annotationClass == io.exoquery.sql.SqlJsonValue::class } != null
 
-fun SerialDescriptor.isJsonValueField(fieldIndex: Int) =
+fun SerialDescriptor.isJsonFieldAnnotated(fieldIndex: Int) =
   this.getElementAnnotations(fieldIndex).find { it.annotationClass == io.exoquery.sql.SqlJsonValue::class } != null
+
+fun SerialDescriptor.isJsonValue() =
+  this.serialName == "io.exoquery.sql.JsonValue"
 
 fun <A, B> Iterable<IndexedValue<Pair<A, B>>>.flattenEach() =
   this.map {
@@ -36,7 +42,7 @@ fun SerialDescriptor.verifyColumns(columns: List<ColumnInfo>): Unit {
   fun flatDescriptorColumnData(desc: SerialDescriptor): List<Pair<String, String>> =
     when {
       // If the entire record that needs to be decoded is a singular json value
-      desc.isJsonValueClass() ->
+      desc.isJsonClassAnnotated() || desc.isJsonValue() ->
         listOf("<unamed>" to desc.serialName)
 
       desc.kind == StructureKind.CLASS ->
@@ -48,7 +54,7 @@ fun SerialDescriptor.verifyColumns(columns: List<ColumnInfo>): Unit {
         fun plainField() = listOf(fieldName to fieldDesc.serialName)
         when {
           // If the field is supposed to be encoded as a json object treat is as a regular column
-          fieldDesc.isJsonValueClass() || desc.isJsonValueField(i) -> plainField()
+          desc.isJsonValue() || fieldDesc.isJsonClassAnnotated() || desc.isJsonFieldAnnotated(i) -> plainField()
           // otherwise if it is a structural-type flatten the structure inside (since it is supposed to be unpacked in a nested fasion)
           fieldDesc.kind == StructureKind.CLASS -> flatDescriptorColumnData(fieldDesc)
           // otherwise its a leaf-value
@@ -161,8 +167,31 @@ abstract class RowDecoder<Session, Row>(
     // If the actual decoded element is supposed to be nullable then make the decoder for it nullable
     fun SqlDecoder<Session, Row, out Any>.asNullableIfSpecified() = if (childDesc.isNullable) asNullable() else this
 
+    // TODO handle the parent-descriptor being a leaf-level json decoded field too
     return when {
-      childDesc.isJsonValueClass() || descriptor.isJsonValueField(index) -> {
+      childDesc.isJsonValue() -> {
+        decoders.find { it.type == io.exoquery.sql.SqlJson::class }?.let {
+          val jsonDecoder = (it.asNullableIfSpecified() as SqlDecoder<Session, Row, SqlJson?>)
+          // If the row is null and the descriptor (i.e. the type of the actual column e.g. `MyProduct(myField: MyType?)`) is specified as nullable then
+          // return a null value. Otherwise (if it is not null or is null and the column type is not nullable) then make the decoder deal with it.
+          // See a more detailed discussion in this logic in `decodeBestEffortFromDescriptor`.
+          if (api.isNull(rowIndex, ctx.row) && childDesc.isNullable) {
+            nextRowIndex(descriptor, index, "Skipping Null Value at column:${currColName()}")
+            null
+          } else
+            jsonDecoder.decode(ctx, rowIndex)?.let { sqlJson ->
+              // create the json represented inside of the JsonValue
+              val innerValue = json.parseToJsonElement(sqlJson.value)
+              // create the json of the actual JsonValue
+              val outerValue = JsonObject(mapOf("value" to innerValue))
+              // Parse that into a JsonValue
+              val jsonValue = json.decodeFromJsonElement(deserializer, outerValue)
+              jsonValue
+            }
+        } ?: throw IllegalArgumentException("Error decoding ${currColName()}. Cannot decode the value of the column ${currColName()} with the descriptor ${childDesc} to Json. A SqlJson encoder was not found.")
+      }
+
+      childDesc.isJsonClassAnnotated() || descriptor.isJsonFieldAnnotated(index) -> {
         decoders.find { it.type == io.exoquery.sql.SqlJson::class }?.let {
           val jsonDecoder = (it.asNullableIfSpecified() as SqlDecoder<Session, Row, SqlJson?>)
           // If the row is null and the descriptor (i.e. the type of the actual column e.g. `MyProduct(myField: MyType?)`) is specified as nullable then

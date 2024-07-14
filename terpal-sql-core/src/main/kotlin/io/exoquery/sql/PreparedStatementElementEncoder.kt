@@ -71,7 +71,7 @@ class PreparedStatementElementEncoder<Session, Stmt>(
     //fun SqlEncoder<Session, Stmt, out Any>.asNullableIfSpecified() = if (desc.isNullable) asNullable() else this
 
     return when {
-      desc.isJsonValueClass() -> {
+      desc.isJsonClassAnnotated() -> {
         encoders.find { it.type == SqlJson::class }?.let {
           val jsonStr = value?.let { json.encodeToString(serializer, it) }
           val encoder = it.asNullable() as SqlEncoder<Session, Stmt, SqlJson?>

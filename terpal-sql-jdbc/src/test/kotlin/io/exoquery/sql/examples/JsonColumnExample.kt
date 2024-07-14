@@ -118,5 +118,5 @@ object JsonColumnExample4 {
 }
 
 suspend fun main() {
-  JsonColumnExample3.main()
+  JsonColumnExample4.main()
 }
