@@ -6,10 +6,9 @@ import kotlinx.serialization.descriptors.*
 import kotlinx.serialization.encoding.CompositeDecoder
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.modules.SerializersModule
+import javax.management.Descriptor
 
 data class ColumnInfo(val name: String, val type: String)
 
@@ -95,6 +94,9 @@ abstract class RowDecoder<Session, Row>(
 
   abstract fun cloneSelf(ctx: DecodingContext<Session, Row>, initialRowIndex: Int, type: RowDecoderType, endCallback: (Int) -> Unit): RowDecoder<Session, Row>
 
+  // helper to get column names
+  fun colName(index: Int) = columnInfos[index].name
+
   var rowIndex: Int = initialRowIndex
   var classIndex: Int = 0
 
@@ -152,12 +154,70 @@ abstract class RowDecoder<Session, Row>(
     endCallback(rowIndex)
   }
 
+  // If the row is null and the descriptor (i.e. the type of the actual column e.g. `MyProduct(myField: MyType?)`) is specified as nullable then
+  // return a null value. Otherwise (if it is not null or is null and the column type is not nullable) then make the decoder deal with it.
+  // See a more detailed discussion in this logic in `decodeBestEffortFromDescriptor`.
+  fun <T> validNullOrElse(desc: SerialDescriptor, index: Int, orElse: () -> T): T? =
+    if (api.isNull(rowIndex, ctx.row) && desc.isNullable) {
+      nextRowIndex(desc, index, "Skipping Null Value at column:${colName(index)}")
+      null
+    } else orElse()
+
+  fun <T> decodeJsonValue(desc: SerialDescriptor, index: Int, deserializer: DeserializationStrategy<T?>): T? {
+    val jsonDecoder = findJsonDecoderOrFail(desc, index)
+    return validNullOrElse(desc, index) {
+      jsonDecoder.decode(ctx, rowIndex)?.let { sqlJson ->
+        // create the json represented inside of the JsonValue
+        val innerValue = json.parseToJsonElement(sqlJson.value)
+        // create the json of the actual JsonValue
+        val outerValue = JsonObject(mapOf("value" to innerValue))
+        // Parse that into a JsonValue
+        val jsonValue = json.decodeFromJsonElement(deserializer, outerValue)
+        jsonValue
+      }
+    }
+  }
+
+  fun <T> decodeJsonValueContent(desc: SerialDescriptor, index: Int, deserializer: DeserializationStrategy<T?>): T? {
+    val jsonDecoder = findJsonDecoderOrFail(desc, index)
+    return validNullOrElse(desc, index) {
+      jsonDecoder.decode(ctx, rowIndex)?.let { sqlJson ->
+        // create the json represented inside of a JsonValue e.g. MyPerson for JsonValue<MyPerson>
+        val innerValue = json.parseToJsonElement(sqlJson.value)
+        // Parse that into a the JsonValue element instance e.g. MyPerson
+        val jsonValue = json.decodeFromJsonElement(deserializer, innerValue)
+        jsonValue
+      }
+    }
+  }
+
+  @Suppress("UNCHECKED_CAST")
+  fun findJsonDecoderOrFail(desc: SerialDescriptor, index: Int): SqlDecoder<Session, Row, SqlJson?> {
+    fun currColName() = colName(index)
+    fun SqlDecoder<Session, Row, out Any>.asNullableIfSpecified() = if (desc.isNullable) asNullable() else this
+    val jsonDecoderRaw = decoders.find { it.type == io.exoquery.sql.SqlJson::class }
+      ?: throw IllegalArgumentException("Error decoding ${currColName()}. Cannot decode the value of the column ${currColName()} with the descriptor ${desc} to Json. A SqlJson encoder was not found.")
+    val jsonDecoder = (jsonDecoderRaw.asNullableIfSpecified() as SqlDecoder<Session, Row, SqlJson?>)
+    return jsonDecoder
+  }
+
+  fun <T> decodeJsonAnnotated(desc: SerialDescriptor, index: Int, deserializer: DeserializationStrategy<T?>): T? {
+    val jsonDecoder = findJsonDecoderOrFail(desc, index)
+    return validNullOrElse(desc, index) {
+      jsonDecoder.decode(ctx, rowIndex)?.let { sqlJson ->
+        json.decodeFromString(deserializer, sqlJson.value)
+      }
+    }
+  }
+
   @ExperimentalSerializationApi
   override fun <T : Any> decodeNullableSerializableElement(descriptor: SerialDescriptor, index: Int, deserializer: DeserializationStrategy<T?>, previousValue: T?): T? {
-    val childDesc = descriptor.elementDescriptors.toList()[index]
 
+    // get the child descriptor (parent might not have one so make it lazy)
+    val childDesc by lazy { descriptor.elementDescriptors.toList()[index] }
+    // helper to get column name for various logging statements
     fun currColName() = columnInfos[index].name
-
+    // helper to run the decoding
     fun decodeWithDecoder(decoder: SqlDecoder<Session, Row, T>): T? {
       val rowIndex = nextRowIndex(descriptor, index)
       val decoded = decoder.decode(ctx, rowIndex)
@@ -167,45 +227,16 @@ abstract class RowDecoder<Session, Row>(
     // If the actual decoded element is supposed to be nullable then make the decoder for it nullable
     fun SqlDecoder<Session, Row, out Any>.asNullableIfSpecified() = if (childDesc.isNullable) asNullable() else this
 
-    // TODO handle the parent-descriptor being a leaf-level json decoded field too
     return when {
-      childDesc.isJsonValue() -> {
-        decoders.find { it.type == io.exoquery.sql.SqlJson::class }?.let {
-          val jsonDecoder = (it.asNullableIfSpecified() as SqlDecoder<Session, Row, SqlJson?>)
-          // If the row is null and the descriptor (i.e. the type of the actual column e.g. `MyProduct(myField: MyType?)`) is specified as nullable then
-          // return a null value. Otherwise (if it is not null or is null and the column type is not nullable) then make the decoder deal with it.
-          // See a more detailed discussion in this logic in `decodeBestEffortFromDescriptor`.
-          if (api.isNull(rowIndex, ctx.row) && childDesc.isNullable) {
-            nextRowIndex(descriptor, index, "Skipping Null Value at column:${currColName()}")
-            null
-          } else
-            jsonDecoder.decode(ctx, rowIndex)?.let { sqlJson ->
-              // create the json represented inside of the JsonValue
-              val innerValue = json.parseToJsonElement(sqlJson.value)
-              // create the json of the actual JsonValue
-              val outerValue = JsonObject(mapOf("value" to innerValue))
-              // Parse that into a JsonValue
-              val jsonValue = json.decodeFromJsonElement(deserializer, outerValue)
-              jsonValue
-            }
-        } ?: throw IllegalArgumentException("Error decoding ${currColName()}. Cannot decode the value of the column ${currColName()} with the descriptor ${childDesc} to Json. A SqlJson encoder was not found.")
-      }
+      // If the parent decoder is a leaf level i.e. if its actually Query<JsonValue<MyPerson>> instead of Query<SomeProduct(...JsonValue<MyPerson>)>
+      descriptor.isJsonValue() ->
+        decodeJsonValueContent(descriptor, index, deserializer)
 
-      childDesc.isJsonClassAnnotated() || descriptor.isJsonFieldAnnotated(index) -> {
-        decoders.find { it.type == io.exoquery.sql.SqlJson::class }?.let {
-          val jsonDecoder = (it.asNullableIfSpecified() as SqlDecoder<Session, Row, SqlJson?>)
-          // If the row is null and the descriptor (i.e. the type of the actual column e.g. `MyProduct(myField: MyType?)`) is specified as nullable then
-          // return a null value. Otherwise (if it is not null or is null and the column type is not nullable) then make the decoder deal with it.
-          // See a more detailed discussion in this logic in `decodeBestEffortFromDescriptor`.
-          if (api.isNull(rowIndex, ctx.row) && childDesc.isNullable) {
-            nextRowIndex(descriptor, index, "Skipping Null Value at column:${currColName()}")
-            null
-          } else
-            jsonDecoder.decode(ctx, rowIndex)?.let { sqlJson ->
-              json.decodeFromString(deserializer, sqlJson.value)
-            }
-        } ?: throw IllegalArgumentException("Error decoding ${currColName()}. Cannot decode the value of the column ${currColName()} with the descriptor ${childDesc} to Json. A SqlJson encoder was not found.")
-      }
+      childDesc.isJsonValue() ->
+        decodeJsonValue(childDesc, index, deserializer)
+
+      childDesc.isJsonClassAnnotated() || descriptor.isJsonFieldAnnotated(index) ->
+        decodeJsonAnnotated(childDesc, index, deserializer)
 
       childDesc.kind == StructureKind.LIST -> {
         val decoder =
@@ -303,16 +334,9 @@ abstract class RowDecoder<Session, Row>(
               // because that would fail downstream. In that case we have no choice but to call deserializer.deserialize(this) and force the deserializer to handle the null-value.
               // For example this is the case in the Oracle StringDecoder since Oracle (very strangely!) automacally converts empty-strings to null-values. Therefore
               // we need to call the deserializer to handle the null-value and return a non-null value (e.g. an empty string) in the case of a null-value.
-              if (api.isNull(rowIndex, ctx.row) && desc.isNullable) {
-                // Advance to the next row (since we know the current one is null)
-                // otherwise the next row lookup will think the element is still this one (i.e. null)
-                //rowIndex += 1
-                // increment to the next index
-                // Note that if this is called from a non-nullable row it will fail during kotlin-serialization construction of the parent object.
-                nextRowIndex(parent, index, "Skipping Null Value at column:${columnInfos[index]}")
-                null
-              } else
+              validNullOrElse(desc, index) {
                 alternateDeserializer.deserialize(this)
+              }
             }
           } as T?
         }

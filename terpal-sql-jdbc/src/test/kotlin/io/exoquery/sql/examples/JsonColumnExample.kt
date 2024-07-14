@@ -117,6 +117,51 @@ object JsonColumnExample4 {
   }
 }
 
+// Like JsonColumnExample4 but just get the scalar of the json column
+object JsonColumnExample5 {
+
+  @Serializable
+  data class MyPerson(val name: String, val age: Int)
+
+  @Serializable
+  data class JsonbExample(val id: Int, val jsonbValue: JsonValue<MyPerson>)
+
+  suspend fun main() {
+    val postgres = EmbeddedPostgres.start()
+    postgres.run("CREATE TABLE JsonbExample(id SERIAL PRIMARY KEY, jsonbValue JSONB)")
+    val ctx = TerpalContext.Postgres(postgres.postgresDatabase)
+    val je = JsonbExample(1, JsonValue(MyPerson("Alice", 30)))
+    //Sql("INSERT INTO JsonbExample (id, jsonbValue) VALUES (1, ${Param.withSer(je.jsonbValue, MyPerson.serializer())})").action().runOn(ctx)
+    Sql("""INSERT INTO JsonbExample (id, jsonbValue) VALUES (1, '{"name":"Joe", "age":123}')""").action().runOn(ctx)
+
+    val customers = Sql("SELECT jsonbValue FROM JsonbExample").queryOf<JsonValue<MyPerson>>().runOn(ctx)
+    println(customers)
+  }
+}
+
+// Does not work:
+//object JsonColumnExample6 {
+//
+//  @Serializable
+//  data class MyPerson(val name: String, val age: Int)
+//
+//  @Serializable
+//  data class JsonbExample(val id: Int, val jsonbValue: JsonValue<MyPerson>)
+//
+//  suspend fun main() {
+//    val postgres = EmbeddedPostgres.start()
+//    postgres.run("CREATE TABLE JsonbExample(id SERIAL PRIMARY KEY, jsonbValue JSONB)")
+//    val ctx = TerpalContext.Postgres(postgres.postgresDatabase)
+//    val je = JsonbExample(1, JsonValue(MyPerson("Alice", 30)))
+//    //Sql("INSERT INTO JsonbExample (id, jsonbValue) VALUES (1, ${Param.withSer(je.jsonbValue, MyPerson.serializer())})").action().runOn(ctx)
+//    Sql("""INSERT INTO JsonbExample (id, jsonbValue) VALUES (1, '{"name":"Joe", "age":123}')""").action().runOn(ctx)
+//
+//    // TODO try to do the same thing using the other json strategy
+//    val customers = Sql("SELECT jsonbValue FROM JsonbExample").queryOf<@SqlJsonValue MyPerson>().runOn(ctx)
+//    println(customers)
+//  }
+//}
+
 suspend fun main() {
-  JsonColumnExample4.main()
+  JsonColumnExample5.main()
 }
