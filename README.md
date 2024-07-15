@@ -56,7 +56,7 @@ plugins {
 }
 
 dependencies {
-    api("io.exoquery:terpal-sql-jdbc:2.0.0-0.2.0")
+    api("io.exoquery:terpal-sql-jdbc:2.0.0-0.3.0")
 
     api("org.jetbrains.kotlinx:kotlinx-serialization-core:1.6.2")
     api("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
