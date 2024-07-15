@@ -348,9 +348,9 @@ data class JsonExample(val id: Int, @SqlJsonValue val person: Person)
 Sql("""INSERT INTO JsonExample (id, person) VALUES (1, '{"name": "Joe", "value": 30}')""").action().runOn(ctx)
 val values: List<JsonExample> = Sql("SELECT id, person FROM JsonExample").queryOf<JsonExample>().runOn(ctx)
 //> List(JsonExample(1, Person(name=Joe, value=30)))
+```
 This list of `JsonExample` parent-objects is returned.
 
-```
 > Note how you cannot query for the `Person` class directly in the above example because it is not annotated with `@SqlJsonValue`.
 > Querying for it will make Terpal try to fetch the Person.name and Person.age columns because it will treat
 > the Person class as a regular data class.
