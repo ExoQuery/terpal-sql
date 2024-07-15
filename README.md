@@ -388,6 +388,9 @@ val values: List<JsonExample> = Sql("SELECT id, person FROM JsonExample").queryO
 //> List(JsonExample(1, Person(name=Joe, value=30)))
 ```
 
+You can find more examples using JSON columns in the [Json Column Examples](terpal-sql-jdbc/src/test/kotlin/io/exoquery/sql/examples/JsonColumnExample.kt)
+documentation.
+
 #### Using the JsonValue Wrapper
 
 If you want more explicit control over how JSON data is encoded/decoded you can use the `JsonValue` wrapper.
@@ -435,6 +438,8 @@ val values: List<JsonExample> = Sql("SELECT id, person FROM JsonExample").queryO
 //> List(JsonExample(1, Person(name=Joe, value=30)))
 ```
 
+You can find more examples using JSON columns in the [Json Column Examples](terpal-sql-jdbc/src/test/kotlin/io/exoquery/sql/examples/JsonColumnExample.kt) 
+documentation.
 
 ### Playing well with other Kotlinx Formats
 
