@@ -337,36 +337,43 @@ as JSON when the parent-object is queried.
 
 ```kotlin
 @Serializeable
-data class Person(val name: String, val value: Int)
+data class Person(val name: String, val age: Int)
 @Serializeable
 data class JsonExample(val id: Int, @SqlJsonValue val person: Person)
 
 Sql("INSERT INTO JsonExample (id, person) VALUES (1, '{"name": "Joe", "value": 30}')").action().runOn(ctx)
 val values: List<JsonExample> = Sql("SELECT id, person FROM JsonExample").queryOf<JsonExample>().runOn(ctx)
 //> List(JsonExample(1, Person(name=Joe, value=30)))
-
-// Note how you cannot query for the `Person` class directly because it is not annotated with `@SqlJsonValue`.
-// Sql("SELECT person FROM JsonExample").queryOf<Person>().runOn(ctx)
-//> 
-// TODO Error message
 ```
+> Note how you cannot query for the `Person` class directly because it is not annotated with `@SqlJsonValue`.
+> Querying for it will make Terpal try to fetch the Person.name and Person.age columns because it will treat
+> the Person class as a regular data class.
+> ```
+> Sql("SELECT person FROM JsonExample").queryOf<Person>().runOn(ctx)
+> //> Column mismatch. The columns from the SQL ResultSet metadata did not match the expected columns from the deserialized type
+> //> SQL Columns (1): [(0)value:jsonb], Class Columns (2): [(0)name:kotlin.String, (1)age:kotlin.Int]
+> ```
 
 You can also place the `@SqlJsonValue` annotation on the actual child data-class. The advantage of this is that Terpal
-will know to decode the JSON data into the child data-class when it is queried in any context.
+will know to decode the JSON data into the child data-class directly (not only when it is queried as part of the parent).
 
 ```kotlin
 @SqlJsonValue
 @Serializeable
-data class Person(val name: String, val value: Int)
+data class Person(val name: String, val age: Int)
 @Serializeable
 data class JsonExample(val id: Int, val person: Person)
 
 val person = Person("Joe", 30)
-Sql("INSERT INTO JsonExample (id, person) VALUES (1, ${Param.withSer(person)})").action().runOn(ctx)
+Sql("INSERT INTO JsonExample (id, person) VALUES (1, '{"name": "Joe", "value": 30}')").action().runOn(ctx)
 val values: List<JsonExample> = Sql("SELECT id, person FROM JsonExample").queryOf<JsonExample>().runOn(ctx)
 //> List(JsonExample(1, Person(name=Joe, value=30)))
 
-// The advantage of this approach is that you can 
+// The advantage of this approach is that you can insert and select the Person-class directly.
+// Can insert the Person class directly:
+Sql("INSERT INTO JsonExample (id, person) VALUES (1, ${Param.withSer(person)})").action().runOn(ctx)
+// Can select the Person class directly:
+val values: List<JsonExample> = Sql("SELECT person FROM JsonExample").queryOf<Person>().runOn(ctx)
 ```
 
 ### Playing well with other Kotlinx Formats

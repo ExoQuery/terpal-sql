@@ -32,7 +32,7 @@ class JsonSpec: FreeSpec({
   }
 
   "SqlJsonValue annotation works on" - {
-    "inner data class" {
+    "inner data class" - {
       @SqlJsonValue
       @Serializable
       data class MyPerson(val name: String, val age: Int)
@@ -41,11 +41,21 @@ class JsonSpec: FreeSpec({
       data class Example(val id: Int, val value: MyPerson)
 
       val je = Example(1, MyPerson("Alice", 30))
-      Sql("INSERT INTO JsonbExample (id, value) VALUES (1, ${Param.withSer(je.value)})").action().runOn(ctx)
-      Sql("SELECT id, value FROM JsonbExample").queryOf<Example>().runOn(ctx) shouldBe listOf(je)
 
-      Sql("INSERT INTO JsonExample (id, value) VALUES (1, ${Param.withSer(je.value, MyPerson.serializer())})").action().runOn(ctx)
-      Sql("SELECT id, value FROM JsonExample").queryOf<Example>().runOn(ctx) shouldBe listOf(je)
+      "should encode in jsonb and decode" {
+        Sql("INSERT INTO JsonbExample (id, value) VALUES (1, ${Param.withSer(je.value)})").action().runOn(ctx)
+        Sql("SELECT id, value FROM JsonbExample").queryOf<Example>().runOn(ctx) shouldBe listOf(je)
+      }
+
+      "should encode in jsonb and decode as atom" {
+        Sql("INSERT INTO JsonbExample (id, value) VALUES (1, ${Param.withSer(je.value)})").action().runOn(ctx)
+        Sql("SELECT value FROM JsonbExample").queryOf<MyPerson>().runOn(ctx) shouldBe listOf(je.value)
+      }
+
+      "should encode in json (with explicit serializer) and decode" {
+        Sql("INSERT INTO JsonExample (id, value) VALUES (1, ${Param.withSer(je.value, MyPerson.serializer())})").action().runOn(ctx)
+        Sql("SELECT id, value FROM JsonExample").queryOf<Example>().runOn(ctx) shouldBe listOf(je)
+      }
     }
 
     "annotated field" {
@@ -60,6 +70,8 @@ class JsonSpec: FreeSpec({
       val customers = Sql("SELECT id, value FROM JsonbExample").queryOf<Example>().runOn(ctx)
       customers shouldBe listOf(je)
     }
+
+
 
     "outer typealias - A".config(enabled = false) {
       val je = JsonSpecData.A.Example(1, JsonSpecData.A.MyPerson("Joe", 123))
