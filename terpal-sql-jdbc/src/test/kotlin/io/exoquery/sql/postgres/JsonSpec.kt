@@ -82,22 +82,45 @@ class JsonSpec: FreeSpec({
   }
 
   "JsonValue object works on" - {
-    @Serializable
-    data class MyPerson(val name: String, val age: Int)
+    "inner data class" - {
+      @Serializable
+      data class MyPerson(val name: String, val age: Int)
 
-    @Serializable
-    data class JsonbExample(val id: Int, val jsonValue: JsonValue<MyPerson>)
+      @Serializable
+      data class JsonbExample(val id: Int, val jsonValue: JsonValue<MyPerson>)
 
-    "inner data class" {
-      val je = JsonbExample(1, JsonValue(MyPerson("Alice", 30)))
-      Sql("INSERT INTO JsonbExample (id, value) VALUES (1, ${Param.withSer(je.jsonValue)})").action().runOn(ctx)
-      Sql("SELECT id, value FROM JsonbExample").queryOf<JsonbExample>().runOn(ctx) shouldBe listOf(je)
+      "field value" {
+        val je = JsonbExample(1, JsonValue(MyPerson("Alice", 30)))
+        Sql("INSERT INTO JsonbExample (id, value) VALUES (1, ${Param.withSer(je.jsonValue)})").action().runOn(ctx)
+        Sql("SELECT id, value FROM JsonbExample").queryOf<JsonbExample>().runOn(ctx) shouldBe listOf(je)
+      }
+
+      "leaf value" {
+        val je = JsonbExample(1, JsonValue(MyPerson("Alice", 30)))
+        Sql("INSERT INTO JsonbExample (id, value) VALUES (1, ${Param.withSer(je.jsonValue)})").action().runOn(ctx)
+        Sql("SELECT value FROM JsonbExample").queryOf<JsonValue<MyPerson>>().runOn(ctx) shouldBe listOf(je.jsonValue)
+      }
     }
+    "complex data classes" - {
+      @Serializable
+      data class MyPerson(val name: String, val age: Int)
 
-    "leaf value" {
-      val je = JsonbExample(1, JsonValue(MyPerson("Alice", 30)))
-      Sql("INSERT INTO JsonbExample (id, value) VALUES (1, ${Param.withSer(je.jsonValue)})").action().runOn(ctx)
-      Sql("SELECT value FROM JsonbExample").queryOf<JsonValue<MyPerson>>().runOn(ctx) shouldBe listOf(je.jsonValue)
+      @Serializable
+      data class JsonbExample(val id: Int, val jsonValue: JsonValue<List<MyPerson>>)
+
+      val people = listOf(MyPerson("Joe", 30), MyPerson("Jack", 31))
+      val je = JsonbExample(1, JsonValue(people))
+
+      "field value" {
+        Sql("INSERT INTO JsonbExample (id, value) VALUES (1, ${Param.withSer(je.jsonValue)})").action().runOn(ctx)
+        Sql("SELECT id, value FROM JsonbExample").queryOf<JsonbExample>().runOn(ctx) shouldBe listOf(je)
+      }
+
+      "leaf value" {
+        val je1 = JsonbExample(1, JsonValue(people))
+        Sql("INSERT INTO JsonbExample (id, value) VALUES (1, ${Param.withSer(je.jsonValue)})").action().runOn(ctx)
+        Sql("SELECT value FROM JsonbExample").queryOf<JsonValue<List<MyPerson>>>().runOn(ctx) shouldBe listOf(je.jsonValue)
+      }
     }
   }
 

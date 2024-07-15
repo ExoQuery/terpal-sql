@@ -31,6 +31,8 @@ data class Param<T>(val serializer: SerializationStrategy<T>, val cls: KClass<*>
     inline fun <reified T> withSer(value: T?, serializer: SerializationStrategy<T>): Param<T> = withSerializer(value, serializer)
     inline fun <reified T> withSer(value: T?): Param<T> = withSerializer(value)
 
+    inline fun <reified T> json(value: T?): Param<JsonValue<T>> = withSerializer(value?.let { JsonValue(it) })
+
     operator fun invoke(value: String?): Param<String> = Param(String.serializer(), String::class, value)
     operator fun invoke(value: Int?): Param<Int> = Param(Int.serializer(), Int::class, value)
     operator fun invoke(value: Long?): Param<Long> = Param(Long.serializer(), Long::class, value)
