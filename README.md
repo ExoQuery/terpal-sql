@@ -348,8 +348,10 @@ data class JsonExample(val id: Int, @SqlJsonValue val person: Person)
 Sql("""INSERT INTO JsonExample (id, person) VALUES (1, '{"name": "Joe", "value": 30}')""").action().runOn(ctx)
 val values: List<JsonExample> = Sql("SELECT id, person FROM JsonExample").queryOf<JsonExample>().runOn(ctx)
 //> List(JsonExample(1, Person(name=Joe, value=30)))
+This list of `JsonExample` parent-objects is returned.
+
 ```
-> Note how you cannot query for the `Person` class directly because it is not annotated with `@SqlJsonValue`.
+> Note how you cannot query for the `Person` class directly in the above example because it is not annotated with `@SqlJsonValue`.
 > Querying for it will make Terpal try to fetch the Person.name and Person.age columns because it will treat
 > the Person class as a regular data class.
 > ```
@@ -357,6 +359,7 @@ val values: List<JsonExample> = Sql("SELECT id, person FROM JsonExample").queryO
 > //> Column mismatch. The columns from the SQL ResultSet metadata did not match the expected columns from the deserialized type
 > //> SQL Columns (1): [(0)value:jsonb], Class Columns (2): [(0)name:kotlin.String, (1)age:kotlin.Int]
 > ```
+> The next example will show how to get around this.
 
 You can also place the `@SqlJsonValue` annotation on the actual child data-class. The advantage of this is that Terpal
 will know to decode the JSON data into the child data-class directly (not only when it is queried as part of the parent).
