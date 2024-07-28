@@ -1,11 +1,9 @@
 package io.exoquery.sql.examples
 
-import io.exoquery.sql.jdbc.JdbcContext
-import io.exoquery.sql.jdbc.Sql
-import io.exoquery.sql.jdbc.TerpalContext
-import io.exoquery.sql.jdbc.runOn
 import io.exoquery.sql.run
 import io.exoquery.sql.Param
+import io.exoquery.sql.jdbc.*
+import io.exoquery.sql.runOn
 import io.zonky.test.db.postgres.embedded.EmbeddedPostgres
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.KSerializer
@@ -46,9 +44,12 @@ object NewtypeColumnContextual_DifferentEncoders {
     val postgres = EmbeddedPostgres.start()
     postgres.run("CREATE TABLE customers (id SERIAL PRIMARY KEY, firstName TEXT, lastName TEXT, email TEXT)")
     val ctx =
-      object: TerpalContext.Postgres(postgres.postgresDatabase) {
-        override val module = SerializersModule { contextual(Email::class, EmailSerialzier) }
-      }
+      TerpalContext.Postgres(
+        postgres.postgresDatabase,
+        JdbcEncodingConfig(
+          module = SerializersModule { contextual(Email::class, EmailSerialzier) }
+        )
+      )
 
     val firstName = "Alice"
     val lastName = "Smith"

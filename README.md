@@ -50,13 +50,13 @@ Add the following to your `build.gradle.kts` file:
 
 ```kotlin
 plugins {
-    kotlin("jvm") version "2.0.0" // Currently the plugin is only available for Kotlin-JVM
-    id("io.exoquery.terpal-plugin") version "2.0.0-0.2.0"
-    kotlin("plugin.serialization") version "2.0.0"
+    kotlin("jvm") version "1.9.22" // Currently the plugin is only available for Kotlin-JVM
+    id("io.exoquery.terpal-plugin") version "1.9.22-1.0.0-RC1"
+    kotlin("plugin.serialization") version "1.9.22"
 }
 
 dependencies {
-    api("io.exoquery:terpal-sql-jdbc:2.0.0-0.3.0")
+    api("io.exoquery:terpal-sql-jdbc:1.9.22-0.3.0")
 
     api("org.jetbrains.kotlinx:kotlinx-serialization-core:1.6.2")
     api("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
@@ -237,8 +237,10 @@ val automaticWrapped = Sql("SELECT * FROM Person WHERE id = $id").queryOf<Person
 The following types are automatically wrapped:
  - Primitives: String, Int, Long, Short, Byte, Float, Double, Boolean
  - Time Types: `java.util.Date`, LocalDate, LocalTime, LocalDateTime, ZonedDateTime, Instant, OffsetTime, OffsetDateTime
+ - Kotlin Multiplatform Time Types: `kotlinx.datetime.LocalDate`, `kotlinx.datetime.LocalTime`, `kotlinx.datetime.LocalDateTime`, `kotlinx.datetime.Instant`
  - SQL Time Types: `java.sql.Date`, `java.sql.Timestamp`, `java.sql.Time`
  - Other: BigDecimal, ByteArray
+ - Note that in all the time-types Nano-second granularity is not supported. It will be rounded to the nearest millisecond.
 
 ### Custom Wrapped Types
 

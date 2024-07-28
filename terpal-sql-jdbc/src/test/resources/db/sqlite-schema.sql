@@ -1,11 +1,11 @@
-CREATE TABLE person (
+CREATE TABLE Person (
     id INTEGER PRIMARY KEY,
     firstName VARCHAR(255),
     lastName VARCHAR(255),
     age INT
 );
 
-CREATE TABLE address (
+CREATE TABLE Address (
     ownerId INT,
     street VARCHAR,
     zip INT
@@ -15,6 +15,17 @@ CREATE TABLE IF NOT EXISTS Product(
 	id INTEGER PRIMARY KEY,
     description VARCHAR(255),
     sku BIGINT
+);
+
+CREATE TABLE KmpTestEntity(
+    timeLocalDate      INTEGER,                     -- java.time.LocalDate
+    timeLocalTime      INTEGER,                     -- java.time.LocalTime
+    timeLocalDateTime  INTEGER,                -- java.time.LocalDateTime
+    timeInstant        INTEGER,  -- java.time.Instant
+    timeLocalDateOpt      INTEGER,
+    timeLocalTimeOpt      INTEGER,                     -- java.time.LocalTime
+    timeLocalDateTimeOpt  INTEGER,                -- java.time.LocalDateTime
+    timeInstantOpt        INTEGER  -- java.time.Instant
 );
 
 -- Sqlite is a bit crazy, they don't have any actual date types:
@@ -33,32 +44,33 @@ CREATE TABLE TimeEntity(
 );
 
 CREATE TABLE IF NOT EXISTS EncodingTestEntity(
-    v1 VARCHAR(255),
-    v2 DECIMAL(5,2),
-    v3 BOOLEAN,
-    v4 SMALLINT,
-    v5 SMALLINT,
-    v6 INTEGER,
-    v7 BIGINT,
-    v8 FLOAT,
-    v9 DOUBLE PRECISIOn,
-    v10 BLOB,
-    v11 BIGINT,
-    v12 VARCHAR(255),
-    v13 BIGINT,
-    v14 VARCHAR(36),
-    o1 VARCHAR(255),
-    o2 DECIMAL(5,2),
-    o3 BOOLEAN,
-    o4 SMALLINT,
-    o5 SMALLINT,
-    o6 INTEGER,
-    o7 BIGINT,
-    o8 FLOAT,
-    o9 DOUBLE PRECISIOn,
-    o10 BLOB,
-    o11 BIGINT,
-    o12 VARCHAR(255),
-    o13 BIGINT,
-    o14 VARCHAR(36)
+    stringMan VARCHAR(255),
+    booleanMan BOOLEAN,
+    byteMan SMALLINT,
+    shortMan SMALLINT,
+    intMan INTEGER,
+    longMan BIGINT,
+    floatMan FLOAT,
+    doubleMan DOUBLE PRECISION,
+    byteArrayMan BLOB,
+    customMan VARCHAR(255),
+    stringOpt VARCHAR(255),
+    booleanOpt BOOLEAN,
+    byteOpt SMALLINT,
+    shortOpt SMALLINT,
+    intOpt INTEGER,
+    longOpt BIGINT,
+    floatOpt FLOAT,
+    doubleOpt DOUBLE PRECISION,
+    byteArrayOpt BLOB,
+    customOpt VARCHAR(255)
+);
+
+CREATE TABLE IF NOT EXISTS JavaTestEntity(
+    bigDecimalMan DECIMAL(5,2),
+    javaUtilDateMan BIGINT,
+    uuidMan VARCHAR(36),
+    bigDecimalOpt DECIMAL(5,2),
+    javaUtilDateOpt BIGINT,
+    uuidOpt VARCHAR(36)
 );

@@ -1,37 +1,21 @@
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 
 repositories {
-    mavenLocal()
+    //mavenLocal() // Don't include this, it causes all sorts of build horror
     mavenCentral()
-}
-
-plugins {
-  kotlin("jvm")
+    mavenLocal()
 }
 
 group = "io.exoquery"
 // Everything inherits the version from here
-version = "2.0.0-0.3.1"
+version = "1.9.22-0.3.0"
 
 check("$version".isNotBlank() && version != "unspecified")
     { "invalid version $version" }
 
-tasks.withType<KotlinCompile> {
-    compilerOptions.jvmTarget.set(JvmTarget.JVM_17)
-}
-
-tasks.withType<KotlinCompile>().configureEach {
-    kotlinOptions {
-        jvmTarget = "11"
-    }
-}
-
-tasks.test {
-    useJUnitPlatform()
-
+tasks.withType<Test> {
     testLogging {
         lifecycle {
             events = mutableSetOf(TestLogEvent.FAILED, TestLogEvent.PASSED, TestLogEvent.SKIPPED)
@@ -85,47 +69,4 @@ tasks.test {
         private fun TestDescriptor.displayName() = parent?.let { "${it.name} - $name" } ?: "$name"
 
     })
-}
-
-kotlin {
-    jvmToolchain(11)
-}
-
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile>().configureEach {
-    compilerOptions {
-        freeCompilerArgs.add("-Xcontext-receivers")
-        // Otherwise will have: Could not resolve io.exoquery:pprint-kotlin:2.0.1.
-        // Incompatible because this component declares a component, compatible with Java 11 and the consumer needed a component, compatible with Java 8
-        java {
-            sourceCompatibility = JavaVersion.VERSION_11
-            targetCompatibility = JavaVersion.VERSION_11
-        }
-        // If I remove this I get:
-        //  'compileJava' task (current target is 11) and 'kaptGenerateStubsKotlin' task (current target is 1.8) jvm target compatibility should be set to the same Java version.
-        // Not sure why
-        jvmTarget.set(JvmTarget.JVM_11)
-    }
-}
-
-
-// Old way of doing it:
-//tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-//    kotlinOptions{
-//        freeCompilerArgs = listOf("-Xcontext-receivers")
-//        // Otherwise will have: Could not resolve io.exoquery:pprint-kotlin:2.0.1.
-//        // Incompatible because this component declares a component, compatible with Java 11 and the consumer needed a component, compatible with Java 8
-//        java {
-//            sourceCompatibility = JavaVersion.VERSION_11
-//            targetCompatibility = JavaVersion.VERSION_11
-//        }
-//    }
-//}
-
-repositories {
-    mavenCentral()
-    mavenLocal()
-}
-
-tasks.withType<Test>().configureEach {
-    useJUnitPlatform()
 }

@@ -2,7 +2,7 @@ package io.exoquery.sql.postgres
 
 import io.exoquery.sql.*
 import io.exoquery.sql.jdbc.TerpalContext
-import io.exoquery.sql.jdbc.runOn
+import io.exoquery.sql.runOn
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe
 

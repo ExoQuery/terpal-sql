@@ -1,16 +1,12 @@
 package io.exoquery.sql.postgres
 
 import io.exoquery.sql.*
+import io.exoquery.sql.encodingdata.EncodingTestEntity
 import io.exoquery.sql.jdbc.Sql
-import io.exoquery.sql.EncodingSpecData.insert
-import io.exoquery.sql.jdbc.JdbcEncodingBasic.Companion.StringEncoder
+import io.exoquery.sql.encodingdata.insert
 import io.exoquery.sql.jdbc.TerpalContext
-import io.exoquery.sql.jdbc.runOn
+import io.exoquery.sql.runOn
 import io.kotest.core.spec.style.FreeSpec
-import java.time.ZoneId
-import io.exoquery.sql.EncodingSpecData.TimeEntity
-import io.exoquery.sql.EncodingSpecData.insertBatch
-import io.exoquery.sql.examples.Simple_SqlServer
 import io.kotest.matchers.shouldBe
 import kotlinx.serialization.Serializable
 
@@ -29,7 +25,7 @@ class InjectionSpec: FreeSpec({
   data class Person(val id: Int, val firstName: String, val lastName: String, val age: Int)
 
   "escapes column meant to be an injection attack" {
-    ctx.run(insert(EncodingSpecData.regularEntity))
+    ctx.run(insert(EncodingTestEntity.regular))
     val name = "'Joe'; DROP TABLE Person;"
     Sql("SELECT * FROM Person WHERE firstName = ${name}").queryOf<Person>().runOn(ctx) shouldBe listOf()
 

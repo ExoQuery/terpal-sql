@@ -5,7 +5,7 @@ import io.exoquery.sql.Ex3_BatchReturnIds.products
 import io.exoquery.sql.examples.id
 import io.exoquery.sql.jdbc.SqlBatch
 import io.exoquery.sql.jdbc.TerpalContext
-import io.exoquery.sql.jdbc.runOn
+import io.exoquery.sql.runOn
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe
 

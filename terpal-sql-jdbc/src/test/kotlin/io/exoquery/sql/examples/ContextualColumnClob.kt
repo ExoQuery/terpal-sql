@@ -25,12 +25,13 @@ object ContextualColumnClob {
     val postgres = EmbeddedPostgres.start()
     postgres.run("CREATE TABLE images (id SERIAL PRIMARY KEY, content BYTEA)")
 
-    val ctx = object: TerpalContext.Postgres(postgres.postgresDatabase) {
-      override val additionalDecoders =
-        super.additionalDecoders + JdbcDecoderAny.fromFunction { ctx, i -> ByteContent(ctx.row.getBinaryStream(i)) }
-      override val additionalEncoders =
-        super.additionalEncoders + JdbcEncoderAny.fromFunction(Types.BLOB) { ctx, v: ByteContent, i -> ctx.stmt.setBinaryStream(i, v.bytes) }
-    }
+    val ctx = TerpalContext.Postgres(
+      postgres.postgresDatabase,
+      JdbcEncodingConfig(
+        setOf(JdbcEncoderAny(Types.BLOB, ByteContent::class) { ctx, v: ByteContent, i -> ctx.stmt.setBinaryStream(i, v.bytes) }),
+        setOf(JdbcDecoderAny(ByteContent::class) { ctx, i -> ByteContent(ctx.row.getBinaryStream(i)) })
+      )
+    )
 
     val (RED, BLUE) = "\u001B[31m" to "\u001B[34m"
     val image = ByteContent.bytesFrom(ByteArrayInputStream("${RED}Hello, ${BLUE}World!".toByteArray()))

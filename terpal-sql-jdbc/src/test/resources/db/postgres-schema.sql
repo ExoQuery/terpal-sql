@@ -17,6 +17,17 @@ CREATE TABLE Product(
     sku BIGINT
 );
 
+CREATE TABLE KmpTestEntity(
+    timeLocalDate      DATE,                     -- java.time.LocalDate
+    timeLocalTime      TIME,                     -- java.time.LocalTime
+    timeLocalDateTime  TIMESTAMP,                -- java.time.LocalDateTime
+    timeInstant        TIMESTAMP WITH TIME ZONE,  -- java.time.Instant
+    timeLocalDateOpt      DATE,
+    timeLocalTimeOpt      TIME,
+    timeLocalDateTimeOpt  TIMESTAMP,
+    timeInstantOpt        TIMESTAMP WITH TIME ZONE
+);
+
 CREATE TABLE TimeEntity(
     sqlDate        DATE,                     -- java.sql.Date
     sqlTime        TIME,                     -- java.sql.Time
@@ -32,34 +43,26 @@ CREATE TABLE TimeEntity(
 );
 
 CREATE TABLE EncodingTestEntity(
-    v1 VARCHAR(255),
-    v2 DECIMAL(5,2),
-    v3 BOOLEAN,
-    v4 SMALLINT,
-    v5 SMALLINT,
-    v6 INTEGER,
-    v7 BIGINT,
-    v8 FLOAT,
-    v9 DOUBLE PRECISION,
-    v10 BYTEA,
-    v11 TIMESTAMP,
-    v12 VARCHAR(255),
-    v13 DATE,
-    v14 UUID,
-    o1 VARCHAR(255),
-    o2 DECIMAL(5,2),
-    o3 BOOLEAN,
-    o4 SMALLINT,
-    o5 SMALLINT,
-    o6 INTEGER,
-    o7 BIGINT,
-    o8 FLOAT,
-    o9 DOUBLE PRECISION,
-    o10 BYTEA,
-    o11 TIMESTAMP,
-    o12 VARCHAR(255),
-    o13 DATE,
-    o14 UUID
+    stringMan VARCHAR(255),
+    booleanMan BOOLEAN,
+    byteMan SMALLINT,
+    shortMan SMALLINT,
+    intMan INTEGER,
+    longMan BIGINT,
+    floatMan FLOAT,
+    doubleMan DOUBLE PRECISION,
+    byteArrayMan BYTEA,
+    customMan VARCHAR(255),
+    stringOpt VARCHAR(255),
+    booleanOpt BOOLEAN,
+    byteOpt SMALLINT,
+    shortOpt SMALLINT,
+    intOpt INTEGER,
+    longOpt BIGINT,
+    floatOpt FLOAT,
+    doubleOpt DOUBLE PRECISION,
+    byteArrayOpt BYTEA,
+    customOpt VARCHAR(255)
 );
 
 CREATE TABLE JsonbExample(
@@ -82,4 +85,19 @@ CREATE TABLE JsonbExample3(
 CREATE TABLE JsonExample(
     id SERIAL PRIMARY KEY,
     value JSON
+);
+
+
+CREATE TABLE MiscTest (
+    id INTEGER NOT NULL PRIMARY KEY,
+    value TEXT NOT NULL
+);
+
+CREATE TABLE JavaTestEntity(
+    bigDecimalMan DECIMAL(5,2),
+    javaUtilDateMan TIMESTAMP,
+    uuidMan UUID,
+    bigDecimalOpt DECIMAL(5,2),
+    javaUtilDateOpt TIMESTAMP,
+    uuidOpt UUID
 );

@@ -17,6 +17,7 @@ services:
       dockerfile: ./scripts/Dockerfile-setup
     depends_on:
       - oracle
+      - sqlserver
     links:
       - mysql:mysql
       - sqlserver:sqlserver
@@ -27,12 +28,18 @@ services:
       - ./scripts/setup_local.sh
 
   sqlserver:
-    image: mcr.microsoft.com/azure-sql-edge:latest # use this because it supports ARM64 architecture for M1 Mac
+    image: mcr.microsoft.com/mssql/server:2022-CU13-ubuntu-22.04 # use this because it supports ARM64 architecture for M1 Mac
+    user: root
     ports:
       - "31433:1433"
     environment:
       - ACCEPT_EULA=Y
-      - SA_PASSWORD=TerpalRocks!
+      - MSSQL_SA_PASSWORD=TerpalRocks!
+    healthcheck:
+      test: /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P "$$MSSQL_SA_PASSWORD" -Q "SELECT 1" || exit 1
+      interval: 30s
+      timeout: 30s
+      retries: 3
 
   oracle:
     image: quillbuilduser/oracle-18-xe-micro-sq

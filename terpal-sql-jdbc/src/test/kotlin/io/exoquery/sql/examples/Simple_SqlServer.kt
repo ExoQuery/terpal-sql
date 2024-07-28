@@ -3,7 +3,7 @@ package io.exoquery.sql.examples
 import io.exoquery.sql.jdbc.Sql
 import io.exoquery.sql.jdbc.TerpalContext
 import io.exoquery.sql.jdbc.fromConfig
-import io.exoquery.sql.jdbc.runOn
+import io.exoquery.sql.runOn
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
 

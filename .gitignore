@@ -9,7 +9,13 @@ out/
 .vscode/
 *.iml
 
-terpal_test.db
+*.db
+*.db-shm
+*.db-wal
+
+perf_test
+perf_test-shm
+perf_test-wal
 
 build-logic/bin
 bin/

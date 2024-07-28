@@ -2,7 +2,7 @@ package io.exoquery.sql.examples
 
 import io.exoquery.sql.jdbc.Sql
 import io.exoquery.sql.jdbc.TerpalContext
-import io.exoquery.sql.jdbc.runOn
+import io.exoquery.sql.runOn
 import io.zonky.test.db.postgres.embedded.EmbeddedPostgres
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.KSerializer

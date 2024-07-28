@@ -2,9 +2,10 @@ package io.exoquery.sql.postgres
 
 import io.exoquery.sql.Param
 import io.exoquery.sql.examples.run
+import io.exoquery.sql.jdbc.JdbcEncodingConfig
 import io.exoquery.sql.jdbc.Sql
 import io.exoquery.sql.jdbc.TerpalContext
-import io.exoquery.sql.jdbc.runOn
+import io.exoquery.sql.runOn
 import io.kotest.core.spec.style.FreeSpec
 import io.zonky.test.db.postgres.embedded.EmbeddedPostgres
 import kotlinx.serialization.Contextual
@@ -48,9 +49,10 @@ class TypeModuleSpec: FreeSpec ({
     val postgres = EmbeddedPostgres.start()
     postgres.run("CREATE TABLE customers (id SERIAL PRIMARY KEY, firstName TEXT, lastName TEXT, email TEXT)")
     val ctx =
-      object: TerpalContext.Postgres(postgres.postgresDatabase) {
-        override val module = SerializersModule { contextual(Email::class, EmailSerialzier) }
-      }
+      TerpalContext.Postgres(
+        postgres.postgresDatabase,
+        JdbcEncodingConfig(module = SerializersModule { contextual(Email::class, EmailSerialzier) })
+      )
 
     val firstName = "Alice"
     val lastName = "Smith"

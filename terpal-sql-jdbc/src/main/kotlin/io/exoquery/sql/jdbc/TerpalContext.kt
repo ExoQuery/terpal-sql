@@ -9,78 +9,109 @@ import java.sql.Types
 import javax.sql.DataSource
 
 object TerpalContext {
-  open class Postgres(override val database: DataSource): JdbcContext(database) {
-    // TODO this setting AdditionaJdbcTimeEncoding.encoders/decoders is already set in the parent class. Try to remove it.
-    override val additionalEncoders = super.additionalEncoders + AdditionaJdbcTimeEncoding.encoders + AdditionalPostgresEncoding.encoders
-    override val additionalDecoders = super.additionalDecoders + AdditionaJdbcTimeEncoding.decoders + AdditionalPostgresEncoding.decoders
+  open class Postgres(
+    override val database: DataSource,
+    encodingConfig: JdbcEncodingConfig = JdbcEncodingConfig.Default
+  ): JdbcContext(database) {
+    override val encodingApi: JdbcSqlEncoding =
+      object: JavaSqlEncoding<Connection, PreparedStatement, ResultSet>,
+        BasicEncoding<Connection, PreparedStatement, ResultSet> by JdbcBasicEncoding,
+        JavaTimeEncoding<Connection, PreparedStatement, ResultSet> by PostgresTimeEncoding,
+        JavaUuidEncoding<Connection, PreparedStatement, ResultSet> by JdbcUuidObjectEncoding {}
+
+    // Postgrees comes with its own default encoders, to exclude them need to override this property direct
+    override val encodingConfig =
+      encodingConfig.copy(
+        additionalEncoders = encodingConfig.additionalEncoders + AdditionalPostgresEncoding.encoders,
+        additionalDecoders = encodingConfig.additionalDecoders + AdditionalPostgresEncoding.decoders
+      )
 
     // Postgres does not support Types.TIME_WITH_TIMEZONE as a JDBC type but does have a `TIME WITH TIMEZONE` datatype this is puzzling.
     object PostgresTimeEncoding: JdbcTimeEncoding() {
       override val jdbcTypeOfOffsetTime = Types.TIME
     }
-    override protected open val encodingApi: SqlEncoding<Connection, PreparedStatement, ResultSet> =
-      object : SqlEncoding<Connection, PreparedStatement, ResultSet>,
-        BasicEncoding<Connection, PreparedStatement, ResultSet> by JdbcEncodingBasic,
-        BooleanEncoding<Connection, PreparedStatement, ResultSet> by JdbcBooleanObjectEncoding,
-        TimeEncoding<Connection, PreparedStatement, ResultSet> by PostgresTimeEncoding,
-        UuidEncoding<Connection, PreparedStatement, ResultSet> by JdbcUuidObjectEncoding {}
 
     companion object { }
   }
 
-  open class PostgresLegacy(override val database: DataSource): Postgres(database) {
-    override protected open val encodingApi: SqlEncoding<Connection, PreparedStatement, ResultSet> =
-      object : SqlEncoding<Connection, PreparedStatement, ResultSet>,
-        BasicEncoding<Connection, PreparedStatement, ResultSet> by JdbcEncodingBasic,
-        BooleanEncoding<Connection, PreparedStatement, ResultSet> by JdbcBooleanObjectEncoding,
-        TimeEncoding<Connection, PreparedStatement, ResultSet> by JdbcTimeEncodingLegacy,
-        UuidEncoding<Connection, PreparedStatement, ResultSet> by JdbcUuidObjectEncoding {}
+  open class PostgresLegacy(
+    override val database: DataSource,
+    encodingConfig: JdbcEncodingConfig = JdbcEncodingConfig.Default
+  ): JdbcContext(database) {
+    override val encodingApi: JdbcSqlEncoding =
+      object: JavaSqlEncoding<Connection, PreparedStatement, ResultSet>,
+        BasicEncoding<Connection, PreparedStatement, ResultSet> by JdbcBasicEncoding,
+        JavaTimeEncoding<Connection, PreparedStatement, ResultSet> by JdbcTimeEncodingLegacy,
+        JavaUuidEncoding<Connection, PreparedStatement, ResultSet> by JdbcUuidObjectEncoding {}
+
+    override val encodingConfig =
+      encodingConfig.copy(
+        additionalEncoders = encodingConfig.additionalEncoders + AdditionalPostgresEncoding.encoders,
+        additionalDecoders = encodingConfig.additionalDecoders + AdditionalPostgresEncoding.decoders
+      )
 
     companion object { }
   }
 
-  open class H2(override val database: DataSource): JdbcContext(database) {
-    override protected open val encodingApi: SqlEncoding<Connection, PreparedStatement, ResultSet> =
-      object : SqlEncoding<Connection, PreparedStatement, ResultSet>,
-        BasicEncoding<Connection, PreparedStatement, ResultSet> by JdbcEncodingBasic,
-        BooleanEncoding<Connection, PreparedStatement, ResultSet> by JdbcBooleanObjectEncoding,
-        TimeEncoding<Connection, PreparedStatement, ResultSet> by JdbcTimeEncoding(),
-        UuidEncoding<Connection, PreparedStatement, ResultSet> by JdbcUuidObjectEncoding {}
+  open class H2(
+    override val database: DataSource,
+    override val encodingConfig: JdbcEncodingConfig = JdbcEncodingConfig.Default
+  ): JdbcContext(database) {
+    override val encodingApi: JdbcSqlEncoding =
+      object: JavaSqlEncoding<Connection, PreparedStatement, ResultSet>,
+        BasicEncoding<Connection, PreparedStatement, ResultSet> by JdbcBasicEncoding,
+        JavaTimeEncoding<Connection, PreparedStatement, ResultSet> by JdbcTimeEncoding(),
+        JavaUuidEncoding<Connection, PreparedStatement, ResultSet> by JdbcUuidObjectEncoding {}
 
     companion object { }
   }
 
-  open class Mysql(override val database: DataSource): JdbcContext(database) {
+  open class Mysql(
+    override val database: DataSource,
+    override val encodingConfig: JdbcEncodingConfig = JdbcEncodingConfig.Default
+    ): JdbcContext(database) {
+    override val encodingApi: JdbcSqlEncoding =
+      object : JavaSqlEncoding<Connection, PreparedStatement, ResultSet>,
+        BasicEncoding<Connection, PreparedStatement, ResultSet> by JdbcBasicEncoding,
+        JavaTimeEncoding<Connection, PreparedStatement, ResultSet> by MysqlTimeEncoding,
+        JavaUuidEncoding<Connection, PreparedStatement, ResultSet> by JdbcUuidStringEncoding {}
+
     object MysqlTimeEncoding: JdbcTimeEncoding() {
       override val jdbcTypeOfZonedDateTime  = Types.TIMESTAMP
       override val jdbcTypeOfInstant        = Types.TIMESTAMP
       override val jdbcTypeOfOffsetTime     = Types.TIME
       override val jdbcTypeOfOffsetDateTime = Types.TIMESTAMP
     }
-    override protected open val encodingApi: SqlEncoding<Connection, PreparedStatement, ResultSet> =
-      object : SqlEncoding<Connection, PreparedStatement, ResultSet>,
-        BasicEncoding<Connection, PreparedStatement, ResultSet> by JdbcEncodingBasic,
-        BooleanEncoding<Connection, PreparedStatement, ResultSet> by JdbcBooleanObjectEncoding,
-        TimeEncoding<Connection, PreparedStatement, ResultSet> by MysqlTimeEncoding,
-        UuidEncoding<Connection, PreparedStatement, ResultSet> by JdbcUuidStringEncoding {}
-
     companion object { }
   }
 
-  open class Sqlite(override val database: DataSource): JdbcContext(database) {
-    override protected open val encodingApi: SqlEncoding<Connection, PreparedStatement, ResultSet> =
-      object : SqlEncoding<Connection, PreparedStatement, ResultSet>,
-        BasicEncoding<Connection, PreparedStatement, ResultSet> by JdbcEncodingBasic,
-        BooleanEncoding<Connection, PreparedStatement, ResultSet> by JdbcBooleanObjectEncoding,
-        TimeEncoding<Connection, PreparedStatement, ResultSet> by JdbcTimeEncodingLegacy,
-        UuidEncoding<Connection, PreparedStatement, ResultSet> by JdbcUuidStringEncoding {}
+  open class Sqlite(
+    override val database: DataSource,
+    override val encodingConfig: JdbcEncodingConfig = JdbcEncodingConfig.Default
+  ): JdbcContext(database) {
+    override val encodingApi: JdbcSqlEncoding =
+      object : JavaSqlEncoding<Connection, PreparedStatement, ResultSet>,
+        BasicEncoding<Connection, PreparedStatement, ResultSet> by JdbcBasicEncoding,
+        JavaTimeEncoding<Connection, PreparedStatement, ResultSet> by JdbcTimeEncodingLegacy,
+        JavaUuidEncoding<Connection, PreparedStatement, ResultSet> by JdbcUuidStringEncoding {}
 
     protected override open suspend fun <T> runActionReturningScoped(act: ActionReturning<T>): Flow<T> =
       flowWithConnection {
         val conn = localConnection()
-        makeStmtReturning(act.sql, conn, act.returningColumns).use { stmt ->
-          prepare(stmt, conn, act.params)
-          emitResultSet(conn, stmt.executeQuery(), act.resultMaker.makeExtractor<T>())
+        when (act) {
+          is ActionReturningId -> {
+            accessStmtReturning(act.sql, conn, act.returningColumns) { stmt ->
+              prepare(stmt, conn, act.params)
+              stmt.execute()
+              emitResultSet(conn, stmt.generatedKeys, { conn, rs -> act.resultMaker.makeExtractor<Long>(QueryDebugInfo(act.sql)).invoke(conn, rs) as T })
+            }
+          }
+          is ActionReturningRow -> {
+            accessStmtReturning(act.sql, conn, act.returningColumns) { stmt ->
+              prepare(stmt, conn, act.params)
+              emitResultSet(conn, stmt.executeQuery(), act.resultMaker.makeExtractor<T>(QueryDebugInfo(act.sql)))
+            }
+          }
         }
       }
 
@@ -88,10 +119,17 @@ object TerpalContext {
       flowWithConnection {
         val conn = localConnection()
         act.params.forEach { batch ->
-          // Sqlite does not support Batch-Actions with returning-keys. So we attempt to emulate this function with single-row inserts inside a transaction but using this API is not recommended.
-          makeStmtReturning(act.sql, conn, act.returningColumns).use { stmt ->
-            prepare(stmt, conn, batch)
-            emitResultSet(conn, stmt.executeQuery(), act.resultMaker.makeExtractor<T>())
+          when (act) {
+            is BatchActionReturningId ->
+              accessStmtReturning(act.sql, conn, emptyList()) { stmt ->
+                prepare(stmt, conn, batch)
+                emitResultSet(conn, stmt.generatedKeys, { conn, rs -> act.resultMaker.makeExtractor<Long>(QueryDebugInfo(act.sql)).invoke(conn, rs) as T })
+              }
+            is BatchActionReturningRow ->
+              accessStmtReturning(act.sql, conn, act.returningColumns) { stmt ->
+                prepare(stmt, conn, batch)
+                emitResultSet(conn, stmt.executeQuery(), act.resultMaker.makeExtractor<T>(QueryDebugInfo(act.sql)))
+              }
           }
         }
       }
@@ -99,7 +137,16 @@ object TerpalContext {
     companion object { }
   }
 
-  open class Oracle(override val database: DataSource): JdbcContext(database) {
+  open class Oracle(
+    override val database: DataSource,
+    override val encodingConfig: JdbcEncodingConfig = JdbcEncodingConfig.Default
+  ): JdbcContext(database) {
+    override val encodingApi: JdbcSqlEncoding =
+      object : JavaSqlEncoding<Connection, PreparedStatement, ResultSet>,
+        BasicEncoding<Connection, PreparedStatement, ResultSet> by JdbcEncodingOracle,
+        JavaTimeEncoding<Connection, PreparedStatement, ResultSet> by OracleTimeEncoding,
+        JavaUuidEncoding<Connection, PreparedStatement, ResultSet> by JdbcUuidStringEncoding {}
+
     object OracleTimeEncoding: JdbcTimeEncoding() {
       // Normally it is Types.TIME by in that case Oracle truncates the milliseconds
       override val jdbcTypeOfLocalTime  = Types.TIMESTAMP
@@ -112,44 +159,57 @@ object TerpalContext {
     // nullable decoder first checks the row using wasNull() before calling the non-nullable decoder. If the row is null then the non-null
     // decoder is not invoked so we would not care about it converting a `null` value to an empty String either way.
     // This same logic applies to the ByteArrayDecoder as well.
-    object JdbcEncodingOracle: JdbcEncodingBasic() {
-      override val CharDecoder: JdbcDecoderAny<Char> = JdbcDecoderAny.fromFunction { ctx, i -> ctx.row.getString(i)?.let { it[0] } ?: Char.MIN_VALUE }
-      override val StringDecoder: JdbcDecoderAny<String> = JdbcDecoderAny.fromFunction { ctx, i -> (ctx.row.getString(i) ?: "") }
-      override val ByteArrayDecoder: JdbcDecoderAny<ByteArray> = JdbcDecoderAny.fromFunction { ctx, i -> ctx.row.getBytes(i) ?: byteArrayOf() }
+    object JdbcEncodingOracle: JdbcBasicEncoding() {
+      override val CharDecoder: JdbcDecoderAny<Char> = JdbcDecoderAny(Char::class) { ctx, i -> ctx.row.getString(i)?.let { it[0] } ?: Char.MIN_VALUE }
+      override val StringDecoder: JdbcDecoderAny<String> = JdbcDecoderAny(String::class) { ctx, i -> (ctx.row.getString(i) ?: "") }
+      override val ByteArrayDecoder: JdbcDecoderAny<ByteArray> = JdbcDecoderAny(ByteArray::class) { ctx, i -> ctx.row.getBytes(i) ?: byteArrayOf() }
+      // More oracle crazy behavior that requires encoding booleans as ints
+      override val BooleanEncoder: JdbcEncoderAny<Boolean> = JdbcEncoderAny(Types.INTEGER, Boolean::class) { ctx, v, i -> ctx.stmt.setInt(i, if (v) 1 else 0) }
+      override val BooleanDecoder: JdbcDecoderAny<Boolean> = JdbcDecoderAny(Boolean::class) { ctx, i -> ctx.row.getInt(i) == 1 }
     }
-
-    override protected open val encodingApi: SqlEncoding<Connection, PreparedStatement, ResultSet> =
-      object : SqlEncoding<Connection, PreparedStatement, ResultSet>,
-        BasicEncoding<Connection, PreparedStatement, ResultSet> by JdbcEncodingOracle,
-        BooleanEncoding<Connection, PreparedStatement, ResultSet> by JdbcBooleanIntEncoding,
-        TimeEncoding<Connection, PreparedStatement, ResultSet> by OracleTimeEncoding,
-        UuidEncoding<Connection, PreparedStatement, ResultSet> by JdbcUuidStringEncoding {}
 
     companion object { }
   }
 
-  open class SqlServer(override val database: DataSource): JdbcContext(database) {
-    override protected open val encodingApi: SqlEncoding<Connection, PreparedStatement, ResultSet> =
-      object : SqlEncoding<Connection, PreparedStatement, ResultSet>,
-        BasicEncoding<Connection, PreparedStatement, ResultSet> by JdbcEncodingBasic,
-        BooleanEncoding<Connection, PreparedStatement, ResultSet> by JdbcBooleanObjectEncoding,
-        TimeEncoding<Connection, PreparedStatement, ResultSet> by JdbcTimeEncoding(),
-        UuidEncoding<Connection, PreparedStatement, ResultSet> by JdbcUuidStringEncoding {}
+  open class SqlServer(
+    override val database: DataSource,
+    override val encodingConfig: JdbcEncodingConfig = JdbcEncodingConfig.Default
+  ): JdbcContext(database) {
+    override val encodingApi: JdbcSqlEncoding =
+      object : JavaSqlEncoding<Connection, PreparedStatement, ResultSet>,
+        BasicEncoding<Connection, PreparedStatement, ResultSet> by JdbcBasicEncoding,
+        JavaTimeEncoding<Connection, PreparedStatement, ResultSet> by JdbcTimeEncoding(),
+        JavaUuidEncoding<Connection, PreparedStatement, ResultSet> by JdbcUuidStringEncoding {}
 
     override suspend fun <T> runActionReturningScoped(act: ActionReturning<T>): Flow<T> =
       flowWithConnection {
         val conn = localConnection()
-        makeStmtReturning(act.sql, conn, act.returningColumns).use { stmt ->
-          prepare(stmt, conn, act.params)
-          // See comment about SQL Server not supporting getGeneratedKeys below
-          emitResultSet(conn, stmt.executeQuery(), act.resultMaker.makeExtractor())
+        when (act) {
+          is ActionReturningId -> {
+            // TODO error looks like it should be impossible!
+            accessStmtReturning(act.sql, conn, act.returningColumns) { stmt ->
+              prepare(stmt, conn, act.params)
+              // This is another oddity in SQL Server where the statement needs to be executed before .getGeneratedKeys() can be called.
+              // If it is not used, when stmt.getGeneratedKeys() is called it will throw the following exception:
+              // com.microsoft.sqlserver.jdbc.SQLServerException: The statement must be executed before any results can be obtained.
+              stmt.execute()
+              emitResultSet(conn, stmt.generatedKeys, { conn, rs -> act.resultMaker.makeExtractor<Long>(QueryDebugInfo(act.sql)).invoke(conn, rs) as T })
+            }
+          }
+          is ActionReturningRow -> {
+            accessStmtReturning(act.sql, conn, act.returningColumns) { stmt ->
+              prepare(stmt, conn, act.params)
+              // See comment about SQL Server not supporting getGeneratedKeys below
+              emitResultSet(conn, stmt.executeQuery(), act.resultMaker.makeExtractor(QueryDebugInfo(act.sql)))
+            }
+          }
         }
       }
 
     override suspend fun <T> runBatchActionReturningScoped(act: BatchActionReturning<T>): Flow<T> =
       flowWithConnection {
         val conn = localConnection()
-        makeStmtReturning(act.sql, conn, act.returningColumns).use { stmt ->
+        accessStmtReturning(act.sql, conn, listOf()) { stmt ->
           act.params.forEach { batch ->
             prepare(stmt, conn, batch)
             // The SQL Server driver has no ability to either do getGeneratedKeys or executeQuery
@@ -159,8 +219,12 @@ object TerpalContext {
             // on every single inserted batch! See the following mssql-jdbc issues for more detail:
             // https://github.com/microsoft/mssql-jdbc/issues/358
             // https://github.com/Microsoft/mssql-jdbc/issues/245
+            // Also note that some libraries like Slick specifically mention that returning-keys is generally
+            // not supported when jdbc-batching is used:
+            // https://github.com/slick/slick/blob/06ccee3cdc0722adeb8bb0658afb4a0d3524b119/slick/src/main/scala/slick/jdbc/JdbcActionComponent.scala#L654
+            // Therefore slick falls back to single-row-insert batching when insertion with getGeneratedKeys is used
             stmt.addBatch()
-            emitResultSet(conn, stmt.executeQuery(), act.resultMaker.makeExtractor())
+            emitResultSet(conn, stmt.executeQuery(), act.resultMaker.makeExtractor(QueryDebugInfo(act.sql)))
           }
         }
       }

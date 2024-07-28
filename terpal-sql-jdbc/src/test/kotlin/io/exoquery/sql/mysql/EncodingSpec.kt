@@ -1,45 +1,59 @@
 package io.exoquery.sql.mysql
 
 import io.exoquery.sql.*
+import io.exoquery.sql.encodingdata.*
 import io.exoquery.sql.jdbc.Sql
-import io.exoquery.sql.EncodingSpecData.insert
-import io.exoquery.sql.jdbc.JdbcEncodingBasic.Companion.StringEncoder
 import io.exoquery.sql.jdbc.TerpalContext
-import io.exoquery.sql.jdbc.runOn
+import io.exoquery.sql.runOn
 import io.kotest.core.spec.style.FreeSpec
 import java.time.ZoneId
-import io.exoquery.sql.EncodingSpecData.TimeEntity
-import io.exoquery.sql.EncodingSpecData.insertBatch
 
 class EncodingSpec: FreeSpec({
   val ds = TestDatabases.mysql
-  val ctx by lazy {
-    object: TerpalContext.Mysql(ds) {
-      override val additionalEncoders = super.additionalEncoders + StringEncoder.contramap { ett: EncodingSpecData.SerializeableTestType -> ett.value }
-    }
-  }
+  val ctx by lazy { TerpalContext.Mysql(ds, encodingConfig) }
 
   beforeEach {
     ds.run("DELETE FROM EncodingTestEntity")
   }
 
   "encodes and decodes nullables - not nulls" {
-    ctx.run(insert(EncodingSpecData.regularEntity))
-    val res = ctx.run(Sql("SELECT * FROM EncodingTestEntity").queryOf<EncodingSpecData.EncodingTestEntity>())
-    EncodingSpecData.verify(res.first(), EncodingSpecData.regularEntity)
+    ctx.run(insert(EncodingTestEntity.regular))
+    val res = ctx.run(Sql("SELECT * FROM EncodingTestEntity").queryOf<EncodingTestEntity>())
+    verify(res.first(), EncodingTestEntity.regular)
   }
 
   "encodes and decodes batch" {
-    insertBatch(listOf(EncodingSpecData.regularEntity, EncodingSpecData.regularEntity)).runOn(ctx)
-    val res = Sql("SELECT * FROM EncodingTestEntity").queryOf<EncodingSpecData.EncodingTestEntity>().runOn(ctx)
-    EncodingSpecData.verify(res.get(0), EncodingSpecData.regularEntity)
-    EncodingSpecData.verify(res.get(1), EncodingSpecData.regularEntity)
+    insertBatch(listOf(EncodingTestEntity.regular, EncodingTestEntity.regular)).runOn(ctx)
+    val res = Sql("SELECT * FROM EncodingTestEntity").queryOf<EncodingTestEntity>().runOn(ctx)
+    verify(res.get(0), EncodingTestEntity.regular)
+    verify(res.get(1), EncodingTestEntity.regular)
   }
 
   "encodes and decodes nullables - nulls" {
-    insert(EncodingSpecData.nullEntity).runOn(ctx)
-    val res = Sql("SELECT * FROM EncodingTestEntity").queryOf<EncodingSpecData.EncodingTestEntity>().runOn(ctx)
-    EncodingSpecData.verify(res.first(), EncodingSpecData.nullEntity)
+    insert(EncodingTestEntity.empty).runOn(ctx)
+    val res = Sql("SELECT * FROM EncodingTestEntity").queryOf<EncodingTestEntity>().runOn(ctx)
+    verify(res.first(), EncodingTestEntity.empty)
+  }
+
+  "Encode/Decode Additional Java Types - regular" {
+    Sql("DELETE FROM JavaTestEntity").action().runOn(ctx)
+    ctx.run(insert(JavaTestEntity.regular))
+    val actual = ctx.run(Sql("SELECT * FROM JavaTestEntity").queryOf<JavaTestEntity>()).first()
+    verify(actual, JavaTestEntity.regular)
+  }
+
+  "Encode/Decode Additional Java Types - empty" {
+    Sql("DELETE FROM JavaTestEntity").action().runOn(ctx)
+    ctx.run(insert(JavaTestEntity.empty))
+    val actual = ctx.run(Sql("SELECT * FROM JavaTestEntity").queryOf<JavaTestEntity>()).first()
+    verify(actual, JavaTestEntity.empty)
+  }
+
+  "Encode/Decode KMP Types" {
+    Sql("DELETE FROM KmpTestEntity").action().runOn(ctx)
+    ctx.run(insert(KmpTestEntity.regular))
+    val actual = ctx.run(Sql("SELECT * FROM KmpTestEntity").queryOf<KmpTestEntity>()).first()
+    verify(actual, KmpTestEntity.regular)
   }
 
   "Encode/Decode Other Time Types" {

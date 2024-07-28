@@ -3,7 +3,7 @@ package io.exoquery.sql.sqlite
 import io.exoquery.sql.TestDatabases
 import io.exoquery.sql.jdbc.TerpalContext
 import io.exoquery.sql.jdbc.Sql
-import io.exoquery.sql.jdbc.runOn
+import io.exoquery.sql.runOn
 import io.exoquery.sql.run
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe
@@ -17,10 +17,14 @@ class BasicActionSpec : FreeSpec({
   beforeEach {
     ds.run(
       """
+      CREATE TABLE test(id INTEGER PRIMARY KEY AUTOINCREMENT); DROP TABLE test;
       DELETE FROM Person;
       DELETE FROM Address;
       """
     )
+//    ds.run(
+//      "UPDATE SQLITE_SEQUENCE SET SEQ=10 WHERE NAME='Person';"
+//    )
   }
 
   @Serializable
@@ -51,4 +55,19 @@ class BasicActionSpec : FreeSpec({
     Sql("SELECT id, firstName, lastName, age FROM Person").queryOf<Person>().runOn(ctx) shouldBe listOf(joe, jim)
   }
 
+  "Insert Returning Ids" {
+    val id1 = Sql("INSERT INTO Person (firstName, lastName, age) VALUES (${joe.firstName}, ${joe.lastName}, ${joe.age})").actionReturningId().runOn(ctx);
+    val id2 = Sql("INSERT INTO Person (firstName, lastName, age) VALUES (${jim.firstName}, ${jim.lastName}, ${jim.age})").actionReturningId().runOn(ctx);
+    id1 shouldBe 1
+    id2 shouldBe 2
+    Sql("SELECT id, firstName, lastName, age FROM Person").queryOf<Person>().runOn(ctx) shouldBe listOf(joe, jim)
+  }
+
+  "Insert Returning Ids - explicit" {
+    val id1 = Sql("INSERT INTO Person (firstName, lastName, age) VALUES (${joe.firstName}, ${joe.lastName}, ${joe.age})").actionReturningId("id").runOn(ctx);
+    val id2 = Sql("INSERT INTO Person (firstName, lastName, age) VALUES (${jim.firstName}, ${jim.lastName}, ${jim.age})").actionReturningId("id").runOn(ctx);
+    id1 shouldBe 1
+    id2 shouldBe 2
+    Sql("SELECT id, firstName, lastName, age FROM Person").queryOf<Person>().runOn(ctx) shouldBe listOf(joe, jim)
+  }
 })

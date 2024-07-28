@@ -1,0 +1,6 @@
+NOTE:
+sqlite3.def was taken from the sqldelight library.
+
+libsqlite3.a was originally also from the sqldelight library, but it was replaced
+with a newer version from: https://packages.msys2.org/package/mingw-w64-x86_64-sqlite3
+The version is: 3.46.1-1

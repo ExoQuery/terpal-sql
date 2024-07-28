@@ -65,7 +65,9 @@ function setup_mysql() {
 function setup_sqlserver() {
     host=$(get_host $1)
     echo "Waiting for SqlServer"
-    until /opt/mssql-tools/bin/sqlcmd -S $1 -U SA -P "TerpalRocks!" -Q "select 1" &> /dev/null; do
+    until /opt/mssql-tools/bin/sqlcmd -S $1 -U SA -P "TerpalRocks!" -Q "select 1;" &> /dev/null; do
+        echo "Tapping SqlServer Connection, this may show an error> /opt/mssql-tools/bin/sqlcmd -S $1 -U SA -P "TerpalRocks!" -Q "select 1" &> /dev/null"
+        /opt/mssql-tools/bin/sqlcmd -S $1 -U SA -P "TerpalRocks!" -Q "select 1;" || true
         sleep 5;
     done
     echo "Connected to SqlServer"

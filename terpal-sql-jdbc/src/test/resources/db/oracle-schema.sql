@@ -17,6 +17,17 @@ CREATE TABLE Product(
   sku NUMBER
 );
 
+CREATE TABLE KmpTestEntity(
+    timeLocalDate      DATE,                     -- java.time.LocalDate
+    timeLocalTime      TIMESTAMP,                     -- java.time.LocalTime
+    timeLocalDateTime  TIMESTAMP,                -- java.time.LocalDateTime
+    timeInstant        TIMESTAMP WITH TIME ZONE,  -- java.time.Instant
+    timeLocalDateOpt      DATE,
+    timeLocalTimeOpt      TIMESTAMP,                     -- java.time.LocalTime
+    timeLocalDateTimeOpt  TIMESTAMP,                -- java.time.LocalDateTime
+    timeInstantOpt        TIMESTAMP WITH TIME ZONE  -- java.time.Instant
+);
+
 CREATE TABLE TimeEntity(
     sqlDate        DATE,                     -- java.sql.Date
     -- Oracle has no TIME type
@@ -32,32 +43,33 @@ CREATE TABLE TimeEntity(
 );
 
 CREATE TABLE EncodingTestEntity(
-  v1 VARCHAR(255),
-  v2 DECIMAL(5,2),
-  v3 SMALLINT,
-  v4 SMALLINT,
-  v5 SMALLINT,
-  v6 INTEGER,
-  v7 NUMBER,
-  v8 FLOAT,
-  v9 DOUBLE PRECISION,
-  v10 BLOB,
-  v11 TIMESTAMP,
-  v12 VARCHAR(255),
-  v13 DATE,
-  v14 VARCHAR(36),
-  o1 VARCHAR(255),
-  o2 DECIMAL(5,2),
-  o3 SMALLINT,
-  o4 SMALLINT,
-  o5 SMALLINT,
-  o6 INTEGER,
-  o7 NUMBER,
-  o8 FLOAT,
-  o9 DOUBLE PRECISION,
-  o10 BLOB,
-  o11 TIMESTAMP,
-  o12 VARCHAR(255),
-  o13 DATE,
-  o14 VARCHAR(36)
+  stringMan VARCHAR(255),
+  booleanMan SMALLINT,
+  byteMan SMALLINT,
+  shortMan SMALLINT,
+  intMan INTEGER,
+  longMan NUMBER,
+  floatMan FLOAT,
+  doubleMan DOUBLE PRECISION,
+  byteArrayMan BLOB,
+  customMan VARCHAR(255),
+  stringOpt VARCHAR(255),
+  booleanOpt SMALLINT,
+  byteOpt SMALLINT,
+  shortOpt SMALLINT,
+  intOpt INTEGER,
+  longOpt NUMBER,
+  floatOpt FLOAT,
+  doubleOpt DOUBLE PRECISION,
+  byteArrayOpt BLOB,
+  customOpt VARCHAR(255)
+);
+
+CREATE TABLE JavaTestEntity(
+  bigDecimalMan DECIMAL(5,2),
+  javaUtilDateMan TIMESTAMP,
+  uuidMan VARCHAR(36),
+  bigDecimalOpt DECIMAL(5,2),
+  javaUtilDateOpt TIMESTAMP,
+  uuidOpt VARCHAR(36)
 );

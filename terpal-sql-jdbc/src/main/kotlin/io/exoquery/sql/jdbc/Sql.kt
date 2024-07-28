@@ -1,6 +1,7 @@
 package io.exoquery.sql.jdbc
 
 import io.exoquery.sql.*
+import io.exoquery.terpal.StrictType
 import io.exoquery.terpal.WrapFailureMessage
 import java.math.BigDecimal
 import java.sql.Connection
@@ -8,7 +9,6 @@ import java.sql.PreparedStatement
 import java.time.*
 import java.time.LocalTime
 import kotlin.reflect.KClass
-import kotlin.reflect.full.isSubclassOf
 
 @WrapFailureMessage(
 """For a datatype that does not have a wrap-function, use the Param(...) constructor to lift it into the proper type. You may
@@ -32,10 +32,19 @@ object SqlBatch: SqlJdbcBatchBase() {
   fun wrap(value: BigDecimal?): Param<BigDecimal> = Param.contextual(value)
   fun wrap(value: ByteArray?): Param<ByteArray> = Param(value)
 
-  fun wrap(value: java.util.Date?): Param<java.util.Date> = Param(value)
-  fun wrap(value: java.sql.Date?): Param<java.sql.Date> = Param(value)
+  // It's a bit crazy but all the java.sql.* types are a subtype of this
+  // so we want it to only match a strict java.util.Date parameter
+  @StrictType
+  fun wrap(value: java.util.Date?): Param<java.util.Date> = Param.fromUtilDate(value)
+
+  fun wrap(value: java.sql.Date?): Param<java.sql.Date> = Param.fromSqlDate(value)
   fun wrap(value: java.sql.Time?): Param<java.sql.Time> = Param(value)
   fun wrap(value: java.sql.Timestamp?): Param<java.sql.Timestamp> = Param(value)
+
+  fun wrap(value: kotlinx.datetime.LocalDate?): Param<kotlinx.datetime.LocalDate> = Param(value)
+  fun wrap(value: kotlinx.datetime.LocalTime?): Param<kotlinx.datetime.LocalTime> = Param(value)
+  fun wrap(value: kotlinx.datetime.LocalDateTime?): Param<kotlinx.datetime.LocalDateTime> = Param(value)
+  fun wrap(value: kotlinx.datetime.Instant?): Param<kotlinx.datetime.Instant> = Param(value)
 
   fun wrap(value: LocalDate?): Param<LocalDate> = Param.contextual(value)
   fun wrap(value: LocalTime?): Param<LocalTime> = Param.contextual(value)
@@ -60,10 +69,19 @@ abstract class SqlJdbcBase(): SqlBase() {
   fun wrap(value: BigDecimal?): SqlFragment = Param.contextual(value)
   fun wrap(value: ByteArray?): SqlFragment = Param(value)
 
-  fun wrap(value: java.util.Date?): SqlFragment = Param(value)
-  fun wrap(value: java.sql.Date?): SqlFragment = Param(value)
+  // It's a bit crazy but all the java.sql.* types are a subtype of this
+  // so we want it to only match a strict java.util.Date parameter
+  @StrictType
+  fun wrap(value: java.util.Date?): SqlFragment = Param.fromUtilDate(value)
+
+  fun wrap(value: java.sql.Date?): SqlFragment = Param.fromSqlDate(value)
   fun wrap(value: java.sql.Time?): SqlFragment = Param(value)
   fun wrap(value: java.sql.Timestamp?): SqlFragment = Param(value)
+
+  fun wrap(value: kotlinx.datetime.LocalDate?): Param<kotlinx.datetime.LocalDate> = Param(value)
+  fun wrap(value: kotlinx.datetime.LocalTime?): Param<kotlinx.datetime.LocalTime> = Param(value)
+  fun wrap(value: kotlinx.datetime.LocalDateTime?): Param<kotlinx.datetime.LocalDateTime> = Param(value)
+  fun wrap(value: kotlinx.datetime.Instant?): Param<kotlinx.datetime.Instant> = Param(value)
 
   fun wrap(value: LocalDate?): SqlFragment = Param.contextual(value)
   fun wrap(value: LocalTime?): SqlFragment = Param.contextual(value)
