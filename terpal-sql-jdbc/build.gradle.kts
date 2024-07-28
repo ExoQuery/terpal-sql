@@ -45,6 +45,9 @@ tasks.withType<Test>().configureEach {
     useJUnitPlatform()
 }
 
+kotlin {
+    jvmToolchain(11)
+}
 
 dependencies {
     // Looks like it knows to do a project-dependency even if there is a version attached (i.e. I guess it ignores the version?)

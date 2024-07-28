@@ -16,8 +16,13 @@ kotlin {
     jvmToolchain(11)
   }
 
+  java {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+  }
+
   // TODO add back the other platforms
-  linuxX64()
+  //linuxX64()
 
   sourceSets {
     val commonMain by getting {

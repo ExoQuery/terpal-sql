@@ -15,6 +15,7 @@ import java.util.*
 import javax.sql.DataSource
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.coroutineContext
+import kotlinx.datetime.TimeZone
 
 abstract class JdbcContext(override val database: DataSource): Context<Connection, DataSource>() {
   // Maybe should just have all the encdoers from the base SqlEncoders class an everything introduced after should be added via additionalEncoders.
@@ -23,7 +24,7 @@ abstract class JdbcContext(override val database: DataSource): Context<Connectio
   // Need to do this first in iniitalization
   protected open val additionalEncoders: Set<SqlEncoder<Connection, PreparedStatement, out Any>> = AdditionaJdbcTimeEncoding.encoders
   protected open val additionalDecoders: Set<SqlDecoder<Connection, ResultSet, out Any>> = AdditionaJdbcTimeEncoding.decoders
-  protected open val timezone: TimeZone = TimeZone.getDefault()
+  protected open val timezone: TimeZone = TimeZone.currentSystemDefault()
 
   // If you want to use any primitive-wrapped contextual encoders you need to add them here
   protected open val module: SerializersModule = EmptySerializersModule()

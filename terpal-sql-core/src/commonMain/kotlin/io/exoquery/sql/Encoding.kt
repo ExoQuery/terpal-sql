@@ -1,9 +1,10 @@
 package io.exoquery.sql
 
-import java.math.BigDecimal
-import java.time.*
-import java.util.UUID
 import kotlin.reflect.KClass
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.LocalTime
+import kotlinx.datetime.Instant
 
 abstract class SqlDecoder<Session, Row, T> {
   abstract val type: KClass<*> // Don't want to force T to be non-nullable so using KClass instead of KClass<T>
@@ -39,11 +40,6 @@ interface BooleanEncoding<Session, Stmt, Row> {
   val BooleanDecoder: SqlDecoder<Session, Row, Boolean>
 }
 
-interface UuidEncoding<Session, Stmt, Row> {
-  val UuidEncoder: SqlEncoder<Session, Stmt, UUID>
-  val UuidDecoder: SqlDecoder<Session, Row, UUID>
-}
-
 // Used by the PreparedStatementEncoder
 interface ApiEncoders<Session, Stmt> {
   val BooleanEncoder: SqlEncoder<Session, Stmt, Boolean>
@@ -55,9 +51,7 @@ interface ApiEncoders<Session, Stmt> {
   val LongEncoder: SqlEncoder<Session, Stmt, Long>
   val ShortEncoder: SqlEncoder<Session, Stmt, Short>
   val StringEncoder: SqlEncoder<Session, Stmt, String>
-  val BigDecimalEncoder: SqlEncoder<Session, Stmt, BigDecimal>
   val ByteArrayEncoder: SqlEncoder<Session, Stmt, ByteArray>
-  val DateEncoder: SqlEncoder<Session, Stmt, java.util.Date>
 }
 // Used by the RowDecoder
 interface ApiDecoders<Session, Row> {
@@ -70,9 +64,7 @@ interface ApiDecoders<Session, Row> {
   val LongDecoder: SqlDecoder<Session, Row, Long>
   val ShortDecoder: SqlDecoder<Session, Row, Short>
   val StringDecoder: SqlDecoder<Session, Row, String>
-  val BigDecimalDecoder: SqlDecoder<Session, Row, BigDecimal>
   val ByteArrayDecoder: SqlDecoder<Session, Row, ByteArray>
-  val DateDecoder: SqlDecoder<Session, Row, java.util.Date>
 
   abstract fun isNull(index: Int, row: Row): Boolean
   abstract fun preview(index: Int, row: Row): String?
@@ -89,9 +81,7 @@ interface BasicEncoding<Session, Stmt, Row> {
   val LongEncoder: SqlEncoder<Session, Stmt, Long>
   val ShortEncoder: SqlEncoder<Session, Stmt, Short>
   val StringEncoder: SqlEncoder<Session, Stmt, String>
-  val BigDecimalEncoder: SqlEncoder<Session, Stmt, BigDecimal>
   val ByteArrayEncoder: SqlEncoder<Session, Stmt, ByteArray>
-  val DateEncoder: SqlEncoder<Session, Stmt, java.util.Date>
 
   val ByteDecoder: SqlDecoder<Session, Row, Byte>
   val CharDecoder: SqlDecoder<Session, Row, Char>
@@ -101,9 +91,7 @@ interface BasicEncoding<Session, Stmt, Row> {
   val LongDecoder: SqlDecoder<Session, Row, Long>
   val ShortDecoder: SqlDecoder<Session, Row, Short>
   val StringDecoder: SqlDecoder<Session, Row, String>
-  val BigDecimalDecoder: SqlDecoder<Session, Row, BigDecimal>
   val ByteArrayDecoder: SqlDecoder<Session, Row, ByteArray>
-  val DateDecoder: SqlDecoder<Session, Row, java.util.Date>
 
   abstract fun isNull(index: Int, row: Row): Boolean
   abstract fun preview(index: Int, row: Row): String?
@@ -111,30 +99,23 @@ interface BasicEncoding<Session, Stmt, Row> {
 
 interface TimeEncoding<Session, Stmt, Row> {
   val LocalDateEncoder: SqlEncoder<Session, Stmt, LocalDate>
-  val LocalTimeEncoder: SqlEncoder<Session, Stmt, LocalTime>
   val LocalDateTimeEncoder: SqlEncoder<Session, Stmt, LocalDateTime>
-  val ZonedDateTimeEncoder: SqlEncoder<Session, Stmt, ZonedDateTime>
+  val LocalTimeEncoder: SqlEncoder<Session, Stmt, LocalTime>
   val InstantEncoder: SqlEncoder<Session, Stmt, Instant>
-  val OffsetTimeEncoder: SqlEncoder<Session, Stmt, OffsetTime>
-  val OffsetDateTimeEncoder: SqlEncoder<Session, Stmt, OffsetDateTime>
 
   val LocalDateDecoder: SqlDecoder<Session, Row, LocalDate>
-  val LocalTimeDecoder: SqlDecoder<Session, Row, LocalTime>
   val LocalDateTimeDecoder: SqlDecoder<Session, Row, LocalDateTime>
-  val ZonedDateTimeDecoder: SqlDecoder<Session, Row, ZonedDateTime>
+  val LocalTimeDecoder: SqlDecoder<Session, Row, LocalTime>
   val InstantDecoder: SqlDecoder<Session, Row, Instant>
-  val OffsetTimeDecoder: SqlDecoder<Session, Row, OffsetTime>
-  val OffsetDateTimeDecoder: SqlDecoder<Session, Row, OffsetDateTime>
 }
 
 interface SqlEncoding<Session, Stmt, Row>:
   BasicEncoding<Session, Stmt, Row>,
   BooleanEncoding<Session, Stmt, Row>,
-  TimeEncoding<Session, Stmt, Row>,
-  UuidEncoding<Session, Stmt, Row>,
   // Use by the PreparedStatementElementEncoder and the RowDecoder
   ApiEncoders<Session, Stmt>,
-  ApiDecoders<Session, Row>{
+  ApiDecoders<Session, Row>,
+  TimeEncoding<Session, Stmt, Row> {
 
   fun computeEncoders(): Set<SqlEncoder<Session, Stmt, out Any>> =
     setOf(
@@ -147,17 +128,11 @@ interface SqlEncoding<Session, Stmt, Row>:
       LongEncoder,
       ShortEncoder,
       StringEncoder,
-      BigDecimalEncoder,
       ByteArrayEncoder,
-      DateEncoder,
       LocalDateEncoder,
-      LocalTimeEncoder,
       LocalDateTimeEncoder,
-      ZonedDateTimeEncoder,
-      InstantEncoder,
-      OffsetTimeEncoder,
-      OffsetDateTimeEncoder,
-      UuidEncoder
+      LocalTimeEncoder,
+      InstantEncoder
     )
 
   fun computeDecoders(): Set<SqlDecoder<Session, Row, out Any>> =
@@ -171,54 +146,10 @@ interface SqlEncoding<Session, Stmt, Row>:
       LongDecoder,
       ShortDecoder,
       StringDecoder,
-      BigDecimalDecoder,
       ByteArrayDecoder,
-      DateDecoder,
       LocalDateDecoder,
-      LocalTimeDecoder,
       LocalDateTimeDecoder,
-      ZonedDateTimeDecoder,
-      InstantDecoder,
-      OffsetTimeDecoder,
-      OffsetDateTimeDecoder,
-      UuidDecoder
+      LocalTimeDecoder,
+      InstantDecoder
     )
 }
-
-//interface FooFoo {
-//  fun xx(): String
-//}
-//
-//interface Foo: FooFoo {
-//  fun x(): String
-//  fun all() = listOf(x(), xx())
-//}
-//class FooFooImpl: FooFoo {
-//  override fun xx(): String = "FooFooImpl"
-//}
-//class FooImpl: Foo, FooFoo by FooFooImpl() {
-//  override fun x(): String = "FooImpl"
-//}
-//
-//interface Bar {
-//  fun y(): String
-//  fun all() = listOf(y())
-//}
-//class BarImpl: Bar {
-//  override fun y(): String = "BarImpl"
-//}
-//interface FooBar: Foo, Bar {
-//  override fun all() = listOf(super<Foo>.all(), super<Bar>.all()).flatten()
-//}
-//
-//class FooBarImpl: FooBar, Foo by FooImpl(), Bar by BarImpl() {
-//  override fun all() = super<FooBar>.all()
-//}
-
-
-
-
-
-
-
-

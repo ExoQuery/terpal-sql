@@ -8,15 +8,17 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.modules.SerializersModule
-import javax.management.Descriptor
+import kotlin.Annotation
 
 data class ColumnInfo(val name: String, val type: String)
 
+@OptIn(ExperimentalSerializationApi::class)
 fun SerialDescriptor.isJsonClassAnnotated() =
-  this.annotations.find { it.annotationClass == io.exoquery.sql.SqlJsonValue::class } != null
+  this.annotations.find { it is io.exoquery.sql.SqlJsonValue } != null
 
+@OptIn(ExperimentalSerializationApi::class)
 fun SerialDescriptor.isJsonFieldAnnotated(fieldIndex: Int) =
-  this.getElementAnnotations(fieldIndex).find { it.annotationClass == io.exoquery.sql.SqlJsonValue::class } != null
+  this.getElementAnnotations(fieldIndex).find { it is io.exoquery.sql.SqlJsonValue } != null
 
 fun SerialDescriptor.isJsonValue() =
   this.serialName == "io.exoquery.sql.JsonValue"

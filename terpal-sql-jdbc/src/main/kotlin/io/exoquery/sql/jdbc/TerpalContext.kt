@@ -22,8 +22,8 @@ object TerpalContext {
       object : SqlEncoding<Connection, PreparedStatement, ResultSet>,
         BasicEncoding<Connection, PreparedStatement, ResultSet> by JdbcEncodingBasic,
         BooleanEncoding<Connection, PreparedStatement, ResultSet> by JdbcBooleanObjectEncoding,
-        TimeEncoding<Connection, PreparedStatement, ResultSet> by PostgresTimeEncoding,
-        UuidEncoding<Connection, PreparedStatement, ResultSet> by JdbcUuidObjectEncoding {}
+        JavaTimeEncoding<Connection, PreparedStatement, ResultSet> by PostgresTimeEncoding,
+        JavaUuidEncoding<Connection, PreparedStatement, ResultSet> by JdbcUuidObjectEncoding {}
 
     companion object { }
   }
@@ -33,8 +33,8 @@ object TerpalContext {
       object : SqlEncoding<Connection, PreparedStatement, ResultSet>,
         BasicEncoding<Connection, PreparedStatement, ResultSet> by JdbcEncodingBasic,
         BooleanEncoding<Connection, PreparedStatement, ResultSet> by JdbcBooleanObjectEncoding,
-        TimeEncoding<Connection, PreparedStatement, ResultSet> by JdbcTimeEncodingLegacy,
-        UuidEncoding<Connection, PreparedStatement, ResultSet> by JdbcUuidObjectEncoding {}
+        JavaTimeEncoding<Connection, PreparedStatement, ResultSet> by JdbcTimeEncodingLegacy,
+        JavaUuidEncoding<Connection, PreparedStatement, ResultSet> by JdbcUuidObjectEncoding {}
 
     companion object { }
   }
@@ -44,8 +44,8 @@ object TerpalContext {
       object : SqlEncoding<Connection, PreparedStatement, ResultSet>,
         BasicEncoding<Connection, PreparedStatement, ResultSet> by JdbcEncodingBasic,
         BooleanEncoding<Connection, PreparedStatement, ResultSet> by JdbcBooleanObjectEncoding,
-        TimeEncoding<Connection, PreparedStatement, ResultSet> by JdbcTimeEncoding(),
-        UuidEncoding<Connection, PreparedStatement, ResultSet> by JdbcUuidObjectEncoding {}
+        JavaTimeEncoding<Connection, PreparedStatement, ResultSet> by JdbcTimeEncoding(),
+        JavaUuidEncoding<Connection, PreparedStatement, ResultSet> by JdbcUuidObjectEncoding {}
 
     companion object { }
   }
@@ -61,8 +61,8 @@ object TerpalContext {
       object : SqlEncoding<Connection, PreparedStatement, ResultSet>,
         BasicEncoding<Connection, PreparedStatement, ResultSet> by JdbcEncodingBasic,
         BooleanEncoding<Connection, PreparedStatement, ResultSet> by JdbcBooleanObjectEncoding,
-        TimeEncoding<Connection, PreparedStatement, ResultSet> by MysqlTimeEncoding,
-        UuidEncoding<Connection, PreparedStatement, ResultSet> by JdbcUuidStringEncoding {}
+        JavaTimeEncoding<Connection, PreparedStatement, ResultSet> by MysqlTimeEncoding,
+        JavaUuidEncoding<Connection, PreparedStatement, ResultSet> by JdbcUuidStringEncoding {}
 
     companion object { }
   }
@@ -72,8 +72,8 @@ object TerpalContext {
       object : SqlEncoding<Connection, PreparedStatement, ResultSet>,
         BasicEncoding<Connection, PreparedStatement, ResultSet> by JdbcEncodingBasic,
         BooleanEncoding<Connection, PreparedStatement, ResultSet> by JdbcBooleanObjectEncoding,
-        TimeEncoding<Connection, PreparedStatement, ResultSet> by JdbcTimeEncodingLegacy,
-        UuidEncoding<Connection, PreparedStatement, ResultSet> by JdbcUuidStringEncoding {}
+        JavaTimeEncoding<Connection, PreparedStatement, ResultSet> by JdbcTimeEncodingLegacy,
+        JavaUuidEncoding<Connection, PreparedStatement, ResultSet> by JdbcUuidStringEncoding {}
 
     protected override open suspend fun <T> runActionReturningScoped(act: ActionReturning<T>): Flow<T> =
       flowWithConnection {
@@ -122,8 +122,8 @@ object TerpalContext {
       object : SqlEncoding<Connection, PreparedStatement, ResultSet>,
         BasicEncoding<Connection, PreparedStatement, ResultSet> by JdbcEncodingOracle,
         BooleanEncoding<Connection, PreparedStatement, ResultSet> by JdbcBooleanIntEncoding,
-        TimeEncoding<Connection, PreparedStatement, ResultSet> by OracleTimeEncoding,
-        UuidEncoding<Connection, PreparedStatement, ResultSet> by JdbcUuidStringEncoding {}
+        JavaTimeEncoding<Connection, PreparedStatement, ResultSet> by OracleTimeEncoding,
+        JavaUuidEncoding<Connection, PreparedStatement, ResultSet> by JdbcUuidStringEncoding {}
 
     companion object { }
   }
@@ -133,8 +133,8 @@ object TerpalContext {
       object : SqlEncoding<Connection, PreparedStatement, ResultSet>,
         BasicEncoding<Connection, PreparedStatement, ResultSet> by JdbcEncodingBasic,
         BooleanEncoding<Connection, PreparedStatement, ResultSet> by JdbcBooleanObjectEncoding,
-        TimeEncoding<Connection, PreparedStatement, ResultSet> by JdbcTimeEncoding(),
-        UuidEncoding<Connection, PreparedStatement, ResultSet> by JdbcUuidStringEncoding {}
+        JavaTimeEncoding<Connection, PreparedStatement, ResultSet> by JdbcTimeEncoding(),
+        JavaUuidEncoding<Connection, PreparedStatement, ResultSet> by JdbcUuidStringEncoding {}
 
     override suspend fun <T> runActionReturningScoped(act: ActionReturning<T>): Flow<T> =
       flowWithConnection {

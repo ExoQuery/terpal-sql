@@ -1,17 +1,17 @@
 package io.exoquery.sql.jdbc
 
 import io.exoquery.sql.*
-import io.exoquery.sql.jdbc.AdditionaJdbcTimeEncoding.SqlDateDecoder
-import io.exoquery.sql.jdbc.AdditionaJdbcTimeEncoding.SqlDateEncoder
-import io.exoquery.sql.jdbc.AdditionaJdbcTimeEncoding.SqlTimeDecoder
-import io.exoquery.sql.jdbc.AdditionaJdbcTimeEncoding.SqlTimeEncoder
-import io.exoquery.sql.jdbc.AdditionaJdbcTimeEncoding.SqlTimestampDecoder
-import io.exoquery.sql.jdbc.AdditionaJdbcTimeEncoding.SqlTimestampEncoder
-import kotlinx.datetime.toJavaZoneId
+import kotlinx.datetime.*
 import java.math.BigDecimal
 import java.sql.*
 import java.time.*
+import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.ZoneOffset
 import java.util.*
+import java.util.TimeZone
 
 /** Represents a Jdbc encoder with a nullable or non-nulalble input value */
 typealias JdbcEncoder<T> = SqlEncoder<Connection, PreparedStatement, T>
@@ -65,7 +65,10 @@ abstract class JdbcEncoderAny<T: Any>: JdbcEncoder<T>() {
   }
 }
 
-open class JdbcEncodingBasic: BasicEncoding<Connection, PreparedStatement, ResultSet> {
+open class JdbcEncodingBasic:
+  BasicEncoding<Connection, PreparedStatement, ResultSet>,
+  JavaBigDecimalEncoding<Connection, PreparedStatement, ResultSet>,
+  JavaLegacyDateEncoding<Connection, PreparedStatement, ResultSet> {
   companion object: JdbcEncodingBasic()
 
   override val ByteEncoder: JdbcEncoderAny<Byte> = JdbcEncoderAny.fromFunction(Types.TINYINT) { ctx, v, i -> ctx.stmt.setByte(i, v) }
@@ -124,7 +127,7 @@ object AdditionaJdbcTimeEncoding {
   val decoders = setOf(SqlDateDecoder, SqlTimeDecoder, SqlTimestampDecoder)
 }
 
-open class JdbcTimeEncoding: TimeEncoding<Connection, PreparedStatement, ResultSet> {
+open class JdbcTimeEncoding: JavaTimeEncoding<Connection, PreparedStatement, ResultSet> {
   // Encoders
   open val jdbcTypeOfLocalDate     = Types.DATE
   open val jdbcTypeOfLocalTime     = Types.TIME
@@ -136,40 +139,64 @@ open class JdbcTimeEncoding: TimeEncoding<Connection, PreparedStatement, ResultS
   open val timezone: TimeZone = TimeZone.getDefault()
   open fun jdbcEncodeInstant(value: Instant): Any = value.atOffset(ZoneOffset.UTC)
 
-  override val LocalDateEncoder: JdbcEncoderAny<LocalDate> = JdbcEncoderAny.fromFunction(jdbcTypeOfLocalDate) { ctx, v, i -> ctx.stmt.setObject(i, v, jdbcTypeOfLocalDate) }
-  override val LocalTimeEncoder: JdbcEncoderAny<LocalTime> = JdbcEncoderAny.fromFunction(jdbcTypeOfLocalTime) { ctx, v, i -> ctx.stmt.setObject(i, v, jdbcTypeOfLocalTime) }
-  override val LocalDateTimeEncoder: JdbcEncoderAny<LocalDateTime> = JdbcEncoderAny.fromFunction(jdbcTypeOfLocalDateTime) { ctx, v, i -> ctx.stmt.setObject(i, v, jdbcTypeOfLocalDateTime) }
-  override val ZonedDateTimeEncoder: JdbcEncoderAny<ZonedDateTime> = JdbcEncoderAny.fromFunction(jdbcTypeOfZonedDateTime) { ctx, v, i -> ctx.stmt.setObject(i, v.toOffsetDateTime(), jdbcTypeOfZonedDateTime) }
+  // Encoders for the KMP datetimes
+  override val LocalDateEncoder: JdbcEncoderAny<kotlinx.datetime.LocalDate> = JdbcEncoderAny.fromFunction(jdbcTypeOfLocalDate) { ctx, v, i -> ctx.stmt.setObject(i, v.toJavaLocalDate(), jdbcTypeOfLocalDate) }
+  override val LocalDateTimeEncoder: JdbcEncoderAny<kotlinx.datetime.LocalDateTime> = JdbcEncoderAny.fromFunction(jdbcTypeOfLocalDateTime) { ctx, v, i -> ctx.stmt.setObject(i, v.toJavaLocalDateTime(), jdbcTypeOfLocalDateTime) }
+  override val LocalTimeEncoder: JdbcEncoderAny<kotlinx.datetime.LocalTime> = JdbcEncoderAny.fromFunction(jdbcTypeOfLocalTime) { ctx, v, i -> ctx.stmt.setObject(i, v.toJavaLocalTime(), jdbcTypeOfLocalTime) }
+  override val InstantEncoder: JdbcEncoderAny<kotlinx.datetime.Instant> = JdbcEncoderAny.fromFunction(jdbcTypeOfInstant) { ctx, v, i -> ctx.stmt.setObject(i, jdbcEncodeInstant(v.toJavaInstant()), jdbcTypeOfInstant) }
 
-  override val InstantEncoder: JdbcEncoderAny<Instant> = JdbcEncoderAny.fromFunction(jdbcTypeOfInstant) { ctx, v, i -> ctx.stmt.setObject(i, jdbcEncodeInstant(v), jdbcTypeOfInstant) }
-  override val OffsetTimeEncoder: JdbcEncoderAny<OffsetTime> = JdbcEncoderAny.fromFunction(jdbcTypeOfOffsetTime) { ctx, v, i -> ctx.stmt.setObject(i, v, jdbcTypeOfOffsetTime) }
-  override val OffsetDateTimeEncoder: JdbcEncoderAny<OffsetDateTime> = JdbcEncoderAny.fromFunction(jdbcTypeOfOffsetDateTime) { ctx, v, i -> ctx.stmt.setObject(i, v, jdbcTypeOfOffsetDateTime) }
+  override val JLocalDateEncoder: JdbcEncoderAny<LocalDate> = JdbcEncoderAny.fromFunction(jdbcTypeOfLocalDate) { ctx, v, i -> ctx.stmt.setObject(i, v, jdbcTypeOfLocalDate) }
+  override val JLocalTimeEncoder: JdbcEncoderAny<LocalTime> = JdbcEncoderAny.fromFunction(jdbcTypeOfLocalTime) { ctx, v, i -> ctx.stmt.setObject(i, v, jdbcTypeOfLocalTime) }
+  override val JLocalDateTimeEncoder: JdbcEncoderAny<LocalDateTime> = JdbcEncoderAny.fromFunction(jdbcTypeOfLocalDateTime) { ctx, v, i -> ctx.stmt.setObject(i, v, jdbcTypeOfLocalDateTime) }
+  override val JZonedDateTimeEncoder: JdbcEncoderAny<ZonedDateTime> = JdbcEncoderAny.fromFunction(jdbcTypeOfZonedDateTime) { ctx, v, i -> ctx.stmt.setObject(i, v.toOffsetDateTime(), jdbcTypeOfZonedDateTime) }
+
+  override val JInstantEncoder: JdbcEncoderAny<Instant> = JdbcEncoderAny.fromFunction(jdbcTypeOfInstant) { ctx, v, i -> ctx.stmt.setObject(i, jdbcEncodeInstant(v), jdbcTypeOfInstant) }
+  override val JOffsetTimeEncoder: JdbcEncoderAny<OffsetTime> = JdbcEncoderAny.fromFunction(jdbcTypeOfOffsetTime) { ctx, v, i -> ctx.stmt.setObject(i, v, jdbcTypeOfOffsetTime) }
+  override val JOffsetDateTimeEncoder: JdbcEncoderAny<OffsetDateTime> = JdbcEncoderAny.fromFunction(jdbcTypeOfOffsetDateTime) { ctx, v, i -> ctx.stmt.setObject(i, v, jdbcTypeOfOffsetDateTime) }
+
+  // Decoders for the KMP datetimes
+  override val LocalDateDecoder: JdbcDecoderAny<kotlinx.datetime.LocalDate> = JdbcDecoderAny.fromFunction { ctx, i -> ctx.row.getObject(i, LocalDate::class.java).toKotlinLocalDate() }
+  override val LocalDateTimeDecoder: JdbcDecoderAny<kotlinx.datetime.LocalDateTime> = JdbcDecoderAny.fromFunction { ctx, i -> ctx.row.getObject(i, LocalDateTime::class.java).toKotlinLocalDateTime() }
+  override val LocalTimeDecoder: JdbcDecoderAny<kotlinx.datetime.LocalTime> = JdbcDecoderAny.fromFunction { ctx, i -> ctx.row.getObject(i, LocalTime::class.java).toKotlinLocalTime() }
+  override val InstantDecoder: JdbcDecoderAny<kotlinx.datetime.Instant> = JdbcDecoderAny.fromFunction { ctx, i -> ctx.row.getObject(i, Instant::class.java).toKotlinInstant() }
 
   // Decoders
-  override val LocalDateDecoder: JdbcDecoderAny<LocalDate> = JdbcDecoderAny.fromFunction { ctx, i -> ctx.row.getObject(i, LocalDate::class.java) }
-  override val LocalTimeDecoder: JdbcDecoderAny<LocalTime> = JdbcDecoderAny.fromFunction { ctx, i -> ctx.row.getObject(i, LocalTime::class.java) }
-  override val LocalDateTimeDecoder: JdbcDecoderAny<LocalDateTime> = JdbcDecoderAny.fromFunction { ctx, i -> ctx.row.getObject(i, LocalDateTime::class.java) }
-  override val ZonedDateTimeDecoder: JdbcDecoderAny<ZonedDateTime> = JdbcDecoderAny.fromFunction { ctx, i -> ctx.row.getObject(i, OffsetDateTime::class.java).toZonedDateTime() }
+  override val JLocalDateDecoder: JdbcDecoderAny<LocalDate> = JdbcDecoderAny.fromFunction { ctx, i -> ctx.row.getObject(i, LocalDate::class.java) }
+  override val JLocalTimeDecoder: JdbcDecoderAny<LocalTime> = JdbcDecoderAny.fromFunction { ctx, i -> ctx.row.getObject(i, LocalTime::class.java) }
+  override val JLocalDateTimeDecoder: JdbcDecoderAny<LocalDateTime> = JdbcDecoderAny.fromFunction { ctx, i -> ctx.row.getObject(i, LocalDateTime::class.java) }
+  override val JZonedDateTimeDecoder: JdbcDecoderAny<ZonedDateTime> = JdbcDecoderAny.fromFunction { ctx, i -> ctx.row.getObject(i, OffsetDateTime::class.java).toZonedDateTime() }
 
-  override val InstantDecoder: JdbcDecoderAny<Instant> = JdbcDecoderAny.fromFunction { ctx, i -> ctx.row.getObject(i, OffsetDateTime::class.java).toInstant() }
-  override val OffsetTimeDecoder: JdbcDecoderAny<OffsetTime> = JdbcDecoderAny.fromFunction { ctx, i -> ctx.row.getObject(i, OffsetTime::class.java) }
-  override val OffsetDateTimeDecoder: JdbcDecoderAny<OffsetDateTime> = JdbcDecoderAny.fromFunction { ctx, i -> ctx.row.getObject(i, OffsetDateTime::class.java) }
+  override val JInstantDecoder: JdbcDecoderAny<Instant> = JdbcDecoderAny.fromFunction { ctx, i -> ctx.row.getObject(i, OffsetDateTime::class.java).toInstant() }
+  override val JOffsetTimeDecoder: JdbcDecoderAny<OffsetTime> = JdbcDecoderAny.fromFunction { ctx, i -> ctx.row.getObject(i, OffsetTime::class.java) }
+  override val JOffsetDateTimeDecoder: JdbcDecoderAny<OffsetDateTime> = JdbcDecoderAny.fromFunction { ctx, i -> ctx.row.getObject(i, OffsetDateTime::class.java) }
 }
 
-object JdbcTimeEncodingLegacy: TimeEncoding<Connection, PreparedStatement, ResultSet> {
-  override val LocalDateEncoder: JdbcEncoderAny<LocalDate> = JdbcEncoderAny.fromFunction(Types.DATE) { ctx, v, i -> ctx.stmt.setDate(i, java.sql.Date.valueOf(v)) }
-  override val LocalTimeEncoder: JdbcEncoderAny<LocalTime> = JdbcEncoderAny.fromFunction(Types.TIME) { ctx, v, i -> ctx.stmt.setTime(i, java.sql.Time.valueOf(v)) }
-  override val LocalDateTimeEncoder: JdbcEncoderAny<LocalDateTime> = JdbcEncoderAny.fromFunction(Types.TIMESTAMP) { ctx, v, i -> ctx.stmt.setTimestamp(i, Timestamp.valueOf(v)) }
-  override val ZonedDateTimeEncoder: JdbcEncoderAny<ZonedDateTime> = JdbcEncoderAny.fromFunction(Types.TIMESTAMP) { ctx, v, i -> ctx.stmt.setTimestamp(i, Timestamp.from(v.toInstant())) }
-  override val InstantEncoder: JdbcEncoderAny<Instant> = JdbcEncoderAny.fromFunction(Types.TIMESTAMP) { ctx, v, i -> ctx.stmt.setTimestamp(i, Timestamp.from(v)) }
-  override val OffsetTimeEncoder: JdbcEncoderAny<OffsetTime> = JdbcEncoderAny.fromFunction(Types.TIME) { ctx, v, i -> ctx.stmt.setTime(i, java.sql.Time.valueOf(v.withOffsetSameInstant(ZoneOffset.UTC).toLocalTime()))  }
-  override val OffsetDateTimeEncoder: JdbcEncoderAny<OffsetDateTime> = JdbcEncoderAny.fromFunction(Types.TIMESTAMP) { ctx, v, i -> ctx.stmt.setTimestamp(i, java.sql.Timestamp.from(v.toInstant())) }
+object JdbcTimeEncodingLegacy: JavaTimeEncoding<Connection, PreparedStatement, ResultSet> {
+  // KMP Date Encoders
+  override val LocalDateEncoder: JdbcEncoderAny<kotlinx.datetime.LocalDate> = JdbcEncoderAny.fromFunction(Types.DATE) { ctx, v, i -> ctx.stmt.setDate(i, java.sql.Date.valueOf(v.toJavaLocalDate())) }
+  override val LocalDateTimeEncoder: JdbcEncoderAny<kotlinx.datetime.LocalDateTime> = JdbcEncoderAny.fromFunction(Types.TIMESTAMP) { ctx, v, i -> ctx.stmt.setTimestamp(i, java.sql.Timestamp.valueOf(v.toJavaLocalDateTime())) }
+  override val LocalTimeEncoder: JdbcEncoderAny<kotlinx.datetime.LocalTime> = JdbcEncoderAny.fromFunction(Types.TIME) { ctx, v, i -> ctx.stmt.setTime(i, java.sql.Time.valueOf(v.toJavaLocalTime())) }
+  override val InstantEncoder: JdbcEncoderAny<kotlinx.datetime.Instant> = JdbcEncoderAny.fromFunction(Types.TIMESTAMP) { ctx, v, i -> ctx.stmt.setTimestamp(i, java.sql.Timestamp.from(v.toJavaInstant())) }
 
-  override val LocalDateDecoder: JdbcDecoderAny<LocalDate> = JdbcDecoderAny.fromFunction { ctx, i -> ctx.row.getDate(i).toLocalDate() }
-  override val LocalTimeDecoder: JdbcDecoderAny<LocalTime> = JdbcDecoderAny.fromFunction { ctx, i -> ctx.row.getTime(i).toLocalTime() }
-  override val LocalDateTimeDecoder: JdbcDecoderAny<LocalDateTime> = JdbcDecoderAny.fromFunction { ctx, i -> ctx.row.getTimestamp(i).toLocalDateTime() }
-  override val ZonedDateTimeDecoder: JdbcDecoderAny<ZonedDateTime> = JdbcDecoderAny.fromFunction { ctx, i -> ZonedDateTime.ofInstant(ctx.row.getTimestamp(i).toInstant(), ctx.timeZone.toJavaZoneId()) }
-  override val InstantDecoder: JdbcDecoderAny<Instant> = JdbcDecoderAny.fromFunction { ctx, i -> ctx.row.getTimestamp(i).toInstant() }
-  override val OffsetTimeDecoder: JdbcDecoderAny<OffsetTime> = JdbcDecoderAny.fromFunction { ctx, i -> OffsetTime.of(ctx.row.getTime(i).toLocalTime(), ZoneOffset.UTC) }
-  override val OffsetDateTimeDecoder: JdbcDecoderAny<OffsetDateTime> = JdbcDecoderAny.fromFunction { ctx, i -> OffsetDateTime.ofInstant(ctx.row.getTimestamp(i).toInstant(), ctx.timeZone.toJavaZoneId()) }
+  override val JLocalDateEncoder: JdbcEncoderAny<LocalDate> = JdbcEncoderAny.fromFunction(Types.DATE) { ctx, v, i -> ctx.stmt.setDate(i, java.sql.Date.valueOf(v)) }
+  override val JLocalTimeEncoder: JdbcEncoderAny<LocalTime> = JdbcEncoderAny.fromFunction(Types.TIME) { ctx, v, i -> ctx.stmt.setTime(i, java.sql.Time.valueOf(v)) }
+  override val JLocalDateTimeEncoder: JdbcEncoderAny<LocalDateTime> = JdbcEncoderAny.fromFunction(Types.TIMESTAMP) { ctx, v, i -> ctx.stmt.setTimestamp(i, Timestamp.valueOf(v)) }
+  override val JZonedDateTimeEncoder: JdbcEncoderAny<ZonedDateTime> = JdbcEncoderAny.fromFunction(Types.TIMESTAMP) { ctx, v, i -> ctx.stmt.setTimestamp(i, Timestamp.from(v.toInstant())) }
+  override val JInstantEncoder: JdbcEncoderAny<Instant> = JdbcEncoderAny.fromFunction(Types.TIMESTAMP) { ctx, v, i -> ctx.stmt.setTimestamp(i, Timestamp.from(v)) }
+  override val JOffsetTimeEncoder: JdbcEncoderAny<OffsetTime> = JdbcEncoderAny.fromFunction(Types.TIME) { ctx, v, i -> ctx.stmt.setTime(i, java.sql.Time.valueOf(v.withOffsetSameInstant(ZoneOffset.UTC).toLocalTime()))  }
+  override val JOffsetDateTimeEncoder: JdbcEncoderAny<OffsetDateTime> = JdbcEncoderAny.fromFunction(Types.TIMESTAMP) { ctx, v, i -> ctx.stmt.setTimestamp(i, java.sql.Timestamp.from(v.toInstant())) }
+
+  // KMP Date Decoders
+  override val LocalDateDecoder: JdbcDecoderAny<kotlinx.datetime.LocalDate> = JdbcDecoderAny.fromFunction { ctx, i -> ctx.row.getDate(i).toLocalDate().toKotlinLocalDate() }
+  override val LocalDateTimeDecoder: JdbcDecoderAny<kotlinx.datetime.LocalDateTime> = JdbcDecoderAny.fromFunction { ctx, i -> ctx.row.getTimestamp(i).toLocalDateTime().toKotlinLocalDateTime() }
+  override val LocalTimeDecoder: JdbcDecoderAny<kotlinx.datetime.LocalTime> = JdbcDecoderAny.fromFunction { ctx, i -> ctx.row.getTime(i).toLocalTime().toKotlinLocalTime() }
+  override val InstantDecoder: JdbcDecoderAny<kotlinx.datetime.Instant> = JdbcDecoderAny.fromFunction { ctx, i -> ctx.row.getTimestamp(i).toInstant().toKotlinInstant() }
+
+  override val JLocalDateDecoder: JdbcDecoderAny<LocalDate> = JdbcDecoderAny.fromFunction { ctx, i -> ctx.row.getDate(i).toLocalDate() }
+  override val JLocalTimeDecoder: JdbcDecoderAny<LocalTime> = JdbcDecoderAny.fromFunction { ctx, i -> ctx.row.getTime(i).toLocalTime() }
+  override val JLocalDateTimeDecoder: JdbcDecoderAny<LocalDateTime> = JdbcDecoderAny.fromFunction { ctx, i -> ctx.row.getTimestamp(i).toLocalDateTime() }
+  override val JZonedDateTimeDecoder: JdbcDecoderAny<ZonedDateTime> = JdbcDecoderAny.fromFunction { ctx, i -> ZonedDateTime.ofInstant(ctx.row.getTimestamp(i).toInstant(), ctx.timeZone.toJavaZoneId()) }
+  override val JInstantDecoder: JdbcDecoderAny<Instant> = JdbcDecoderAny.fromFunction { ctx, i -> ctx.row.getTimestamp(i).toInstant() }
+  override val JOffsetTimeDecoder: JdbcDecoderAny<OffsetTime> = JdbcDecoderAny.fromFunction { ctx, i -> OffsetTime.of(ctx.row.getTime(i).toLocalTime(), ZoneOffset.UTC) }
+  override val JOffsetDateTimeDecoder: JdbcDecoderAny<OffsetDateTime> = JdbcDecoderAny.fromFunction { ctx, i -> OffsetDateTime.ofInstant(ctx.row.getTimestamp(i).toInstant(), ctx.timeZone.toJavaZoneId()) }
 }
