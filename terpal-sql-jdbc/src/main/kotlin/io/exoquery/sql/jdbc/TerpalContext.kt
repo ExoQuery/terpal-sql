@@ -11,16 +11,16 @@ import javax.sql.DataSource
 object TerpalContext {
   open class Postgres(override val database: DataSource): JdbcContext(database) {
     // TODO this setting AdditionaJdbcTimeEncoding.encoders/decoders is already set in the parent class. Try to remove it.
-    override val additionalEncoders = super.additionalEncoders + AdditionaJdbcTimeEncoding.encoders + AdditionalPostgresEncoding.encoders
-    override val additionalDecoders = super.additionalDecoders + AdditionaJdbcTimeEncoding.decoders + AdditionalPostgresEncoding.decoders
+    override val additionalEncoders = super.additionalEncoders + AdditionaJdbcEncoding.encoders + AdditionalPostgresEncoding.encoders
+    override val additionalDecoders = super.additionalDecoders + AdditionaJdbcEncoding.decoders + AdditionalPostgresEncoding.decoders
 
     // Postgres does not support Types.TIME_WITH_TIMEZONE as a JDBC type but does have a `TIME WITH TIMEZONE` datatype this is puzzling.
     object PostgresTimeEncoding: JdbcTimeEncoding() {
       override val jdbcTypeOfOffsetTime = Types.TIME
     }
-    override protected open val encodingApi: SqlEncoding<Connection, PreparedStatement, ResultSet> =
-      object : SqlEncoding<Connection, PreparedStatement, ResultSet>,
-        BasicEncoding<Connection, PreparedStatement, ResultSet> by JdbcEncodingBasic,
+    override protected open val encodingApi: JavaSqlEncoding<Connection, PreparedStatement, ResultSet> =
+      object : JavaSqlEncoding<Connection, PreparedStatement, ResultSet>,
+        BasicEncoding<Connection, PreparedStatement, ResultSet> by JdbcBasicEncoding,
         BooleanEncoding<Connection, PreparedStatement, ResultSet> by JdbcBooleanObjectEncoding,
         JavaTimeEncoding<Connection, PreparedStatement, ResultSet> by PostgresTimeEncoding,
         JavaUuidEncoding<Connection, PreparedStatement, ResultSet> by JdbcUuidObjectEncoding {}
@@ -29,9 +29,9 @@ object TerpalContext {
   }
 
   open class PostgresLegacy(override val database: DataSource): Postgres(database) {
-    override protected open val encodingApi: SqlEncoding<Connection, PreparedStatement, ResultSet> =
-      object : SqlEncoding<Connection, PreparedStatement, ResultSet>,
-        BasicEncoding<Connection, PreparedStatement, ResultSet> by JdbcEncodingBasic,
+    override protected open val encodingApi: JavaSqlEncoding<Connection, PreparedStatement, ResultSet> =
+      object : JavaSqlEncoding<Connection, PreparedStatement, ResultSet>,
+        BasicEncoding<Connection, PreparedStatement, ResultSet> by JdbcBasicEncoding,
         BooleanEncoding<Connection, PreparedStatement, ResultSet> by JdbcBooleanObjectEncoding,
         JavaTimeEncoding<Connection, PreparedStatement, ResultSet> by JdbcTimeEncodingLegacy,
         JavaUuidEncoding<Connection, PreparedStatement, ResultSet> by JdbcUuidObjectEncoding {}
@@ -41,8 +41,8 @@ object TerpalContext {
 
   open class H2(override val database: DataSource): JdbcContext(database) {
     override protected open val encodingApi: SqlEncoding<Connection, PreparedStatement, ResultSet> =
-      object : SqlEncoding<Connection, PreparedStatement, ResultSet>,
-        BasicEncoding<Connection, PreparedStatement, ResultSet> by JdbcEncodingBasic,
+      object : JavaSqlEncoding<Connection, PreparedStatement, ResultSet>,
+        BasicEncoding<Connection, PreparedStatement, ResultSet> by JdbcBasicEncoding,
         BooleanEncoding<Connection, PreparedStatement, ResultSet> by JdbcBooleanObjectEncoding,
         JavaTimeEncoding<Connection, PreparedStatement, ResultSet> by JdbcTimeEncoding(),
         JavaUuidEncoding<Connection, PreparedStatement, ResultSet> by JdbcUuidObjectEncoding {}
@@ -57,9 +57,9 @@ object TerpalContext {
       override val jdbcTypeOfOffsetTime     = Types.TIME
       override val jdbcTypeOfOffsetDateTime = Types.TIMESTAMP
     }
-    override protected open val encodingApi: SqlEncoding<Connection, PreparedStatement, ResultSet> =
-      object : SqlEncoding<Connection, PreparedStatement, ResultSet>,
-        BasicEncoding<Connection, PreparedStatement, ResultSet> by JdbcEncodingBasic,
+    override protected open val encodingApi: JavaSqlEncoding<Connection, PreparedStatement, ResultSet> =
+      object : JavaSqlEncoding<Connection, PreparedStatement, ResultSet>,
+        BasicEncoding<Connection, PreparedStatement, ResultSet> by JdbcBasicEncoding,
         BooleanEncoding<Connection, PreparedStatement, ResultSet> by JdbcBooleanObjectEncoding,
         JavaTimeEncoding<Connection, PreparedStatement, ResultSet> by MysqlTimeEncoding,
         JavaUuidEncoding<Connection, PreparedStatement, ResultSet> by JdbcUuidStringEncoding {}
@@ -68,9 +68,9 @@ object TerpalContext {
   }
 
   open class Sqlite(override val database: DataSource): JdbcContext(database) {
-    override protected open val encodingApi: SqlEncoding<Connection, PreparedStatement, ResultSet> =
-      object : SqlEncoding<Connection, PreparedStatement, ResultSet>,
-        BasicEncoding<Connection, PreparedStatement, ResultSet> by JdbcEncodingBasic,
+    override protected open val encodingApi: JavaSqlEncoding<Connection, PreparedStatement, ResultSet> =
+      object : JavaSqlEncoding<Connection, PreparedStatement, ResultSet>,
+        BasicEncoding<Connection, PreparedStatement, ResultSet> by JdbcBasicEncoding,
         BooleanEncoding<Connection, PreparedStatement, ResultSet> by JdbcBooleanObjectEncoding,
         JavaTimeEncoding<Connection, PreparedStatement, ResultSet> by JdbcTimeEncodingLegacy,
         JavaUuidEncoding<Connection, PreparedStatement, ResultSet> by JdbcUuidStringEncoding {}
@@ -112,14 +112,14 @@ object TerpalContext {
     // nullable decoder first checks the row using wasNull() before calling the non-nullable decoder. If the row is null then the non-null
     // decoder is not invoked so we would not care about it converting a `null` value to an empty String either way.
     // This same logic applies to the ByteArrayDecoder as well.
-    object JdbcEncodingOracle: JdbcEncodingBasic() {
+    object JdbcEncodingOracle: JdbcBasicEncoding() {
       override val CharDecoder: JdbcDecoderAny<Char> = JdbcDecoderAny.fromFunction { ctx, i -> ctx.row.getString(i)?.let { it[0] } ?: Char.MIN_VALUE }
       override val StringDecoder: JdbcDecoderAny<String> = JdbcDecoderAny.fromFunction { ctx, i -> (ctx.row.getString(i) ?: "") }
       override val ByteArrayDecoder: JdbcDecoderAny<ByteArray> = JdbcDecoderAny.fromFunction { ctx, i -> ctx.row.getBytes(i) ?: byteArrayOf() }
     }
 
-    override protected open val encodingApi: SqlEncoding<Connection, PreparedStatement, ResultSet> =
-      object : SqlEncoding<Connection, PreparedStatement, ResultSet>,
+    override protected open val encodingApi: JavaSqlEncoding<Connection, PreparedStatement, ResultSet> =
+      object : JavaSqlEncoding<Connection, PreparedStatement, ResultSet>,
         BasicEncoding<Connection, PreparedStatement, ResultSet> by JdbcEncodingOracle,
         BooleanEncoding<Connection, PreparedStatement, ResultSet> by JdbcBooleanIntEncoding,
         JavaTimeEncoding<Connection, PreparedStatement, ResultSet> by OracleTimeEncoding,
@@ -129,9 +129,9 @@ object TerpalContext {
   }
 
   open class SqlServer(override val database: DataSource): JdbcContext(database) {
-    override protected open val encodingApi: SqlEncoding<Connection, PreparedStatement, ResultSet> =
-      object : SqlEncoding<Connection, PreparedStatement, ResultSet>,
-        BasicEncoding<Connection, PreparedStatement, ResultSet> by JdbcEncodingBasic,
+    override protected open val encodingApi: JavaSqlEncoding<Connection, PreparedStatement, ResultSet> =
+      object : JavaSqlEncoding<Connection, PreparedStatement, ResultSet>,
+        BasicEncoding<Connection, PreparedStatement, ResultSet> by JdbcBasicEncoding,
         BooleanEncoding<Connection, PreparedStatement, ResultSet> by JdbcBooleanObjectEncoding,
         JavaTimeEncoding<Connection, PreparedStatement, ResultSet> by JdbcTimeEncoding(),
         JavaUuidEncoding<Connection, PreparedStatement, ResultSet> by JdbcUuidStringEncoding {}

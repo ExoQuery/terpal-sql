@@ -40,16 +40,12 @@ interface JavaBigDecimalEncoding<Session, Stmt, Row> {
 interface JavaSqlEncoding<Session, Stmt, Row>:
   SqlEncoding<Session, Stmt, Row>,
   JavaTimeEncoding<Session, Stmt, Row>,
-  JavaLegacyDateEncoding<Session, Stmt, Row>,
-  JavaBigDecimalEncoding<Session, Stmt, Row>,
   JavaUuidEncoding<Session, Stmt, Row> {
 
   override fun computeEncoders(): Set<SqlEncoder<Session, Stmt, out Any>> =
       super.computeEncoders() +
       setOf(
         JUuidEncoder,
-        BigDecimalEncoder,
-        DateEncoder,
         JLocalDateEncoder,
         JLocalTimeEncoder,
         JLocalDateTimeEncoder,
@@ -63,8 +59,6 @@ interface JavaSqlEncoding<Session, Stmt, Row>:
       super.computeDecoders() +
       setOf(
         JUuidDecoder,
-        BigDecimalDecoder,
-        DateDecoder,
         JLocalDateDecoder,
         JLocalTimeDecoder,
         JLocalDateTimeDecoder,

@@ -65,11 +65,9 @@ abstract class JdbcEncoderAny<T: Any>: JdbcEncoder<T>() {
   }
 }
 
-open class JdbcEncodingBasic:
-  BasicEncoding<Connection, PreparedStatement, ResultSet>,
-  JavaBigDecimalEncoding<Connection, PreparedStatement, ResultSet>,
-  JavaLegacyDateEncoding<Connection, PreparedStatement, ResultSet> {
-  companion object: JdbcEncodingBasic()
+open class JdbcBasicEncoding:
+  BasicEncoding<Connection, PreparedStatement, ResultSet> {
+  companion object: JdbcBasicEncoding()
 
   override val ByteEncoder: JdbcEncoderAny<Byte> = JdbcEncoderAny.fromFunction(Types.TINYINT) { ctx, v, i -> ctx.stmt.setByte(i, v) }
   override val CharEncoder: JdbcEncoderAny<Char> = JdbcEncoderAny.fromFunction(Types.VARCHAR) { ctx, v, i -> ctx.stmt.setString(i, v.toString()) }
@@ -79,12 +77,7 @@ open class JdbcEncodingBasic:
   override val LongEncoder: JdbcEncoderAny<Long> = JdbcEncoderAny.fromFunction(Types.BIGINT) { ctx, v, i -> ctx.stmt.setLong(i, v) }
   override val ShortEncoder: JdbcEncoderAny<Short> = JdbcEncoderAny.fromFunction(Types.SMALLINT) { ctx, v, i -> ctx.stmt.setShort(i, v) }
   override val StringEncoder: JdbcEncoderAny<String> = JdbcEncoderAny.fromFunction(Types.VARCHAR) { ctx, v, i -> ctx.stmt.setString(i, v) }
-  override val BigDecimalEncoder: JdbcEncoderAny<BigDecimal> = JdbcEncoderAny.fromFunction(Types.NUMERIC) { ctx, v, i -> ctx.stmt.setBigDecimal(i, v) }
   override val ByteArrayEncoder: JdbcEncoderAny<ByteArray> = JdbcEncoderAny.fromFunction(Types.VARBINARY) { ctx, v, i -> ctx.stmt.setBytes(i, v) }
-  override val DateEncoder: JdbcEncoderAny<java.util.Date> =
-    JdbcEncoderAny.fromFunction(Types.TIMESTAMP) { ctx, v, i ->
-      ctx.stmt.setTimestamp(i, java.sql.Timestamp(v.getTime()), Calendar.getInstance(TimeZone.getTimeZone(ctx.timeZone.toJavaZoneId())))
-    }
 
   override fun preview(index: Int, row: ResultSet): String? = row.getObject(index)?.let { it.toString() }
   override fun isNull(index: Int, row: ResultSet): Boolean {
@@ -99,12 +92,7 @@ open class JdbcEncodingBasic:
   override val LongDecoder: JdbcDecoderAny<Long> = JdbcDecoderAny.fromFunction { ctx, i -> ctx.row.getLong(i) }
   override val ShortDecoder: JdbcDecoderAny<Short> = JdbcDecoderAny.fromFunction { ctx, i -> ctx.row.getShort(i) }
   override val StringDecoder: JdbcDecoderAny<String> = JdbcDecoderAny.fromFunction { ctx, i -> ctx.row.getString(i) }
-  override val BigDecimalDecoder: JdbcDecoderAny<BigDecimal> = JdbcDecoderAny.fromFunction { ctx, i -> ctx.row.getBigDecimal(i) }
   override val ByteArrayDecoder: JdbcDecoderAny<ByteArray> = JdbcDecoderAny.fromFunction { ctx, i -> ctx.row.getBytes(i) }
-  override val DateDecoder: JdbcDecoderAny<java.util.Date> =
-    JdbcDecoderAny.fromFunction { ctx, i ->
-      java.util.Date(ctx.row.getTimestamp(i, Calendar.getInstance(ctx.timeZone.toJava())).getTime())
-    }
 }
 
 object AdditionalPostgresEncoding {
@@ -115,7 +103,18 @@ object AdditionalPostgresEncoding {
   val decoders = setOf(SqlJsonDecoder)
 }
 
-object AdditionaJdbcTimeEncoding {
+object AdditionaJdbcEncoding {
+  val BigDecimalEncoder: JdbcEncoderAny<BigDecimal> = JdbcEncoderAny.fromFunction(Types.NUMERIC) { ctx, v, i -> ctx.stmt.setBigDecimal(i, v) }
+  val BigDecimalDecoder: JdbcDecoderAny<BigDecimal> = JdbcDecoderAny.fromFunction { ctx, i -> ctx.row.getBigDecimal(i) }
+  val DateEncoder: JdbcEncoderAny<java.util.Date> =
+    JdbcEncoderAny.fromFunction(Types.TIMESTAMP) { ctx, v, i ->
+      ctx.stmt.setTimestamp(i, java.sql.Timestamp(v.getTime()), Calendar.getInstance(TimeZone.getTimeZone(ctx.timeZone.toJavaZoneId())))
+    }
+  val DateDecoder: JdbcDecoderAny<java.util.Date> =
+    JdbcDecoderAny.fromFunction { ctx, i ->
+      java.util.Date(ctx.row.getTimestamp(i, Calendar.getInstance(ctx.timeZone.toJava())).getTime())
+    }
+
   val SqlDateEncoder: JdbcEncoderAny<java.sql.Date> = JdbcEncoderAny.fromFunction(Types.DATE) { ctx, v, i -> ctx.stmt.setDate(i, v) }
   val SqlTimeEncoder: JdbcEncoderAny<java.sql.Time> = JdbcEncoderAny.fromFunction(Types.TIME) { ctx, v, i -> ctx.stmt.setTime(i, v) }
   val SqlTimestampEncoder: JdbcEncoderAny<Timestamp> = JdbcEncoderAny.fromFunction(Types.TIMESTAMP) { ctx, v, i -> ctx.stmt.setTimestamp(i, v) }
@@ -123,8 +122,8 @@ object AdditionaJdbcTimeEncoding {
   val SqlTimeDecoder: JdbcDecoderAny<java.sql.Time> = JdbcDecoderAny.fromFunction { ctx, i -> ctx.row.getTime(i) }
   val SqlTimestampDecoder: JdbcDecoderAny<java.sql.Timestamp> = JdbcDecoderAny.fromFunction { ctx, i -> ctx.row.getTimestamp(i) }
 
-  val encoders = setOf(SqlDateEncoder, SqlTimeEncoder, SqlTimestampEncoder)
-  val decoders = setOf(SqlDateDecoder, SqlTimeDecoder, SqlTimestampDecoder)
+  val encoders = setOf(BigDecimalEncoder, DateEncoder, SqlDateEncoder, SqlTimeEncoder, SqlTimestampEncoder)
+  val decoders = setOf(BigDecimalDecoder, DateDecoder, SqlDateDecoder, SqlTimeDecoder, SqlTimestampDecoder)
 }
 
 open class JdbcTimeEncoding: JavaTimeEncoding<Connection, PreparedStatement, ResultSet> {

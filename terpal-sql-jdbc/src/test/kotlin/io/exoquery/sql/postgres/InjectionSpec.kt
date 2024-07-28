@@ -3,14 +3,9 @@ package io.exoquery.sql.postgres
 import io.exoquery.sql.*
 import io.exoquery.sql.jdbc.Sql
 import io.exoquery.sql.EncodingSpecData.insert
-import io.exoquery.sql.jdbc.JdbcEncodingBasic.Companion.StringEncoder
 import io.exoquery.sql.jdbc.TerpalContext
 import io.exoquery.sql.jdbc.runOn
 import io.kotest.core.spec.style.FreeSpec
-import java.time.ZoneId
-import io.exoquery.sql.EncodingSpecData.TimeEntity
-import io.exoquery.sql.EncodingSpecData.insertBatch
-import io.exoquery.sql.examples.Simple_SqlServer
 import io.kotest.matchers.shouldBe
 import kotlinx.serialization.Serializable
 

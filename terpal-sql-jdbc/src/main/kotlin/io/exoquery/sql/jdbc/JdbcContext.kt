@@ -11,7 +11,6 @@ import java.sql.Connection
 import java.sql.PreparedStatement
 import java.sql.ResultSet
 import java.sql.SQLException
-import java.util.*
 import javax.sql.DataSource
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.coroutineContext
@@ -22,8 +21,8 @@ abstract class JdbcContext(override val database: DataSource): Context<Connectio
   // that would make it much easier to reason about what encoders fome from where
 
   // Need to do this first in iniitalization
-  protected open val additionalEncoders: Set<SqlEncoder<Connection, PreparedStatement, out Any>> = AdditionaJdbcTimeEncoding.encoders
-  protected open val additionalDecoders: Set<SqlDecoder<Connection, ResultSet, out Any>> = AdditionaJdbcTimeEncoding.decoders
+  protected open val additionalEncoders: Set<SqlEncoder<Connection, PreparedStatement, out Any>> = AdditionaJdbcEncoding.encoders
+  protected open val additionalDecoders: Set<SqlDecoder<Connection, ResultSet, out Any>> = AdditionaJdbcEncoding.decoders
   protected open val timezone: TimeZone = TimeZone.currentSystemDefault()
 
   // If you want to use any primitive-wrapped contextual encoders you need to add them here

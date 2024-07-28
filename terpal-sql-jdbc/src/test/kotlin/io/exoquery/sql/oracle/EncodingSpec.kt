@@ -5,7 +5,7 @@ import io.exoquery.sql.EncodingSpecData.EncodingTestEntity
 import io.exoquery.sql.EncodingSpecData.SerializeableTestType
 import io.exoquery.sql.jdbc.Sql
 import io.exoquery.sql.EncodingSpecData.insert
-import io.exoquery.sql.jdbc.JdbcEncodingBasic.Companion.StringEncoder
+import io.exoquery.sql.jdbc.JdbcBasicEncoding.Companion.StringEncoder
 import io.exoquery.sql.jdbc.TerpalContext
 import io.exoquery.sql.jdbc.runOn
 import io.kotest.core.spec.style.FreeSpec
