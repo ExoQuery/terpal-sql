@@ -7,8 +7,8 @@ import kotlinx.serialization.Serializer
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.descriptors.SerialKind
 import kotlinx.serialization.serializer
-import java.math.BigDecimal
-import java.time.*
+//import java.math.BigDecimal
+import kotlinx.datetime.*
 import kotlin.reflect.KClass
 
 // Note that T can't extend Any because then T will not be allowed to be null when it is being decoded
@@ -43,17 +43,9 @@ data class Param<T>(val serializer: SerializationStrategy<T>, val cls: KClass<*>
     operator fun invoke(value: Boolean?): Param<Boolean> = Param(Boolean.serializer(), Boolean::class, value)
     operator fun invoke(value: ByteArray?): Param<ByteArray> = Param(serializer<ByteArray>(), ByteArray::class, value)
 
-    @OptIn(SerApi::class) operator fun invoke(value: java.util.Date?): Param<java.util.Date> = Param(ContextualSerializer(java.util.Date::class), java.util.Date::class, value)
-    @OptIn(SerApi::class) operator fun invoke(value: java.sql.Date?): Param<java.sql.Date> = Param(ContextualSerializer(java.sql.Date::class), java.sql.Date::class, value)
-    @OptIn(SerApi::class) operator fun invoke(value: java.sql.Time?): Param<java.sql.Time> = Param(ContextualSerializer(java.sql.Time::class), java.sql.Time::class, value)
-    @OptIn(SerApi::class) operator fun invoke(value: java.sql.Timestamp?): Param<java.sql.Timestamp> = Param(ContextualSerializer(java.sql.Timestamp::class), java.sql.Timestamp::class, value)
-    @OptIn(SerApi::class) operator fun invoke(value: BigDecimal?): Param<BigDecimal> = Param(ContextualSerializer(BigDecimal::class), BigDecimal::class, value)
     @OptIn(SerApi::class) operator fun invoke(value: LocalDate?): Param<LocalDate> = Param(ContextualSerializer(LocalDate::class), LocalDate::class, value)
     @OptIn(SerApi::class) operator fun invoke(value: LocalTime?): Param<LocalTime> = Param(ContextualSerializer(LocalTime::class), LocalTime::class, value)
     @OptIn(SerApi::class) operator fun invoke(value: LocalDateTime?): Param<LocalDateTime> = Param(ContextualSerializer(LocalDateTime::class), LocalDateTime::class, value)
-    @OptIn(SerApi::class) operator fun invoke(value: ZonedDateTime?): Param<ZonedDateTime> = Param(ContextualSerializer(ZonedDateTime::class), ZonedDateTime::class, value)
     @OptIn(SerApi::class) operator fun invoke(value: Instant?): Param<Instant> = Param(ContextualSerializer(Instant::class), Instant::class, value)
-    @OptIn(SerApi::class) operator fun invoke(value: OffsetTime?): Param<OffsetTime> = Param(ContextualSerializer(OffsetTime::class), OffsetTime::class, value)
-    @OptIn(SerApi::class) operator fun invoke(value: OffsetDateTime?): Param<OffsetDateTime> = Param(ContextualSerializer(OffsetDateTime::class), OffsetDateTime::class, value)
   }
 }

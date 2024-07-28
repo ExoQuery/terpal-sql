@@ -1,16 +1,50 @@
-import org.gradle.api.tasks.testing.logging.TestExceptionFormat
-import org.gradle.api.tasks.testing.logging.TestLogEvent
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-
 plugins {
+    kotlin("jvm") version "1.9.22"
+
     id("conventions")
     id("publish")
-    id("io.exoquery.terpal-plugin") version "2.0.0-0.2.0"
-    kotlin("jvm") version "2.0.0"
-    kotlin("plugin.serialization") version "2.0.0"
+    id("io.exoquery.terpal-plugin") version "1.9.22-1.0.0-RC1"
+    kotlin("plugin.serialization") version "1.9.22"
 }
 
 val thisVersion = version
+
+
+//tasks.withType<KotlinCompile> {
+//    compilerOptions.jvmTarget.set(JvmTarget.JVM_11)
+//}
+//
+//tasks.withType<KotlinCompile>().configureEach {
+//    kotlinOptions {
+//        jvmTarget = "11"
+//    }
+//}
+//
+//kotlin {
+//    jvmToolchain(11)
+//}
+
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile>().configureEach {
+    compilerOptions {
+        freeCompilerArgs.add("-Xcontext-receivers")
+        // Otherwise will have: Could not resolve io.exoquery:pprint-kotlin:2.0.1.
+        // Incompatible because this component declares a component, compatible with Java 11 and the consumer needed a component, compatible with Java 8
+        java {
+            sourceCompatibility = JavaVersion.VERSION_11
+            targetCompatibility = JavaVersion.VERSION_11
+        }
+        // If I remove this I get:
+        //  'compileJava' task (current target is 11) and 'kaptGenerateStubsKotlin' task (current target is 1.8) jvm target compatibility should be set to the same Java version.
+        // Not sure why
+        //jvmTarget.set(JvmTarget.JVM_11)
+    }
+}
+
+
+tasks.withType<Test>().configureEach {
+    useJUnitPlatform()
+}
+
 
 dependencies {
     // Looks like it knows to do a project-dependency even if there is a version attached (i.e. I guess it ignores the version?)

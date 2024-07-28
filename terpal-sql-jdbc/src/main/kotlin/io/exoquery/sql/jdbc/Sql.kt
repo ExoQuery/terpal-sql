@@ -6,9 +6,12 @@ import java.math.BigDecimal
 import java.sql.Connection
 import java.sql.PreparedStatement
 import java.time.*
+import kotlinx.datetime.LocalTime as KLocalTime
+import kotlinx.datetime.LocalDate as KLocalDate
+import kotlinx.datetime.LocalDateTime as KLocalDateTime
+import kotlinx.datetime.Instant as KInstant
 import java.time.LocalTime
 import kotlin.reflect.KClass
-import kotlin.reflect.full.isSubclassOf
 
 @WrapFailureMessage(
 """For a datatype that does not have a wrap-function, use the Param(...) constructor to lift it into the proper type. You may
@@ -36,6 +39,11 @@ object SqlBatch: SqlJdbcBatchBase() {
   fun wrap(value: java.sql.Date?): Param<java.sql.Date> = Param(value)
   fun wrap(value: java.sql.Time?): Param<java.sql.Time> = Param(value)
   fun wrap(value: java.sql.Timestamp?): Param<java.sql.Timestamp> = Param(value)
+
+  fun wrap(value: KLocalDate?): Param<KLocalDate> = Param(value)
+  fun wrap(value: KLocalTime?): Param<KLocalTime> = Param(value)
+  fun wrap(value: KLocalDateTime?): Param<KLocalDateTime> = Param(value)
+  fun wrap(value: KInstant?): Param<KInstant> = Param(value)
 
   fun wrap(value: LocalDate?): Param<LocalDate> = Param.contextual(value)
   fun wrap(value: LocalTime?): Param<LocalTime> = Param.contextual(value)

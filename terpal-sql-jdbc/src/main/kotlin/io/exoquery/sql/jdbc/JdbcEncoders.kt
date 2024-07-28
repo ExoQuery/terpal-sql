@@ -7,6 +7,7 @@ import io.exoquery.sql.jdbc.AdditionaJdbcTimeEncoding.SqlTimeDecoder
 import io.exoquery.sql.jdbc.AdditionaJdbcTimeEncoding.SqlTimeEncoder
 import io.exoquery.sql.jdbc.AdditionaJdbcTimeEncoding.SqlTimestampDecoder
 import io.exoquery.sql.jdbc.AdditionaJdbcTimeEncoding.SqlTimestampEncoder
+import kotlinx.datetime.toJavaZoneId
 import java.math.BigDecimal
 import java.sql.*
 import java.time.*
@@ -14,6 +15,8 @@ import java.util.*
 
 /** Represents a Jdbc encoder with a nullable or non-nulalble input value */
 typealias JdbcEncoder<T> = SqlEncoder<Connection, PreparedStatement, T>
+
+fun kotlinx.datetime.TimeZone.toJava(): TimeZone = TimeZone.getTimeZone(this.toJavaZoneId())
 
 /** Represents a Jdbc Encoder with a non-nullable input value */
 abstract class JdbcEncoderAny<T: Any>: JdbcEncoder<T>() {
@@ -77,7 +80,7 @@ open class JdbcEncodingBasic: BasicEncoding<Connection, PreparedStatement, Resul
   override val ByteArrayEncoder: JdbcEncoderAny<ByteArray> = JdbcEncoderAny.fromFunction(Types.VARBINARY) { ctx, v, i -> ctx.stmt.setBytes(i, v) }
   override val DateEncoder: JdbcEncoderAny<java.util.Date> =
     JdbcEncoderAny.fromFunction(Types.TIMESTAMP) { ctx, v, i ->
-      ctx.stmt.setTimestamp(i, java.sql.Timestamp(v.getTime()), Calendar.getInstance(ctx.timeZone))
+      ctx.stmt.setTimestamp(i, java.sql.Timestamp(v.getTime()), Calendar.getInstance(TimeZone.getTimeZone(ctx.timeZone.toJavaZoneId())))
     }
 
   override fun preview(index: Int, row: ResultSet): String? = row.getObject(index)?.let { it.toString() }
@@ -97,7 +100,7 @@ open class JdbcEncodingBasic: BasicEncoding<Connection, PreparedStatement, Resul
   override val ByteArrayDecoder: JdbcDecoderAny<ByteArray> = JdbcDecoderAny.fromFunction { ctx, i -> ctx.row.getBytes(i) }
   override val DateDecoder: JdbcDecoderAny<java.util.Date> =
     JdbcDecoderAny.fromFunction { ctx, i ->
-      java.util.Date(ctx.row.getTimestamp(i, Calendar.getInstance(ctx.timeZone)).getTime())
+      java.util.Date(ctx.row.getTimestamp(i, Calendar.getInstance(ctx.timeZone.toJava())).getTime())
     }
 }
 
@@ -165,8 +168,8 @@ object JdbcTimeEncodingLegacy: TimeEncoding<Connection, PreparedStatement, Resul
   override val LocalDateDecoder: JdbcDecoderAny<LocalDate> = JdbcDecoderAny.fromFunction { ctx, i -> ctx.row.getDate(i).toLocalDate() }
   override val LocalTimeDecoder: JdbcDecoderAny<LocalTime> = JdbcDecoderAny.fromFunction { ctx, i -> ctx.row.getTime(i).toLocalTime() }
   override val LocalDateTimeDecoder: JdbcDecoderAny<LocalDateTime> = JdbcDecoderAny.fromFunction { ctx, i -> ctx.row.getTimestamp(i).toLocalDateTime() }
-  override val ZonedDateTimeDecoder: JdbcDecoderAny<ZonedDateTime> = JdbcDecoderAny.fromFunction { ctx, i -> ZonedDateTime.ofInstant(ctx.row.getTimestamp(i).toInstant(), ctx.timeZone.toZoneId()) }
+  override val ZonedDateTimeDecoder: JdbcDecoderAny<ZonedDateTime> = JdbcDecoderAny.fromFunction { ctx, i -> ZonedDateTime.ofInstant(ctx.row.getTimestamp(i).toInstant(), ctx.timeZone.toJavaZoneId()) }
   override val InstantDecoder: JdbcDecoderAny<Instant> = JdbcDecoderAny.fromFunction { ctx, i -> ctx.row.getTimestamp(i).toInstant() }
   override val OffsetTimeDecoder: JdbcDecoderAny<OffsetTime> = JdbcDecoderAny.fromFunction { ctx, i -> OffsetTime.of(ctx.row.getTime(i).toLocalTime(), ZoneOffset.UTC) }
-  override val OffsetDateTimeDecoder: JdbcDecoderAny<OffsetDateTime> = JdbcDecoderAny.fromFunction { ctx, i -> OffsetDateTime.ofInstant(ctx.row.getTimestamp(i).toInstant(), ctx.timeZone.toZoneId()) }
+  override val OffsetDateTimeDecoder: JdbcDecoderAny<OffsetDateTime> = JdbcDecoderAny.fromFunction { ctx, i -> OffsetDateTime.ofInstant(ctx.row.getTimestamp(i).toInstant(), ctx.timeZone.toJavaZoneId()) }
 }
