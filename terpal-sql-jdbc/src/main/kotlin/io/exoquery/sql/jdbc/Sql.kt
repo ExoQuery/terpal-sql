@@ -35,8 +35,8 @@ object SqlBatch: SqlJdbcBatchBase() {
   fun wrap(value: BigDecimal?): Param<BigDecimal> = Param.contextual(value)
   fun wrap(value: ByteArray?): Param<ByteArray> = Param(value)
 
-  fun wrap(value: java.util.Date?): Param<java.util.Date> = Param(value)
-  fun wrap(value: java.sql.Date?): Param<java.sql.Date> = Param(value)
+  fun wrap(value: java.util.Date?): Param<java.util.Date> = Param.fromUtilDate(value)
+  fun wrap(value: java.sql.Date?): Param<java.sql.Date> = Param.fromSqlDate(value)
   fun wrap(value: java.sql.Time?): Param<java.sql.Time> = Param(value)
   fun wrap(value: java.sql.Timestamp?): Param<java.sql.Timestamp> = Param(value)
 
@@ -68,8 +68,8 @@ abstract class SqlJdbcBase(): SqlBase() {
   fun wrap(value: BigDecimal?): SqlFragment = Param.contextual(value)
   fun wrap(value: ByteArray?): SqlFragment = Param(value)
 
-  fun wrap(value: java.util.Date?): SqlFragment = Param(value)
-  fun wrap(value: java.sql.Date?): SqlFragment = Param(value)
+  fun wrap(value: java.util.Date?): SqlFragment = Param.fromUtilDate(value)
+  fun wrap(value: java.sql.Date?): SqlFragment = Param.fromSqlDate(value)
   fun wrap(value: java.sql.Time?): SqlFragment = Param(value)
   fun wrap(value: java.sql.Timestamp?): SqlFragment = Param(value)
 

@@ -122,8 +122,8 @@ object AdditionaJdbcEncoding {
   val SqlTimeDecoder: JdbcDecoderAny<java.sql.Time> = JdbcDecoderAny.fromFunction { ctx, i -> ctx.row.getTime(i) }
   val SqlTimestampDecoder: JdbcDecoderAny<java.sql.Timestamp> = JdbcDecoderAny.fromFunction { ctx, i -> ctx.row.getTimestamp(i) }
 
-  val encoders = setOf(BigDecimalEncoder, DateEncoder, SqlDateEncoder, SqlTimeEncoder, SqlTimestampEncoder)
-  val decoders = setOf(BigDecimalDecoder, DateDecoder, SqlDateDecoder, SqlTimeDecoder, SqlTimestampDecoder)
+  val encoders = setOf(BigDecimalEncoder, /*SqlDateEncoder, DateEncoder, */ SqlTimeEncoder, SqlTimestampEncoder)
+  val decoders = setOf(BigDecimalDecoder, /*SqlDateDecoder, DateDecoder, */ SqlTimeDecoder, SqlTimestampDecoder)
 }
 
 open class JdbcTimeEncoding: JavaTimeEncoding<Connection, PreparedStatement, ResultSet> {

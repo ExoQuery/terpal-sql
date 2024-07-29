@@ -15,9 +15,9 @@ import kotlinx.serialization.ExperimentalSerializationApi as SerApi
 @OptIn(SerApi::class) operator fun Param.Companion.invoke(value: LocalDateTime?): Param<LocalDateTime> = Param(ContextualSerializer(LocalDateTime::class), LocalDateTime::class, value)
 @OptIn(SerApi::class) operator fun Param.Companion.invoke(value: Instant?): Param<Instant> = Param(ContextualSerializer(Instant::class), Instant::class, value)
 
-@OptIn(SerApi::class) operator fun Param.Companion.invoke(value: java.util.Date?): Param<java.util.Date> = Param(ContextualSerializer(java.util.Date::class), java.util.Date::class, value)
-@OptIn(SerApi::class) operator fun Param.Companion.invoke(value: java.sql.Date?): Param<Date> = Param(ContextualSerializer(Date::class), Date::class, value)
-@OptIn(SerApi::class) operator fun Param.Companion.invoke(value: java.sql.Time?): Param<Time> = Param(ContextualSerializer(Time::class), Time::class, value)
+@OptIn(SerApi::class) fun Param.Companion.fromUtilDate(value: java.util.Date?): Param<java.util.Date> = Param(ContextualSerializer(java.util.Date::class), java.util.Date::class, value)
+@OptIn(SerApi::class) fun Param.Companion.fromSqlDate(value: java.sql.Date?): Param<java.sql.Date> = Param(ContextualSerializer(java.sql.Date::class), java.sql.Date::class, value)
+@OptIn(SerApi::class) operator fun Param.Companion.invoke(value: java.sql.Time?): Param<java.sql.Time> = Param(ContextualSerializer(java.sql.Time::class), java.sql.Time::class, value)
 @OptIn(SerApi::class) operator fun Param.Companion.invoke(value: java.sql.Timestamp?): Param<Timestamp> = Param(ContextualSerializer(Timestamp::class), Timestamp::class, value)
 @OptIn(SerApi::class) operator fun Param.Companion.invoke(value: BigDecimal?): Param<BigDecimal> = Param(ContextualSerializer(BigDecimal::class), BigDecimal::class, value)
 @OptIn(SerApi::class) operator fun Param.Companion.invoke(value: ZonedDateTime?): Param<ZonedDateTime> = Param(ContextualSerializer(ZonedDateTime::class), ZonedDateTime::class, value)
