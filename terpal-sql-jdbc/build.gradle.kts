@@ -23,6 +23,8 @@ dependencies {
     implementation("com.zaxxer:HikariCP:5.0.1")
     implementation("com.typesafe:config:1.4.1")
 
+    implementation("com.github.jasync-sql:jasync-postgresql:2.2.4")
+
     testImplementation("io.exoquery:pprint-kotlin:2.0.2")
     testImplementation("io.zonky.test:embedded-postgres:2.0.7")
     testImplementation("mysql:mysql-connector-java:8.0.29")

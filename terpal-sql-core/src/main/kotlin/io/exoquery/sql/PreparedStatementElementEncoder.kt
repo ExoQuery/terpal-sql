@@ -10,6 +10,7 @@ import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.modules.SerializersModule
 
+
 class PreparedStatementElementEncoder<Session, Stmt>(
   val ctx: EncodingContext<Session, Stmt>,
   val index: Int,
