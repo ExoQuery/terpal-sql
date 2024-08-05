@@ -7,7 +7,7 @@ plugins {
 
   id("conventions")
   id("publish")
-  id("io.exoquery.terpal-plugin") version "1.9.22-1.0.0-RC1"
+  id("io.exoquery.terpal-plugin") version "1.9.22-1.0.0-RC2.8"
   kotlin("plugin.serialization") version "1.9.22"
 }
 
@@ -31,7 +31,7 @@ kotlin {
         api("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
         api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
         //api("org.jetbrains.kotlinx:kotlinx-datetime:0.6.0")
-        api("io.exoquery:terpal-runtime:1.9.22-1.0.0-RC1")
+        api("io.exoquery:terpal-runtime:1.9.22-1.0.0-RC2.8")
       }
     }
 

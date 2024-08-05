@@ -268,11 +268,12 @@ object EncodingSpecData {
       null
     )
 
-  fun insert(e: EncodingTestEntity): Action {
+  fun insert(e: EncodingTestEntity): Action { // ///
     val v12: Param<SerializeableTestType> = Param.withSer(e.v12, SerializeableTestType.serializer())
     val v14: Param<UUID> = Param.ctx(e.v14)
     val o12: Param<SerializeableTestType> = Param.withSer(e.o12, SerializeableTestType.serializer())
     val o14: Param<UUID> = Param.ctx(e.o14)
+    //return Sql("INSERT INTO EncodingTestEntity VALUES (${e.v1}, ${e.v2}, ${e.v3}, ${e.v4}, ${e.v5}, ${e.v6}, ${e.v7}, ${e.v8}, ${e.v9}, ${e.v10}, ${e.v11}, ${v12}, ${e.v13}, ${v14}, ${e.o1}, ${e.o2}, ${e.o3}, ${e.o4}, ${e.o5}, ${e.o6}, ${e.o7}, ${e.o8}, ${e.o9}, ${e.o10}, ${e.o11}, ${o12}, ${e.o13}, ${o14})").action()
     return Sql("INSERT INTO EncodingTestEntity VALUES (${e.v1}, ${e.v2}, ${e.v3}, ${e.v4}, ${e.v5}, ${e.v6}, ${e.v7}, ${e.v8}, ${e.v9}, ${e.v10}, ${e.v11}, ${v12}, ${e.v13}, ${v14}, ${e.o1}, ${e.o2}, ${e.o3}, ${e.o4}, ${e.o5}, ${e.o6}, ${e.o7}, ${e.o8}, ${e.o9}, ${e.o10}, ${e.o11}, ${o12}, ${e.o13}, ${o14})").action()
   }
 

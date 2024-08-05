@@ -5,6 +5,7 @@ import java.math.BigDecimal
 import java.util.UUID
 
 interface JavaTimeEncoding<Session, Stmt, Row>: TimeEncoding<Session, Stmt, Row> {
+  val JDateEncoder: SqlEncoder<Session, Stmt, java.util.Date>
   val JLocalDateEncoder: SqlEncoder<Session, Stmt, LocalDate>
   val JLocalTimeEncoder: SqlEncoder<Session, Stmt, LocalTime>
   val JLocalDateTimeEncoder: SqlEncoder<Session, Stmt, LocalDateTime>
@@ -13,6 +14,7 @@ interface JavaTimeEncoding<Session, Stmt, Row>: TimeEncoding<Session, Stmt, Row>
   val JOffsetTimeEncoder: SqlEncoder<Session, Stmt, OffsetTime>
   val JOffsetDateTimeEncoder: SqlEncoder<Session, Stmt, OffsetDateTime>
 
+  val JDateDecoder: SqlDecoder<Session, Row, java.util.Date>
   val JLocalDateDecoder: SqlDecoder<Session, Row, LocalDate>
   val JLocalTimeDecoder: SqlDecoder<Session, Row, LocalTime>
   val JLocalDateTimeDecoder: SqlDecoder<Session, Row, LocalDateTime>
@@ -46,6 +48,7 @@ interface JavaSqlEncoding<Session, Stmt, Row>:
       super.computeEncoders() +
       setOf(
         JUuidEncoder,
+        JDateEncoder,
         JLocalDateEncoder,
         JLocalTimeEncoder,
         JLocalDateTimeEncoder,
@@ -59,6 +62,7 @@ interface JavaSqlEncoding<Session, Stmt, Row>:
       super.computeDecoders() +
       setOf(
         JUuidDecoder,
+        JDateDecoder,
         JLocalDateDecoder,
         JLocalTimeDecoder,
         JLocalDateTimeDecoder,

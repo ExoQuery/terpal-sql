@@ -1,27 +1,27 @@
+import org.gradle.api.tasks.testing.logging.TestExceptionFormat
+import org.jetbrains.kotlin.gradle.dsl.KotlinCompile
+
 plugins {
     kotlin("jvm") version "1.9.22"
 
     id("conventions")
     id("publish")
-    id("io.exoquery.terpal-plugin") version "1.9.22-1.0.0-RC1"
+    id("io.exoquery.terpal-plugin") version "1.9.22-1.0.0-RC2.8"
     kotlin("plugin.serialization") version "1.9.22"
 }
 
 val thisVersion = version
 
-
-//tasks.withType<KotlinCompile> {
-//    compilerOptions.jvmTarget.set(JvmTarget.JVM_11)
-//}
-//
-//tasks.withType<KotlinCompile>().configureEach {
-//    kotlinOptions {
-//        jvmTarget = "11"
+// Enable logging of wrappers
+//tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
+//    compilerOptions {
+//        freeCompilerArgs.addAll(
+//            listOf(
+//                "-P",
+//                "plugin:io.exoquery.terpal-plugin:traceWrappers=true"
+//            )
+//        )
 //    }
-//}
-//
-//kotlin {
-//    jvmToolchain(11)
 //}
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile>().configureEach {
@@ -40,9 +40,11 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile>().configureEa
     }
 }
 
-
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()
+    testLogging {
+            exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+    }
 }
 
 kotlin {

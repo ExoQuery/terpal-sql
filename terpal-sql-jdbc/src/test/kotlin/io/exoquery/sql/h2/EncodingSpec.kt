@@ -12,6 +12,7 @@ import io.exoquery.sql.EncodingSpecData.TimeEntity
 import io.exoquery.sql.EncodingSpecData.insertBatch
 
 class EncodingSpec: FreeSpec({
+
   val ds = TestDatabases.h2
   val ctx by lazy {
     object: TerpalContext.H2(ds) {

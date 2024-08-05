@@ -4,6 +4,7 @@ import io.exoquery.sql.*
 import kotlinx.datetime.*
 import java.math.BigDecimal
 import java.sql.*
+import java.sql.Date
 import java.time.*
 import java.time.Instant
 import java.time.LocalDate
@@ -106,14 +107,6 @@ object AdditionalPostgresEncoding {
 object AdditionaJdbcEncoding {
   val BigDecimalEncoder: JdbcEncoderAny<BigDecimal> = JdbcEncoderAny.fromFunction(Types.NUMERIC) { ctx, v, i -> ctx.stmt.setBigDecimal(i, v) }
   val BigDecimalDecoder: JdbcDecoderAny<BigDecimal> = JdbcDecoderAny.fromFunction { ctx, i -> ctx.row.getBigDecimal(i) }
-  val DateEncoder: JdbcEncoderAny<java.util.Date> =
-    JdbcEncoderAny.fromFunction(Types.TIMESTAMP) { ctx, v, i ->
-      ctx.stmt.setTimestamp(i, java.sql.Timestamp(v.getTime()), Calendar.getInstance(TimeZone.getTimeZone(ctx.timeZone.toJavaZoneId())))
-    }
-  val DateDecoder: JdbcDecoderAny<java.util.Date> =
-    JdbcDecoderAny.fromFunction { ctx, i ->
-      java.util.Date(ctx.row.getTimestamp(i, Calendar.getInstance(ctx.timeZone.toJava())).getTime())
-    }
 
   val SqlDateEncoder: JdbcEncoderAny<java.sql.Date> = JdbcEncoderAny.fromFunction(Types.DATE) { ctx, v, i -> ctx.stmt.setDate(i, v) }
   val SqlTimeEncoder: JdbcEncoderAny<java.sql.Time> = JdbcEncoderAny.fromFunction(Types.TIME) { ctx, v, i -> ctx.stmt.setTime(i, v) }
@@ -122,11 +115,20 @@ object AdditionaJdbcEncoding {
   val SqlTimeDecoder: JdbcDecoderAny<java.sql.Time> = JdbcDecoderAny.fromFunction { ctx, i -> ctx.row.getTime(i) }
   val SqlTimestampDecoder: JdbcDecoderAny<java.sql.Timestamp> = JdbcDecoderAny.fromFunction { ctx, i -> ctx.row.getTimestamp(i) }
 
-  val encoders = setOf(BigDecimalEncoder, /*SqlDateEncoder, DateEncoder, */ SqlTimeEncoder, SqlTimestampEncoder)
-  val decoders = setOf(BigDecimalDecoder, /*SqlDateDecoder, DateDecoder, */ SqlTimeDecoder, SqlTimestampDecoder)
+  val encoders = setOf(BigDecimalEncoder, SqlDateEncoder, SqlTimeEncoder, SqlTimestampEncoder)
+  val decoders = setOf(BigDecimalDecoder, SqlDateDecoder, SqlTimeDecoder, SqlTimestampDecoder)
 }
 
 open class JdbcTimeEncoding: JavaTimeEncoding<Connection, PreparedStatement, ResultSet> {
+  override val JDateEncoder: JdbcEncoderAny<java.util.Date> =
+    JdbcEncoderAny.fromFunction(Types.TIMESTAMP) { ctx, v, i ->
+      ctx.stmt.setTimestamp(i, java.sql.Timestamp(v.getTime()), Calendar.getInstance(ctx.timeZone.toJava()))
+    }
+  override val JDateDecoder: JdbcDecoderAny<java.util.Date> =
+    JdbcDecoderAny.fromFunction { ctx, i ->
+      java.util.Date(ctx.row.getTimestamp(i, Calendar.getInstance(ctx.timeZone.toJava())).getTime())
+    }
+
   // Encoders
   open val jdbcTypeOfLocalDate     = Types.DATE
   open val jdbcTypeOfLocalTime     = Types.TIME
@@ -171,6 +173,15 @@ open class JdbcTimeEncoding: JavaTimeEncoding<Connection, PreparedStatement, Res
 }
 
 object JdbcTimeEncodingLegacy: JavaTimeEncoding<Connection, PreparedStatement, ResultSet> {
+  override val JDateEncoder: JdbcEncoderAny<java.util.Date> =
+    JdbcEncoderAny.fromFunction(Types.TIMESTAMP) { ctx, v, i ->
+      ctx.stmt.setTimestamp(i, java.sql.Timestamp(v.getTime()), Calendar.getInstance(ctx.timeZone.toJava()))
+    }
+  override val JDateDecoder: JdbcDecoderAny<java.util.Date> =
+    JdbcDecoderAny.fromFunction { ctx, i ->
+      java.util.Date(ctx.row.getTimestamp(i, Calendar.getInstance(ctx.timeZone.toJava())).getTime())
+    }
+
   // KMP Date Encoders
   override val LocalDateEncoder: JdbcEncoderAny<kotlinx.datetime.LocalDate> = JdbcEncoderAny.fromFunction(Types.DATE) { ctx, v, i -> ctx.stmt.setDate(i, java.sql.Date.valueOf(v.toJavaLocalDate())) }
   override val LocalDateTimeEncoder: JdbcEncoderAny<kotlinx.datetime.LocalDateTime> = JdbcEncoderAny.fromFunction(Types.TIMESTAMP) { ctx, v, i -> ctx.stmt.setTimestamp(i, java.sql.Timestamp.valueOf(v.toJavaLocalDateTime())) }
@@ -186,6 +197,7 @@ object JdbcTimeEncodingLegacy: JavaTimeEncoding<Connection, PreparedStatement, R
   override val JOffsetDateTimeEncoder: JdbcEncoderAny<OffsetDateTime> = JdbcEncoderAny.fromFunction(Types.TIMESTAMP) { ctx, v, i -> ctx.stmt.setTimestamp(i, java.sql.Timestamp.from(v.toInstant())) }
 
   // KMP Date Decoders
+
   override val LocalDateDecoder: JdbcDecoderAny<kotlinx.datetime.LocalDate> = JdbcDecoderAny.fromFunction { ctx, i -> ctx.row.getDate(i).toLocalDate().toKotlinLocalDate() }
   override val LocalDateTimeDecoder: JdbcDecoderAny<kotlinx.datetime.LocalDateTime> = JdbcDecoderAny.fromFunction { ctx, i -> ctx.row.getTimestamp(i).toLocalDateTime().toKotlinLocalDateTime() }
   override val LocalTimeDecoder: JdbcDecoderAny<kotlinx.datetime.LocalTime> = JdbcDecoderAny.fromFunction { ctx, i -> ctx.row.getTime(i).toLocalTime().toKotlinLocalTime() }
