@@ -67,6 +67,18 @@ CREATE TABLE JsonbExample(
     value JSONB
 );
 
+CREATE TABLE JsonbExample2(
+    id SERIAL PRIMARY KEY,
+    value1 JSONB,
+    value2 JSONB
+);
+
+CREATE TABLE JsonbExample3(
+    id SERIAL PRIMARY KEY,
+    value JSONB,
+    sample SERIAL
+);
+
 CREATE TABLE JsonExample(
     id SERIAL PRIMARY KEY,
     value JSON
