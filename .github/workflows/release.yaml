@@ -42,6 +42,6 @@ jobs:
         uses: gradle/wrapper-validation-action@v1
       - name: Publish Library
         run: |
-          docker-compose build && docker-compose run --rm --service-ports setup;
-          ./gradlew :terpal-sql-core:clean :terpal-sql-core:build :terpal-sql-jdbc:clean :terpal-sql-jdbc:build --stacktrace -PisCI -Pnosign
+          docker compose build && docker-compose run --rm --service-ports setup &&
+          ./gradlew :terpal-sql-core:clean :terpal-sql-core:build :terpal-sql-jdbc:clean :terpal-sql-jdbc:build --stacktrace -PisCI -Pnosign &&
           ./gradlew :terpal-sql-core:publish :terpal-sql-jdbc:publish -PisCI --stacktrace
