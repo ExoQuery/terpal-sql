@@ -8,7 +8,6 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.modules.SerializersModule
-import javax.management.Descriptor
 
 data class ColumnInfo(val name: String, val type: String)
 
@@ -163,31 +162,36 @@ abstract class RowDecoder<Session, Row>(
       null
     } else orElse()
 
-  fun <T> decodeJsonValue(desc: SerialDescriptor, index: Int, deserializer: DeserializationStrategy<T?>): T? {
-    val jsonDecoder = findJsonDecoderOrFail(desc, index)
-    return validNullOrElse(desc, index) {
-      jsonDecoder.decode(ctx, rowIndex)?.let { sqlJson ->
-        // create the json represented inside of the JsonValue
-        val innerValue = json.parseToJsonElement(sqlJson.value)
-        // create the json of the actual JsonValue
-        val outerValue = JsonObject(mapOf("value" to innerValue))
-        // Parse that into a JsonValue
-        val jsonValue = json.decodeFromJsonElement(deserializer, outerValue)
-        jsonValue
-      }
+  fun <T> decodeJsonValue(desc: SerialDescriptor, index: Int, deserializer: DeserializationStrategy<T?>): T? =
+    decodeSqlJson(desc, index)?.let { sqlJson ->
+      // create the json represented inside of the JsonValue
+      val innerValue = json.parseToJsonElement(sqlJson.value)
+      // create the json of the actual JsonValue
+      val outerValue = JsonObject(mapOf("value" to innerValue))
+      // Parse that into a JsonValue
+      val jsonValue = json.decodeFromJsonElement(deserializer, outerValue)
+      jsonValue
     }
-  }
 
-  fun <T> decodeJsonValueContent(desc: SerialDescriptor, index: Int, deserializer: DeserializationStrategy<T?>): T? {
+  fun <T> decodeJsonValueContent(desc: SerialDescriptor, index: Int, deserializer: DeserializationStrategy<T?>): T? =
+    decodeSqlJson(desc, index)?.let { sqlJson ->
+      // create the json represented inside of a JsonValue e.g. MyPerson for JsonValue<MyPerson>
+      val innerValue = json.parseToJsonElement(sqlJson.value)
+      // Parse that into a the JsonValue element instance e.g. MyPerson
+      val jsonValue = json.decodeFromJsonElement(deserializer, innerValue)
+      jsonValue
+    }
+
+  fun <T> decodeJsonAnnotated(desc: SerialDescriptor, index: Int, deserializer: DeserializationStrategy<T?>): T? =
+    decodeSqlJson(desc, index)?.let { sqlJson ->
+      json.decodeFromString(deserializer, sqlJson.value)
+    }
+
+  fun decodeSqlJson(desc: SerialDescriptor, index: Int): SqlJson? {
     val jsonDecoder = findJsonDecoderOrFail(desc, index)
     return validNullOrElse(desc, index) {
-      jsonDecoder.decode(ctx, rowIndex)?.let { sqlJson ->
-        // create the json represented inside of a JsonValue e.g. MyPerson for JsonValue<MyPerson>
-        val innerValue = json.parseToJsonElement(sqlJson.value)
-        // Parse that into a the JsonValue element instance e.g. MyPerson
-        val jsonValue = json.decodeFromJsonElement(deserializer, innerValue)
-        jsonValue
-      }
+      val rowIndex = nextRowIndex(desc, index)
+      jsonDecoder.decode(ctx, rowIndex)
     }
   }
 
@@ -199,15 +203,6 @@ abstract class RowDecoder<Session, Row>(
       ?: throw IllegalArgumentException("Error decoding ${currColName()}. Cannot decode the value of the column ${currColName()} with the descriptor ${desc} to Json. A SqlJson encoder was not found.")
     val jsonDecoder = (jsonDecoderRaw.asNullableIfSpecified() as SqlDecoder<Session, Row, SqlJson?>)
     return jsonDecoder
-  }
-
-  fun <T> decodeJsonAnnotated(desc: SerialDescriptor, index: Int, deserializer: DeserializationStrategy<T?>): T? {
-    val jsonDecoder = findJsonDecoderOrFail(desc, index)
-    return validNullOrElse(desc, index) {
-      jsonDecoder.decode(ctx, rowIndex)?.let { sqlJson ->
-        json.decodeFromString(deserializer, sqlJson.value)
-      }
-    }
   }
 
   @ExperimentalSerializationApi
