@@ -28,6 +28,8 @@ class JsonSpec: FreeSpec({
 
   beforeEach {
     ds.run("DELETE FROM JsonbExample")
+    ds.run("DELETE FROM JsonbExample2")
+    ds.run("DELETE FROM JsonbExample3")
     ds.run("DELETE FROM JsonExample")
   }
 
@@ -121,6 +123,40 @@ class JsonSpec: FreeSpec({
         Sql("INSERT INTO JsonbExample (id, value) VALUES (1, ${Param.withSer(je.jsonValue)})").action().runOn(ctx)
         Sql("SELECT value FROM JsonbExample").queryOf<JsonValue<List<MyPerson>>>().runOn(ctx) shouldBe listOf(je.jsonValue)
       }
+    }
+  }
+  "multiple complex data classes" - {
+    @Serializable
+    data class MyPerson(val name: String, val age: Int)
+
+    @Serializable
+    data class MyJob(val job: String, val salary: Long)
+
+    @Serializable
+    data class JsonbExample2(val id: Int, val jsonValue1: JsonValue<List<MyPerson>>, val jsonValue2: JsonValue<List<MyJob>>)
+
+    val people = listOf(MyPerson("Joe", 30), MyPerson("Jack", 31))
+    val jobs = listOf(MyJob("job1", 100), MyJob("job2", 200))
+    val je = JsonbExample2(1, JsonValue(people), JsonValue(jobs))
+
+    "field value" {
+      Sql("INSERT INTO JsonbExample2 (id, value1, value2) VALUES (1, ${Param.withSer(je.jsonValue1)}, ${Param.withSer(je.jsonValue2)})").action().runOn(ctx)
+      Sql("SELECT id, value1, value2  FROM JsonbExample2").queryOf<JsonbExample2>().runOn(ctx) shouldBe listOf(je)
+    }
+  }
+  "complex data classes before primitive column" - {
+    @Serializable
+    data class MyPerson(val name: String, val age: Int)
+
+    @Serializable
+    data class JsonbExample3(val id: Int, val jsonValue1: JsonValue<List<MyPerson>>, val sample: Int)
+
+    val people = listOf(MyPerson("Joe", 30), MyPerson("Jack", 31))
+    val je = JsonbExample3(1, JsonValue(people), 100)
+
+    "field value" {
+      Sql("INSERT INTO JsonbExample3 (id, value, sample) VALUES (1, ${Param.withSer(je.jsonValue1)}, 100)").action().runOn(ctx)
+      Sql("SELECT id, value, sample  FROM JsonbExample3").queryOf<JsonbExample3>().runOn(ctx) shouldBe listOf(je)
     }
   }
 
