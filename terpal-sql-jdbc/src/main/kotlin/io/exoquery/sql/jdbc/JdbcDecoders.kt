@@ -8,6 +8,7 @@ import java.sql.ResultSet
 import java.sql.SQLException
 import java.time.*
 import java.util.*
+import kotlin.reflect.KClass
 
 data class EncodingException(val msg: String, val errorCause: Throwable? = null): SQLException(msg.toString(), errorCause) {
   override fun toString(): String = msg
@@ -17,13 +18,12 @@ data class EncodingException(val msg: String, val errorCause: Throwable? = null)
 typealias JdbcDecoder<T> = SqlDecoder<Connection, ResultSet, T>
 
 /** Represents a Jdbc Decoder with a non-nullable output value */
-abstract class JdbcDecoderAny<T: Any>: JdbcDecoder<T>() {
+class JdbcDecoderAny<T: Any>(override val type: KClass<T>, val f: (JdbcDecodingContext, Int) -> T): JdbcDecoder<T>() {
+  override fun decode(ctx: JdbcDecodingContext, index: Int): T =
+    f(ctx, index)
+
   inline fun <reified R: Any> map(crossinline f: (T) -> R): JdbcDecoderAny<R> =
-    object: JdbcDecoderAny<R>() {
-      override val type = R::class
-      override fun decode(ctx: JdbcDecodingContext, index: Int) =
-        f(this@JdbcDecoderAny.decode(ctx, index))
-    }
+    JdbcDecoderAny<R>(R::class) { ctx, index -> f(this.decode(ctx, index)) }
 
   override fun asNullable(): SqlDecoder<Connection, ResultSet, T?> =
     object: SqlDecoder<Connection, ResultSet, T?>() {
@@ -37,18 +37,4 @@ abstract class JdbcDecoderAny<T: Any>: JdbcDecoder<T>() {
           this@JdbcDecoderAny.decode(ctx, index)
       }
     }
-
-  companion object {
-    inline fun <reified T: Any> fromFunction(crossinline f: (JdbcDecodingContext, Int) -> T?): JdbcDecoderAny<T> =
-      object: JdbcDecoderAny<T>() {
-        override val type = T::class
-        override fun decode(ctx: JdbcDecodingContext, index: Int) =
-          try {
-            f(ctx, index) ?: throw EncodingException("Non-nullable Decoder returned null")
-          } catch (e: Throwable) {
-            throw EncodingException("Error decoding index: $index, column: ${ctx.row.metaData.getColumnName(index)} and expected type: ${T::class}", e)
-          }
-
-      }
-  }
 }

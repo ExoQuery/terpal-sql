@@ -72,30 +72,9 @@ interface ApiDecoders<Session, Row> {
 
 data class SqlJson(val value: String)
 
-interface BasicEncoding<Session, Stmt, Row> {
-  val ByteEncoder: SqlEncoder<Session, Stmt, Byte>
-  val CharEncoder: SqlEncoder<Session, Stmt, Char>
-  val DoubleEncoder: SqlEncoder<Session, Stmt, Double>
-  val FloatEncoder: SqlEncoder<Session, Stmt, Float>
-  val IntEncoder: SqlEncoder<Session, Stmt, Int>
-  val LongEncoder: SqlEncoder<Session, Stmt, Long>
-  val ShortEncoder: SqlEncoder<Session, Stmt, Short>
-  val StringEncoder: SqlEncoder<Session, Stmt, String>
-  val ByteArrayEncoder: SqlEncoder<Session, Stmt, ByteArray>
-
-  val ByteDecoder: SqlDecoder<Session, Row, Byte>
-  val CharDecoder: SqlDecoder<Session, Row, Char>
-  val DoubleDecoder: SqlDecoder<Session, Row, Double>
-  val FloatDecoder: SqlDecoder<Session, Row, Float>
-  val IntDecoder: SqlDecoder<Session, Row, Int>
-  val LongDecoder: SqlDecoder<Session, Row, Long>
-  val ShortDecoder: SqlDecoder<Session, Row, Short>
-  val StringDecoder: SqlDecoder<Session, Row, String>
-  val ByteArrayDecoder: SqlDecoder<Session, Row, ByteArray>
-
-  abstract fun isNull(index: Int, row: Row): Boolean
-  abstract fun preview(index: Int, row: Row): String?
-}
+interface BasicEncoding<Session, Stmt, Row>:
+  ApiEncoders<Session, Stmt>,
+  ApiDecoders<Session, Row>
 
 interface TimeEncoding<Session, Stmt, Row> {
   val LocalDateEncoder: SqlEncoder<Session, Stmt, LocalDate>

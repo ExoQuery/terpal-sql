@@ -27,9 +27,9 @@ object ContextualColumnClob {
 
     val ctx = object: TerpalContext.Postgres(postgres.postgresDatabase) {
       override val additionalDecoders =
-        super.additionalDecoders + JdbcDecoderAny.fromFunction { ctx, i -> ByteContent(ctx.row.getBinaryStream(i)) }
+        super.additionalDecoders + JdbcDecoderAny(ByteContent::class) { ctx, i -> ByteContent(ctx.row.getBinaryStream(i)) }
       override val additionalEncoders =
-        super.additionalEncoders + JdbcEncoderAny.fromFunction(Types.BLOB) { ctx, v: ByteContent, i -> ctx.stmt.setBinaryStream(i, v.bytes) }
+        super.additionalEncoders + JdbcEncoderAny(Types.BLOB, ByteContent::class) { ctx, v: ByteContent, i -> ctx.stmt.setBinaryStream(i, v.bytes) }
     }
 
     val (RED, BLUE) = "\u001B[31m" to "\u001B[34m"

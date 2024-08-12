@@ -12,26 +12,22 @@ plugins {
 }
 
 kotlin {
-  jvm {
-    jvmToolchain(11)
-  }
 
-  java {
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
-  }
+  val thisVersion = version
 
-  // TODO add back the other platforms
   linuxX64()
 
   sourceSets {
     val commonMain by getting {
       dependencies {
+        api("io.exoquery:terpal-sql-core:${thisVersion}")
+
         api("org.jetbrains.kotlinx:kotlinx-serialization-core:1.6.2")
         api("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
         api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
         //api("org.jetbrains.kotlinx:kotlinx-datetime:0.6.0")
         api("io.exoquery:terpal-runtime:1.9.22-1.0.0-RC2.8")
+        implementation("app.cash.sqldelight:native-driver:2.0.2")
       }
     }
 
