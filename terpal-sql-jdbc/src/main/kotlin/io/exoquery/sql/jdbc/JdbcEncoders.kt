@@ -4,7 +4,6 @@ import io.exoquery.sql.*
 import kotlinx.datetime.*
 import java.math.BigDecimal
 import java.sql.*
-import java.sql.Date
 import java.time.*
 import java.time.Instant
 import java.time.LocalDate
@@ -20,30 +19,42 @@ typealias JdbcEncoder<T> = SqlEncoder<Connection, PreparedStatement, T>
 
 fun kotlinx.datetime.TimeZone.toJava(): TimeZone = TimeZone.getTimeZone(this.toJavaZoneId())
 
-open class JdbcEncoderAny<T: Any>(val jdbcType: Int, override val type: KClass<T>, val f: (JdbcEncodingContext, T, Int) -> Unit):JdbcEncoder<T>() {
-  override fun encode(ctx: JdbcEncodingContext, value: T, index: Int) =
-    f(ctx, value, index)
+//open class JdbcEncoderAny<T: Any>(val jdbcType: Int, override val type: KClass<T>, val f: (JdbcEncodingContext, T, Int) -> Unit):JdbcEncoder<T>() {
+//  override fun encode(ctx: JdbcEncodingContext, value: T, index: Int) =
+//    f(ctx, value, index)
+//
+//  override fun asNullable(): JdbcEncoder<T?> =
+//    object: JdbcEncoder<T?>() {
+//      override val type = this@JdbcEncoderAny.type
+//      val jdbcType = this@JdbcEncoderAny.jdbcType
+//      override fun asNullable(): SqlEncoder<Connection, PreparedStatement, T?> = this
+//
+//      override fun encode(ctx: JdbcEncodingContext, value: T?, index: Int) =
+//        try {
+//          if (value != null)
+//            this@JdbcEncoderAny.encode(ctx, value, index)
+//          else
+//            ctx.stmt.setNull(index, jdbcType)
+//        } catch (e: Throwable) {
+//          throw EncodingException("Error encoding ${type} value: $value at index: $index (whose jdbc-type: ${jdbcType})", e)
+//        }
+//    }
+//
+//  inline fun <reified R: Any> contramap(crossinline f: (R) -> T):JdbcEncoderAny<R> =
+//    JdbcEncoderAny<R>(this@JdbcEncoderAny.jdbcType, R::class) { _, value, _ -> f(value) }
+//}
 
-  override fun asNullable(): JdbcEncoder<T?> =
-    object: JdbcEncoder<T?>() {
-      override val type = this@JdbcEncoderAny.type
-      val jdbcType = this@JdbcEncoderAny.jdbcType
-      override fun asNullable(): SqlEncoder<Connection, PreparedStatement, T?> = this
+//typealias JdbcEncoderAny<T> = EncoderAny<T, Int, Connection, PreparedStatement>
 
-      override fun encode(ctx: JdbcEncodingContext, value: T?, index: Int) =
-        try {
-          if (value != null)
-            this@JdbcEncoderAny.encode(ctx, value, index)
-          else
-            ctx.stmt.setNull(index, jdbcType)
-        } catch (e: Throwable) {
-          throw EncodingException("Error encoding ${type} value: $value at index: $index (whose jdbc-type: ${jdbcType})", e)
-        }
-    }
-
-  inline fun <reified R: Any> contramap(crossinline f: (R) -> T):JdbcEncoderAny<R> =
-    JdbcEncoderAny<R>(this@JdbcEncoderAny.jdbcType, R::class) { _, value, _ -> f(value) }
-}
+class JdbcEncoderAny<T: Any>(
+  override val dataType: Int,
+  override val type: KClass<T>,
+  override val f: (JdbcEncodingContext, T, Int) -> Unit
+): EncoderAny<T, Int, Connection, PreparedStatement>(
+  dataType, type,
+  { i, stmt, dbType -> stmt.setNull(i, dbType) },
+  f
+)
 
 open class JdbcBasicEncoding:
   BasicEncoding<Connection, PreparedStatement, ResultSet> {

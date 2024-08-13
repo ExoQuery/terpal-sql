@@ -35,11 +35,6 @@ abstract class SqlEncoder<Session, Statement, T> {
   }
 }
 
-interface BooleanEncoding<Session, Stmt, Row> {
-  val BooleanEncoder: SqlEncoder<Session, Stmt, Boolean>
-  val BooleanDecoder: SqlDecoder<Session, Row, Boolean>
-}
-
 // Used by the PreparedStatementEncoder
 interface ApiEncoders<Session, Stmt> {
   val BooleanEncoder: SqlEncoder<Session, Stmt, Boolean>
@@ -90,10 +85,6 @@ interface TimeEncoding<Session, Stmt, Row> {
 
 interface SqlEncoding<Session, Stmt, Row>:
   BasicEncoding<Session, Stmt, Row>,
-  BooleanEncoding<Session, Stmt, Row>,
-  // Use by the PreparedStatementElementEncoder and the RowDecoder
-  ApiEncoders<Session, Stmt>,
-  ApiDecoders<Session, Row>,
   TimeEncoding<Session, Stmt, Row> {
 
   fun computeEncoders(): Set<SqlEncoder<Session, Stmt, out Any>> =

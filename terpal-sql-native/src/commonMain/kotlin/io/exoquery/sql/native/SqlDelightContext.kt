@@ -4,65 +4,106 @@ import app.cash.sqldelight.driver.native.NativeSqliteDriver
 import co.touchlab.sqliter.Cursor
 import co.touchlab.sqliter.DatabaseConnection
 import co.touchlab.sqliter.Statement
+import co.touchlab.sqliter.FieldType
 import io.exoquery.sql.*
+import kotlinx.datetime.*
+import kotlin.reflect.KClass
 
 class SqlDelightContext(val driver: NativeSqliteDriver) {
 
 
 
-
   suspend fun <T> run(query: Query<T>): List<T> = TODO()
-
 }
 
 typealias NativeEncoder<T> = SqlEncoder<DatabaseConnection, Statement, T>
-
-
 typealias NativeEncodingContext = EncodingContext<DatabaseConnection, Statement>
 typealias NativeDecodingContext = DecodingContext<DatabaseConnection, Cursor>
+typealias FieldType = Int
 
-//abstract class NativeEncoderAny<T: Any>: NativeEncoder<T>() {
-//  abstract val jdbcType: Int
-//
-//  override fun asNullable(): NativeEncoder<T?> =
-//    object: NativeEncoder<T?>() {
-//      override val type = this@NativeEncoderAny.type
-//      val jdbcType = this@NativeEncoderAny.jdbcType
-//      override fun asNullable(): SqlEncoder<DatabaseConnection, Statement, T?> = this
-//
-//      override fun encode(ctx: NativeEncodingContext, value: T?, index: Int) =
-//        try {
-//          if (value != null)
-//            this@NativeEncoderAny.encode(ctx, value, index)
-//          else
-//            ctx.stmt.bindNull(index)
-//        } catch (e: Throwable) {
-//          throw EncodingException("Error encoding ${type} value: $value at index: $index (whose jdbc-type: ${jdbcType})", e)
-//        }
-//    }
-//
-//  inline fun <reified R: Any> contramap(crossinline f: (R) -> T):NativeEncoderAny<R> =
-//    object: NativeEncoderAny<R>() {
-//      override val type = R::class
-//      // Get the JDBC type from the parent. This makes sense because most of the time contramapped encoders are from primivites
-//      // e.g. StringDecoder.contramap { ... } so we want the jdbc type from the parent.
-//      override val jdbcType = this@NativeEncoderAny.jdbcType
-//      override fun encode(ctx: NativeEncodingContext, value: R, index: Int) =
-//        this@NativeEncoderAny.encode(ctx, f(value), index)
-//    }
-//
-//  /*
-//  expected:<[EncodingTestEntity(v1=s, v2=1.1, v3=true, v4=11, v5=23, v6=33, v7=431, v8=34.4, v9=42.0, v10=[1, 2], v11=Fri Nov 22 19:00:00 EST 2013, v12=EncodingTestType(value=s), v13=2013-11-23, v14=173fb134-c84b-4bb2-be5c-85b2552f60b5, o1=s, o2=1.1, o3=true, o4=11, o5=23, o6=33, o7=431, o8=34.4, o9=42.0, o10=[1, 2], o11=Fri Nov 22 19:00:00 EST 2013, o12=EncodingTestType(value=s), o13=2013-11-23, o14=348e85a2-d953-4cb6-a2ff-a90f02006eb4),
-//             EncodingTestEntity(v1=, v2=0, v3=false, v4=0, v5=0, v6=0, v7=0, v8=0.0, v9=0.0, v10=[], v11=1969-12-31, v12=EncodingTestType(value=), v13=1970-01-01, v14=00000000-0000-0000-0000-000000000000, o1=null, o2=null, o3=null, o4=null, o5=null, o6=null, o7=null, o8=null, o9=null, o10=null, o11=null, o12=null, o13=null, o14=null)]> but was:<[EncodingTestEntity(v1=s, v2=1.10, v3=true, v4=11, v5=23, v6=33, v7=431, v8=34.4, v9=42.0, v10=[1, 2], v11=Fri Nov 22 19:00:00 EST 2013, v12=EncodingTestType(value=s), v13=2013-11-23, v14=173fb134-c84b-4bb2-be5c-85b2552f60b5, o1=s, o2=1.10, o3=true, o4=null, o5=null, o6=null, o7=null, o8=null, o9=null, o10=null, o11=null, o12=null, o13=null, o14=null), EncodingTestEntity(v1=, v2=0.00, v3=false, v4=0, v5=0, v6=0, v7=0, v8=0.0, v9=0.0, v10=[], v11=Wed Dec 31 19:00:00 EST 1969, v12=EncodingTestType(value=), v13=1970-01-01, v14=00000000-0000-0000-0000-000000000000, o1=null, o2=null, o3=null, o4=null, o5=null, o6=null, o7=null, o8=null, o9=null, o10=null, o11=null, o12=null, o13=null, o14=null)]>
-//   */
-//
-//  companion object {
-//    inline fun <reified T: Any> fromFunction(jdbcTypeNum: Int, crossinline f: (NativeEncodingContext, T, Int) -> Unit): NativeEncoderAny<T> =
-//      object: NativeEncoderAny<T>() {
-//        override val jdbcType: Int = jdbcTypeNum
-//        override val type = T::class
-//        override fun encode(ctx: NativeEncodingContext, value: T, index: Int) =
-//          f(ctx, value, index)
-//      }
-//  }
-//}
+class NativeEncoderAny<T: Any>(
+  override val dataType: FieldType,
+  override val type: KClass<T>,
+  override val f: (NativeEncodingContext, T, Int) -> Unit
+): EncoderAny<T, FieldType, DatabaseConnection, Statement>(
+  dataType,
+  type,
+  { index, stmt, dataType -> stmt.bindNull(index) },
+  f
+)
+
+class NativeDecoderAny<T: Any>(
+  override val type: KClass<T>,
+  override val f: (NativeDecodingContext, Int) -> T
+): DecoderAny<T, DatabaseConnection, Cursor>(
+  type,
+  { index, cursor -> cursor.isNull(index) },
+  f
+)
+
+object NativeSqlEncoding: SqlEncoding<DatabaseConnection, Statement, Cursor>,
+  BasicEncoding<DatabaseConnection, Statement, Cursor> by NativeBasicEncoding,
+  TimeEncoding<DatabaseConnection, Statement, Cursor> by NativeTimeEncoding
+
+object NativeBasicEncoding: BasicEncoding<DatabaseConnection, Statement, Cursor> {
+  override val StringEncoder: NativeEncoderAny<String> = NativeEncoderAny(FieldType.TYPE_TEXT, String::class) { ctx, value, index -> ctx.stmt.bindString(index, value) }
+  override val StringDecoder: NativeDecoderAny<String> = NativeDecoderAny(String::class) { ctx, index -> ctx.row.getString(index) }
+
+  override val BooleanEncoder: NativeEncoderAny<Boolean> = NativeEncoderAny(FieldType.TYPE_INTEGER, Boolean::class) { ctx, value, index -> ctx.stmt.bindLong(index, if (value) 1 else 0) }
+  override val BooleanDecoder: NativeDecoderAny<Boolean> = NativeDecoderAny(Boolean::class) { ctx, index -> ctx.row.getLong(index) == 1L }
+
+  override val IntDecoder: NativeDecoderAny<Int> = NativeDecoderAny(Int::class) { ctx, index -> ctx.row.getLong(index).toInt() }
+  override val IntEncoder: NativeEncoderAny<Int> = NativeEncoderAny(FieldType.TYPE_INTEGER, Int::class) { ctx, value, index -> ctx.stmt.bindLong(index, value.toLong()) }
+
+  override val ShortEncoder: NativeEncoderAny<Short> = NativeEncoderAny(FieldType.TYPE_INTEGER, Short::class) { ctx, value, index -> ctx.stmt.bindLong(index, value.toLong()) }
+  override val ShortDecoder: NativeDecoderAny<Short> = NativeDecoderAny(Short::class) { ctx, index -> ctx.row.getLong(index).toShort() }
+
+  override val LongEncoder: NativeEncoderAny<Long> = NativeEncoderAny(FieldType.TYPE_INTEGER, Long::class) { ctx, value, index -> ctx.stmt.bindLong(index, value) }
+  override val LongDecoder: NativeDecoderAny<Long> = NativeDecoderAny(Long::class) { ctx, index -> ctx.row.getLong(index) }
+
+  override val DoubleEncoder: NativeEncoderAny<Double> = NativeEncoderAny(FieldType.TYPE_FLOAT, Double::class) { ctx, value, index -> ctx.stmt.bindDouble(index, value) }
+  override val DoubleDecoder: NativeDecoderAny<Double> = NativeDecoderAny(Double::class) { ctx, index -> ctx.row.getDouble(index) }
+
+  override val ByteEncoder: NativeEncoderAny<Byte> = NativeEncoderAny(FieldType.TYPE_INTEGER, Byte::class) { ctx, value, index -> ctx.stmt.bindLong(index, value.toLong()) }
+  override val ByteDecoder: NativeDecoderAny<Byte> = NativeDecoderAny(Byte::class) { ctx, index -> ctx.row.getLong(index).toByte() }
+
+  override val CharEncoder: NativeEncoderAny<Char> = NativeEncoderAny(FieldType.TYPE_TEXT, Char::class) { ctx, value, index -> ctx.stmt.bindString(index, value.toString()) }
+  override val CharDecoder: NativeDecoderAny<Char> = NativeDecoderAny(Char::class) { ctx, index -> ctx.row.getString(index).single() }
+
+  override val FloatEncoder: NativeEncoderAny<Float> = NativeEncoderAny(FieldType.TYPE_FLOAT, Float::class) { ctx, value, index -> ctx.stmt.bindDouble(index, value.toDouble()) }
+  override val FloatDecoder: NativeDecoderAny<Float> = NativeDecoderAny(Float::class) { ctx, index -> ctx.row.getDouble(index).toFloat() }
+
+  override val ByteArrayEncoder: NativeEncoderAny<ByteArray> = NativeEncoderAny(FieldType.TYPE_BLOB, ByteArray::class) { ctx, value, index -> ctx.stmt.bindBlob(index, value) }
+  override val ByteArrayDecoder: NativeDecoderAny<ByteArray> = NativeDecoderAny(ByteArray::class) { ctx, index -> ctx.row.getBytes(index) }
+
+  override fun preview(index: Int, row: Cursor): String? = row.getString(index)
+  override fun isNull(index: Int, row: Cursor): Boolean = row.isNull(index)
+}
+
+object NativeTimeEncoding: TimeEncoding<DatabaseConnection, Statement, Cursor> {
+  override val InstantEncoder: NativeEncoderAny<Instant> = NativeEncoderAny(FieldType.TYPE_INTEGER, Instant::class) { ctx, value, index -> ctx.stmt.bindLong(index, value.toEpochMilliseconds()) }
+  override val InstantDecoder: NativeDecoderAny<Instant> = NativeDecoderAny(Instant::class) { ctx, index -> Instant.fromEpochMilliseconds(ctx.row.getLong(index)) }
+
+  override val LocalDateEncoder: NativeEncoderAny<LocalDate> = NativeEncoderAny(FieldType.TYPE_INTEGER, LocalDate::class) { ctx, value, index -> ctx.stmt.bindLong(index, value.toEpochDays().toLong()) }
+  override val LocalDateDecoder: NativeDecoderAny<LocalDate> = NativeDecoderAny(LocalDate::class) { ctx, index -> LocalDate.fromEpochDays(ctx.row.getLong(index).toInt()) }
+
+  override val LocalTimeEncoder: NativeEncoderAny<LocalTime> = NativeEncoderAny(FieldType.TYPE_INTEGER, LocalTime::class) { ctx, value, index -> ctx.stmt.bindLong(index, value.toNanosecondOfDay()) }
+  override val LocalTimeDecoder: NativeDecoderAny<LocalTime> = NativeDecoderAny(LocalTime::class) { ctx, index -> LocalTime.fromNanosecondOfDay(ctx.row.getLong(index)) }
+
+  override val LocalDateTimeEncoder: NativeEncoderAny<LocalDateTime> = NativeEncoderAny(FieldType.TYPE_INTEGER, LocalDateTime::class) { ctx, value, index -> ctx.stmt.bindLong(index, value.toInstant(ctx.timeZone).toEpochMilliseconds()) }
+  override val LocalDateTimeDecoder: NativeDecoderAny<LocalDateTime> = NativeDecoderAny(LocalDateTime::class) { ctx, index -> Instant.fromEpochMilliseconds(ctx.row.getLong(index)).toLocalDateTime(ctx.timeZone) }
+}
+
+object NativeTimeStringEncoding: TimeEncoding<DatabaseConnection, Statement, Cursor> {
+  override val InstantEncoder: NativeEncoderAny<Instant> = NativeEncoderAny(FieldType.TYPE_TEXT, Instant::class) { ctx, value, index -> ctx.stmt.bindString(index, value.toString()) }
+  override val InstantDecoder: NativeDecoderAny<Instant> = NativeDecoderAny(Instant::class) { ctx, index -> Instant.parse(ctx.row.getString(index)) }
+
+  override val LocalDateEncoder: NativeEncoderAny<LocalDate> = NativeEncoderAny(FieldType.TYPE_TEXT, LocalDate::class) { ctx, value, index -> ctx.stmt.bindString(index, value.toString()) }
+  override val LocalDateDecoder: NativeDecoderAny<LocalDate> = NativeDecoderAny(LocalDate::class) { ctx, index -> LocalDate.parse(ctx.row.getString(index)) }
+
+  override val LocalTimeEncoder: NativeEncoderAny<LocalTime> = NativeEncoderAny(FieldType.TYPE_TEXT, LocalTime::class) { ctx, value, index -> ctx.stmt.bindString(index, value.toString()) }
+  override val LocalTimeDecoder: NativeDecoderAny<LocalTime> = NativeDecoderAny(LocalTime::class) { ctx, index -> LocalTime.parse(ctx.row.getString(index)) }
+
+  override val LocalDateTimeEncoder: NativeEncoderAny<LocalDateTime> = NativeEncoderAny(FieldType.TYPE_TEXT, LocalDateTime::class) { ctx, value, index -> ctx.stmt.bindString(index, value.toString()) }
+  override val LocalDateTimeDecoder: NativeDecoderAny<LocalDateTime> = NativeDecoderAny(LocalDateTime::class) { ctx, index -> LocalDateTime.parse(ctx.row.getString(index)) }
+}

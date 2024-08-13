@@ -55,7 +55,7 @@ CREATE TABLE IF NOT EXISTS EncodingTestEntity(
     o6 INTEGER,
     o7 BIGINT,
     o8 FLOAT,
-    o9 DOUBLE PRECISIOn,
+    o9 DOUBLE PRECISION,
     o10 BLOB,
     o11 BIGINT,
     o12 VARCHAR(255),
