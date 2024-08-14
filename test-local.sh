@@ -1,2 +1,0 @@
-docker-compose down && docker-compose build && docker-compose run --rm --service-ports setup;
-./gradlew :terpal-sql-core:clean :terpal-sql-core:build :terpal-sql-jdbc:clean :terpal-sql-jdbc:build --stacktrace -PisCI -Pnosign
