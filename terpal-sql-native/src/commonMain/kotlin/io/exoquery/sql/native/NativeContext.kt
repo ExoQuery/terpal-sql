@@ -1,19 +1,55 @@
+/*
 package io.exoquery.sql.native
 
-import app.cash.sqldelight.driver.native.NativeSqliteDriver
-import co.touchlab.sqliter.Cursor
-import co.touchlab.sqliter.DatabaseConnection
-import co.touchlab.sqliter.Statement
+import app.cash.sqldelight.db.QueryResult
+import co.touchlab.sqliter.*
 import co.touchlab.sqliter.FieldType
+import co.touchlab.sqliter.Statement
 import io.exoquery.sql.*
 import kotlinx.datetime.*
+import kotlinx.serialization.modules.EmptySerializersModule
+import kotlinx.serialization.modules.SerializersModule
 import kotlin.reflect.KClass
 
-class SqlDelightContext(val driver: NativeSqliteDriver) {
+class DualPool(
+  val databaseManager: DatabaseManager,
+  val maxReaderConnections: Int = 1
+) {
+  private val transactionPool: Pool<ThreadConnection>
+  internal val readerPool: Pool<ThreadConnection>
+
+  companion object {
+    operator fun invoke(configuration: DatabaseConfiguration, maxReaderConnections: Int = 1) =
+      DualPool(createDatabaseManager(configuration), maxReaderConnections)
+
+//    fun inMemory(maxReaderConnections: Int = 1): DualPool {
+//      return DualPool(DatabaseConfiguration("file::memory:?cache=shared"), maxReaderConnections)
+//    }
+  }
+}
+
+open class NativeContext(
+  val dualPool: DualPool
+) {
 
 
+  protected open val additionalEncoders: Set<SqlEncoder<DatabaseConnection, Statement, out Any>> = setOf()
+  protected open val additionalDecoders: Set<SqlDecoder<DatabaseConnection, Cursor, out Any>> = setOf()
+  protected open val timezone: TimeZone = TimeZone.currentSystemDefault()
 
-  suspend fun <T> run(query: Query<T>): List<T> = TODO()
+  // If you want to use any primitive-wrapped contextual encoders you need to add them here
+  protected open val module: SerializersModule = EmptySerializersModule()
+
+  protected val encodingApi: SqlEncoding<DatabaseConnection, Statement, Cursor> = NativeSqlEncoding
+
+  protected open fun createEncodingContext(session: DatabaseConnection, stmt: Statement) = EncodingContext(session, stmt, timezone)
+  protected open fun createDecodingContext(session: DatabaseConnection, row: Cursor) = DecodingContext(session, row, timezone)
+
+  fun <T> run(query: Query<T>): QueryResult<T> {
+
+
+    return TODO()
+  }
 }
 
 typealias NativeEncoder<T> = SqlEncoder<DatabaseConnection, Statement, T>
@@ -45,6 +81,10 @@ object NativeSqlEncoding: SqlEncoding<DatabaseConnection, Statement, Cursor>,
   BasicEncoding<DatabaseConnection, Statement, Cursor> by NativeBasicEncoding,
   TimeEncoding<DatabaseConnection, Statement, Cursor> by NativeTimeEncoding
 
+object NativeSqlEncodingStringTimes: SqlEncoding<DatabaseConnection, Statement, Cursor>,
+  BasicEncoding<DatabaseConnection, Statement, Cursor> by NativeBasicEncoding,
+  TimeEncoding<DatabaseConnection, Statement, Cursor> by NativeTimeStringEncoding
+
 object NativeBasicEncoding: BasicEncoding<DatabaseConnection, Statement, Cursor> {
   override val StringEncoder: NativeEncoderAny<String> = NativeEncoderAny(FieldType.TYPE_TEXT, String::class) { ctx, value, index -> ctx.stmt.bindString(index, value) }
   override val StringDecoder: NativeDecoderAny<String> = NativeDecoderAny(String::class) { ctx, index -> ctx.row.getString(index) }
@@ -52,8 +92,8 @@ object NativeBasicEncoding: BasicEncoding<DatabaseConnection, Statement, Cursor>
   override val BooleanEncoder: NativeEncoderAny<Boolean> = NativeEncoderAny(FieldType.TYPE_INTEGER, Boolean::class) { ctx, value, index -> ctx.stmt.bindLong(index, if (value) 1 else 0) }
   override val BooleanDecoder: NativeDecoderAny<Boolean> = NativeDecoderAny(Boolean::class) { ctx, index -> ctx.row.getLong(index) == 1L }
 
-  override val IntDecoder: NativeDecoderAny<Int> = NativeDecoderAny(Int::class) { ctx, index -> ctx.row.getLong(index).toInt() }
   override val IntEncoder: NativeEncoderAny<Int> = NativeEncoderAny(FieldType.TYPE_INTEGER, Int::class) { ctx, value, index -> ctx.stmt.bindLong(index, value.toLong()) }
+  override val IntDecoder: NativeDecoderAny<Int> = NativeDecoderAny(Int::class) { ctx, index -> ctx.row.getLong(index).toInt() }
 
   override val ShortEncoder: NativeEncoderAny<Short> = NativeEncoderAny(FieldType.TYPE_INTEGER, Short::class) { ctx, value, index -> ctx.stmt.bindLong(index, value.toLong()) }
   override val ShortDecoder: NativeDecoderAny<Short> = NativeDecoderAny(Short::class) { ctx, index -> ctx.row.getLong(index).toShort() }
@@ -107,3 +147,4 @@ object NativeTimeStringEncoding: TimeEncoding<DatabaseConnection, Statement, Cur
   override val LocalDateTimeEncoder: NativeEncoderAny<LocalDateTime> = NativeEncoderAny(FieldType.TYPE_TEXT, LocalDateTime::class) { ctx, value, index -> ctx.stmt.bindString(index, value.toString()) }
   override val LocalDateTimeDecoder: NativeDecoderAny<LocalDateTime> = NativeDecoderAny(LocalDateTime::class) { ctx, index -> LocalDateTime.parse(ctx.row.getString(index)) }
 }
+*/

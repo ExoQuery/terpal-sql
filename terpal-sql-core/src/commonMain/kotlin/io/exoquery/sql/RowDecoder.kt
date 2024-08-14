@@ -88,7 +88,6 @@ abstract class RowDecoder<Session, Row>(
   val initialRowIndex: Int,
   val api: ApiDecoders<Session, Row>,
   val decoders: Set<SqlDecoder<Session, Row, out Any>>,
-  val columnInfos: List<ColumnInfo>,
   val type: RowDecoderType,
   val json: Json,
   val endCallback: (Int) -> Unit
@@ -97,7 +96,7 @@ abstract class RowDecoder<Session, Row>(
   abstract fun cloneSelf(ctx: DecodingContext<Session, Row>, initialRowIndex: Int, type: RowDecoderType, endCallback: (Int) -> Unit): RowDecoder<Session, Row>
 
   // helper to get column names
-  fun colName(index: Int) = columnInfos[index].name
+  fun colName(index: Int) = ctx.columnInfos?.get(index)?.name ?: "<UNKNOWN>"
 
   var rowIndex: Int = initialRowIndex
   var classIndex: Int = 0
@@ -218,7 +217,7 @@ abstract class RowDecoder<Session, Row>(
     // get the child descriptor (parent might not have one so make it lazy)
     val childDesc by lazy { descriptor.elementDescriptors.toList()[index] }
     // helper to get column name for various logging statements
-    fun currColName() = columnInfos[index].name
+    fun currColName() = ctx.columnInfos?.get(index)?.name ?: "<UNKNOWN>"
     // helper to run the decoding
     fun decodeWithDecoder(decoder: SqlDecoder<Session, Row, T>): T? {
       val rowIndex = nextRowIndex(descriptor, index)
@@ -343,7 +342,7 @@ abstract class RowDecoder<Session, Row>(
           } as T?
         }
       else ->
-        throw IllegalArgumentException("Unsupported kind: ${desc.kind} at column:${columnInfos[index]}")
+        throw IllegalArgumentException("Unsupported kind: ${desc.kind} at column:${ctx.columnInfos?.get(index)}")
     }
   }
 
@@ -370,7 +369,7 @@ abstract class RowDecoder<Session, Row>(
       element != null -> element
       //now: element == null must be true
       descriptor.getElementDescriptor(index).isNullable -> null as T
-      else -> throw IllegalArgumentException("Error at column ${columnInfos[index]}. Found null element at index ${index} of descriptor ${descriptor.getElementDescriptor(index)} (of ${descriptor}) where null values are not allowed.")
+      else -> throw IllegalArgumentException("Error at column ${ctx.columnInfos?.get(index)}. Found null element at index ${index} of descriptor ${descriptor.getElementDescriptor(index)} (of ${descriptor}) where null values are not allowed.")
     }
   }
 

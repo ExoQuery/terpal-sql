@@ -5,6 +5,7 @@
 # is included in the image. So for example if docker compose in a directory 'foo' then
 # everything under 'foo/*' is included inside including the DB setup scripts. We write these paths based on that.
 export SQLITE_SCRIPT=terpal-sql-jdbc/src/test/resources/db/sqlite-schema.sql
+export SQLITE_NATIVE_SCRIPT=terpal-sql-native/src/test/resources/db/sqlite-schema.sql
 export MYSQL_SCRIPT=terpal-sql-jdbc/src/test/resources/db/mysql-schema.sql
 export SQL_SERVER_SCRIPT=terpal-sql-jdbc/src/test/resources/db/sqlserver-schema.sql
 export ORACLE_SCRIPT=terpal-sql-jdbc/src/test/resources/db/oracle-schema.sql
@@ -31,6 +32,18 @@ function setup_sqlite() {
     chmod a+rw $DB_FILE
 
     echo "Sqlite ready!"
+
+    echo "Creating sqlite DB Native File"
+    DB_FILE=terpal-sql-native/terpal_test.db
+    echo "Removing Previous sqlite DB File (if any)"
+    rm -f $DB_FILE
+    echo "Creating sqlite DB File"
+    echo "(with the $SQLITE_NATIVE_SCRIPT script)"
+    sqlite3 $DB_FILE < $SQLITE_NATIVE_SCRIPT
+    echo "Setting permissions on sqlite DB File"
+    chmod a+rw $DB_FILE
+
+    echo "Sqlite Native ready!"
 }
 
 function setup_mysql() {

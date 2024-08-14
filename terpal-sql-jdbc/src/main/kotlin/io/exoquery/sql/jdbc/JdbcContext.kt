@@ -7,14 +7,11 @@ import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.EmptySerializersModule
 import kotlinx.serialization.modules.SerializersModule
-import java.sql.Connection
-import java.sql.PreparedStatement
-import java.sql.ResultSet
-import java.sql.SQLException
 import javax.sql.DataSource
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.coroutineContext
 import kotlinx.datetime.TimeZone
+import java.sql.*
 
 abstract class JdbcContext(override val database: DataSource): Context<Connection, DataSource>() {
   // Maybe should just have all the encdoers from the base SqlEncoders class an everything introduced after should be added via additionalEncoders.
@@ -35,7 +32,12 @@ abstract class JdbcContext(override val database: DataSource): Context<Connectio
   override open fun isClosedSession(session: Connection): Boolean = session.isClosed
 
   protected open fun createEncodingContext(session: Connection, stmt: PreparedStatement) = EncodingContext(session, stmt, timezone)
-  protected open fun createDecodingContext(session: Connection, row: ResultSet) = DecodingContext(session, row, timezone)
+  protected open fun createDecodingContext(session: Connection, row: ResultSet) = run {
+    fun metaColumnData(meta: ResultSetMetaData) =
+      (1..meta.columnCount).map { ColumnInfo(meta.getColumnName(it), meta.getColumnTypeName(it)) }
+    val metaColumns = metaColumnData(row.metaData)
+    DecodingContext(session, row, timezone, metaColumns)
+  }
 
   protected val JdbcCoroutineContext = object: CoroutineContext.Key<CoroutineSession<Connection>> {}
   override val sessionKey: CoroutineContext.Key<CoroutineSession<Connection>> = JdbcCoroutineContext
