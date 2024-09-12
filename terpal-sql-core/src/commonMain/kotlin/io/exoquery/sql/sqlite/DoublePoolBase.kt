@@ -8,13 +8,26 @@ import kotlinx.atomicfu.atomic
 import kotlinx.atomicfu.locks.reentrantLock
 
 interface DoublePoolType {
-  // One reader, one writer i.e. connection I shared between all operations. Use this
-  // for non-WAL mode since transactors need to lock everything so the best thing to do is only have one connection
-  // and suspend everything that is waiting on the connection
+  /**
+   * One reader, one writer i.e. connection I shared between all operations. Use this
+   * for non-WAL mode since transactors need to lock everything so the best thing to do is only have one connection
+   * and suspend everything that is waiting on the connection
+   */
   data object Single: DoublePoolType
-  // One reader, multiple writers i.e. connections are not shared between operations. Use this for WAL mode
-  // There will be one writer but multiple readers, specify the number of them.
+  /**
+   * One reader, multiple writers i.e. connections are not shared between operations. Use this for WAL mode
+   * There will be one writer but multiple readers, specify the number of them.
+   */
   data class Multi(val numReaders: Int): DoublePoolType
+  /**
+   * If the platform supports multiple processors, use 1-writer, multiple readers. Otherwise, use a single
+   * pool pool (with a single connection for readers and writers).
+   */
+  fun auto() =
+    when (getNumProcessorsOnPlatform()) {
+      1 -> Single
+      else -> Multi(getNumProcessorsOnPlatform() - 1)
+    }
 }
 
 class DoublePoolSession<Session>(protected val conn: Borrowed<Session>, val isWriter: Boolean) {
@@ -23,6 +36,7 @@ class DoublePoolSession<Session>(protected val conn: Borrowed<Session>, val isWr
   val value get() = conn.value
 }
 
+expect fun getNumProcessorsOnPlatform():Int
 
 /**
  * Since in Sqlite WAL mode you can create a MVCC-like behavior by allowing a single writer and multiple readers,

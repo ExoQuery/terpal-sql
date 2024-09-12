@@ -8,6 +8,7 @@ import io.exoquery.sql.Sql
 import io.exoquery.sql.delight.runOnDriver
 import io.exoquery.sql.sqlite.SimplePool
 import io.exoquery.sql.sqlite.Waiter
+import io.exoquery.sql.sqlite.getNumProcessorsOnPlatform
 import io.exoquery.sql.waitRandom
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.*
@@ -21,46 +22,56 @@ import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
+fun <T> runBlockingWithTimeout(timeout: Long, block: suspend CoroutineScope.() -> T): T =
+  runBlocking {
+    withTimeout(timeout) {
+      block()
+    }
+  }
+
 class PoolConcurrencySpec {
 
-  fun <T> runBlockingWithTimeout(timeout: Long, block: suspend CoroutineScope.() -> T): T =
-    runBlocking {
-      withTimeout(timeout) {
-        block()
-      }
-    }
-
-  @Ignore
-  @Test
-  fun `Pool Should be able to make progress when contended`() {
-    val numSlots = 1000
-    val (waitMin, waitMax) = 5 to 10 // 1000 to 10000, 20 to 2000
-
+  class ContentionTest(val numSlots: Int, val waitMin: Int, val waitMax: Int, val totalTimeout: Long) {
     val marks = Array(numSlots) { AtomicInt(0) }
     val indexes = (0 until numSlots).toList().shuffled()
 
-    // create a simple pool in order to "borrow" things from it. In reality
-    // we actually don't care about what's inside the pool for this test, just that
-    // we can borrow and return things from it without deadlocking.
-    val pool = SimplePool<String>(5, { "Connection: ${it.numEntries}" }, {})
-    runBlockingWithTimeout(6000) {
-      indexes.withIndex().forEach { (count, i) ->
-        launch {
-          waitRandom(waitMin, waitMax)
-          //println("Task: ${i} trying to borrow connection")
-          val connNum = pool.borrow()
-          marks[i].value = 1
-          waitRandom(waitMin, waitMax)
-          connNum.close()
-          //println("Finished task: ${count}->${i} with - ${connNum.value}")
+    fun run() {
+      // create a simple pool in order to "borrow" things from it. In reality
+      // we actually don't care about what's inside the pool for this test, just that
+      // we can borrow and return things from it without deadlocking.
+      val pool = SimplePool<String>(getNumProcessorsOnPlatform(), { "Connection: ${it.numEntries}" }, {})
+      runBlockingWithTimeout(totalTimeout) {
+        indexes.withIndex().forEach { (count, i) ->
+          launch {
+            // Wait randomly for each slot to simulate a real-world scenario
+            waitRandom(waitMin, waitMax)
+            //println("Task: ${i} trying to borrow connection")
+            val connNum = pool.borrow()
+            marks[i].value = 1
+            waitRandom(waitMin, waitMax)
+            //println("Finished task: ${count}->${i} with - ${connNum.value}")
+            connNum.close()
+          }
+        }
+
+        while (marks.any { it.value == 0 }) {
+          delay(1000)
+          println("Progress: ${marks.map { it.value }}")
         }
       }
-
-      while (marks.any { it.value == 0 }) {
-        delay(1000)
-        println("Progress: ${marks.map { it.value }}")
-      }
     }
+  }
+
+  @Test
+  fun `Pool Should be able to make progress when contended`() {
+    //val test = ContentionTest(1000, 5, 10, 6000)
+    val numProcs = getNumProcessorsOnPlatform()
+    val test = ContentionTest(numProcs * 100, 5, 10,
+      // If there are 4 processors there should be 400 slots, if each waits the max of 10ms the total
+      // wait time should be less than 4000ms. Give it an upper bound of twice that of this test.
+      (numProcs * 2000).toLong()
+    )
+
   }
 
   @Test
