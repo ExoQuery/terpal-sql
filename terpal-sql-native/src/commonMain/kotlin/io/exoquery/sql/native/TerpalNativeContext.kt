@@ -18,6 +18,8 @@ import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.coroutineContext
 import kotlin.experimental.ExperimentalTypeInference
 
+data class Versions(val oldVersion: Int, val newVersion: Int)
+
 @OptIn(ExperimentalStdlibApi::class)
 class TerpalNativeContext internal constructor(
   override val encodingConfig: EncodingConfig<Unused, SqliteStatementWrapper, SqliteCursorWrapper>,
@@ -60,6 +62,32 @@ class TerpalNativeContext internal constructor(
       TerpalNativeContext(encodingConfig, pool)
     }
 
+    suspend fun fromSchema(
+      schema: TerpalSchema<QueryResult.Value<Unit>>,
+      dbName: String,
+      basePath: String? = null,
+      mode: PoolingMode = PoolingMode.Single,
+      cacheCapacity: Int = DEFAULT_CACHE_CAPACITY,
+      encodingConfig: NativeEncodingConfig = NativeEncodingConfig()
+    ): TerpalNativeContext {
+      val nativeConfig =
+        DatabaseConfiguration(
+          name = dbName,
+          inMemory = false,
+          version = schema.version.toInt(),
+          create = { conn -> schema.toCreateCallbackSync(TerpalNativeContext.fromSingleConnection(conn)) },
+          upgrade = { connection, oldVersion, newVersion ->
+            schema.toMigrateCallbackSync(
+              TerpalNativeContext.fromSingleConnection(connection),
+              oldVersion.toLong(),
+              newVersion.toLong()
+            )
+          },
+          extendedConfig = DatabaseConfiguration.Extended(basePath = basePath)
+        )
+      return fromDatabaseConfiguration(nativeConfig, mode, cacheCapacity, encodingConfig)
+    }
+
 
     /**
      * TODO move this into a extension function and make SqlDelight a provided (i.e. optional) dependency
@@ -86,6 +114,28 @@ class TerpalNativeContext internal constructor(
             wrapConnection(connection) { schema.migrate(it, oldVersion.toLong(), newVersion.toLong()) }
           },
           extendedConfig = DatabaseConfiguration.Extended(basePath = basePath)
+        )
+      return fromDatabaseConfiguration(nativeConfig, mode, cacheCapacity, encodingConfig)
+    }
+
+    suspend fun create(
+      dbFileName: String,
+      dbfilePath: String? = null,
+      version: Int = 1,
+      mode: PoolingMode = PoolingMode.Single,
+      cacheCapacity: Int = DEFAULT_CACHE_CAPACITY,
+      encodingConfig: NativeEncodingConfig = NativeEncodingConfig(),
+      createCallback: (TerpalNativeContext) -> Unit = {},
+      updateCallback: (TerpalNativeContext, Versions) -> Unit = { _, _ -> }
+    ): TerpalNativeContext {
+      val nativeConfig =
+        DatabaseConfiguration(
+          name = dbFileName,
+          inMemory = false,
+          version = version,
+          create = { createCallback(TerpalNativeContext.fromSingleConnection(it)) },
+          upgrade = { db, old, new -> updateCallback(TerpalNativeContext.fromSingleConnection(db), Versions(old, new)) },
+          extendedConfig = DatabaseConfiguration.Extended(basePath = dbfilePath)
         )
       return fromDatabaseConfiguration(nativeConfig, mode, cacheCapacity, encodingConfig)
     }

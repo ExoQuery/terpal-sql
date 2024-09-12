@@ -10,6 +10,7 @@ import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
 import kotlin.reflect.KClass
+import org.intellij.lang.annotations.Language
 
 interface SqlFragment
 
@@ -68,6 +69,8 @@ abstract class SqlBatchBase: InterpolatorBatchingWithWrapper<Param<*>> {
 }
 
 abstract class SqlBase: InterpolatorWithWrapper<SqlFragment, Statement> {
+  override operator fun invoke(@Language("SQL") string: String): Statement = Messages.throwPluginNotExecuted()
+
   override fun interpolate(parts: () -> List<String>, params: () -> List<SqlFragment>): Statement {
     val partsList = parts().map { IR.Part(it) }
     val paramsList = params().map {
