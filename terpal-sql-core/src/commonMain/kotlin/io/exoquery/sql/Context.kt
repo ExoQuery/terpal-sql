@@ -158,6 +158,8 @@ interface Context {
   suspend fun run(query: BatchAction): List<Long>
   suspend fun <T> run(query: ActionReturning<T>): T
   suspend fun <T> run(query: BatchActionReturning<T>): List<T>
+
+  suspend fun <T> runRaw(query: Query<T>): List<Pair<String, String?>>
 }
 
 
@@ -186,6 +188,7 @@ class ExternalTransactionScope(private val scope: CoroutineScope, private val ct
 
 suspend fun <T> Query<T>.runOn(ctx: Context) = ctx.run(this)
 suspend fun <T> Query<T>.streamOn(ctx: Context) = ctx.stream(this)
+suspend fun <T> Query<T>.runRawOn(ctx: Context) = ctx.runRaw(this)
 suspend fun Action.runOn(ctx: Context) = ctx.run(this)
 suspend fun <T> ActionReturning<T>.runOn(ctx: Context) = ctx.run(this)
 suspend fun BatchAction.runOn(ctx: Context) = ctx.run(this)

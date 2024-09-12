@@ -140,6 +140,25 @@ abstract class JdbcContext internal constructor(
       }
     }
 
+  override suspend fun <T> runRaw(query: Query<T>) =
+    withConnection {
+      val conn = localConnection()
+      accessStmt(query.sql, conn) { stmt ->
+        prepare(stmt, conn, query.params)
+        val result = mutableListOf<Pair<String, String?>>()
+        tryCatchQuery(query.sql) {
+          stmt.executeQuery().use { rs ->
+            rs.next()
+            val meta = rs.metaData
+            for (i in 1..meta.columnCount) {
+              result.add(meta.getColumnName(i) to rs.getString(i))
+            }
+          }
+        }
+        result
+      }
+    }
+
   override open suspend fun <T> stream(query: Query<T>): Flow<T> =
     flowWithConnection {
       val conn = localConnection()

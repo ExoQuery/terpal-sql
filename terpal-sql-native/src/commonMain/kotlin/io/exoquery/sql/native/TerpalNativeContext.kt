@@ -218,6 +218,24 @@ class TerpalNativeContext internal constructor(
       }
     }
 
+  override suspend fun <T> runRaw(query: Query<T>) =
+    withConnection {
+      val conn = localConnection()
+      accessStmt(query.sql, conn) { stmt ->
+        prepare(DelightStatementWrapper(stmt), Unused, query.params)
+        val result = mutableListOf<Pair<String, String?>>()
+        tryCatchQuery(query.sql) {
+          stmt.query().let { rs ->
+            rs.next()
+            for (i in 1..rs.columnCount) {
+              result.add(rs.columnName(i) to rs.getString(i))
+            }
+          }
+        }
+        result
+      }
+    }
+
   open override suspend fun <T> run(query: Query<T>): List<T> = stream(query).toList()
   open override suspend fun run(query: Action): Long = runActionScoped(query.sql, query.params)
   open override suspend fun <T> run(query: ActionReturning<T>): T = runActionReturningScoped(query).first()

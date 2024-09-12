@@ -97,10 +97,6 @@ class TerpalAndroidContext internal constructor(
   // Is there an open writer?
   override fun CoroutineContext.hasOpenConnection(): Boolean {
     val session = get(sessionKey)?.session
-    //if (session != null)
-    //  println("--------- (${currentThreadId()}) Found session: ${if (session.isWriter) "WRITER" else "JUST READER, needs promotion" } - isClosed: ${isClosedSession(session)}")
-    //else
-    //  println("---------- (${currentThreadId()}) No session fuond, create a new one!")
     return session != null && session.isWriter && !isClosedSession(session)
   }
 
@@ -111,10 +107,8 @@ class TerpalAndroidContext internal constructor(
       //println("----- (${currentThreadId()}) has open connection, running block")
       withContext(coroutineContext + Dispatchers.IO) { block() }
     } else {
-      //println("----- (${currentThreadId()}) creating new session")
       val session = newSession()
       try {
-        //println("----- (${currentThreadId()}) running block with new session")
         withContext(CoroutineSession(session, sessionKey) + Dispatchers.IO) { block() }
       } finally { closeSession(session) }
     }
@@ -219,18 +213,36 @@ class TerpalAndroidContext internal constructor(
       }
     }
 
+  protected fun <T> Query<T>.toSqliteQuery(): SimpleSQLiteQuery {
+    val queryParams = AndroidxArrayWrapper(this.params.size)
+    return SimpleSQLiteQuery(this.sql, queryParams.array)
+  }
+
   override suspend fun <T> stream(query: Query<T>): Flow<T> =
     flowWithConnectionReadOnly {
       val conn = localConnection()
-      val queryParams = AndroidxArrayWrapper(query.params.size)
       // No caching used here, get the session directly
       tryCatchQuery(query.sql) {
-        val sqliteQuery = SimpleSQLiteQuery(query.sql, queryParams.array)
-        conn.value.session.query(sqliteQuery).use {
+        conn.value.session.query(query.toSqliteQuery()).use {
           val cursorWrapper = AndroidxCursorWrapper(it, windowSizeBytes)
           emitResultSet(cursorWrapper) { cursor -> query.resultMaker.makeExtractor(QueryDebugInfo(query.sql)).invoke(Unused, cursor) }
         }
       }
+    }
+
+  override suspend fun <T> runRaw(query: Query<T>) =
+    withConnection {
+      val conn = localConnection()
+      val result = mutableListOf<Pair<String, String?>>()
+      tryCatchQuery(query.sql) {
+        conn.value.session.query(query.toSqliteQuery()).use { rs ->
+          val meta = rs.columnNames
+          for (i in 0 until meta.size) {
+            result.add(meta[i] to rs.getString(i))
+          }
+        }
+      }
+      result
     }
 
   open override suspend fun <T> run(query: Query<T>): List<T> = stream(query).toList()
