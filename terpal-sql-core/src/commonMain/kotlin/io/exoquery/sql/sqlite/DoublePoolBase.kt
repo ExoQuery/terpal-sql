@@ -75,7 +75,7 @@ open class DoublePoolBase<Session>(
 
       }
       is DoublePoolType.Multi -> {
-        readerPool = SimplePool(mode.numReaders, aquireWriter, finalize)
+        readerPool = SimplePool(mode.numReaders, aquireReader, finalize)
         writerPool = SimplePool(1, aquireWriter, finalize)
       }
     }

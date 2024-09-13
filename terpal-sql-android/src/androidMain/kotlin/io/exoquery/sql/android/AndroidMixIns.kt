@@ -1,5 +1,6 @@
 package io.exoquery.sql.android
 
+import android.database.sqlite.SQLiteDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.sqlite.db.SupportSQLiteStatement
 import io.exoquery.sql.CoroutineSession
@@ -15,16 +16,26 @@ import kotlin.coroutines.coroutineContext
 
 typealias Connection = DoublePoolSession<StatementCachingSession<SupportSQLiteDatabase, SupportSQLiteStatement>>
 
-object NativeCoroutineContext: CoroutineContext.Key<CoroutineSession<Connection>> {}
+object AndroidCoroutineContext: CoroutineContext.Key<CoroutineSession<Connection>> {}
 
 interface HasSessionAndroid: RequiresSession<Connection, SupportSQLiteStatement> {
   val pool: AndroidPool
-  override val sessionKey: CoroutineContext.Key<CoroutineSession<Connection>> get() = NativeCoroutineContext
+  override val sessionKey: CoroutineContext.Key<CoroutineSession<Connection>> get() = AndroidCoroutineContext
 
   // This is the WRITER session
   // Use this for the transactor pool (that's what the RequiresTransactionality interface is for)
   // for reader connections we borrow readers
-  override suspend fun newSession(): Connection = pool.borrowWriter()
+  override suspend fun newSession(): Connection =
+    prepareSession(pool.borrowWriter())
+
+  fun prepareSession(session: Connection): Connection
+
+  suspend fun newSession(label: String?): Connection = run {
+    val session = pool.borrowWriter()
+    session.value.session.enableWriteAheadLogging()
+    session
+  }
+
   override fun closeSession(session: Connection): Unit = session.close()
   override fun isClosedSession(session: Connection): Boolean = !session.isOpen()
 
@@ -66,6 +77,8 @@ interface HasSessionAndroid: RequiresSession<Connection, SupportSQLiteStatement>
 }
 
 interface HasTransactionalityAndroid: RequiresTransactionality<Connection, SupportSQLiteStatement>, HasSessionAndroid {
+  val walMode: WalMode
+
   // In RequiresTransactionality this is run inside of withConnection. Now withConnection is implemented here specifically as
   // having a WRITEABLE connection which means that in sqlite this will be in a pool of only 1. There are other
   // methods that only have a reader connection but they are not used here.
@@ -73,7 +86,12 @@ interface HasTransactionalityAndroid: RequiresTransactionality<Connection, Suppo
     val session = coroutineContext.get(sessionKey)?.session ?: error("No connection found")
     val transaction = CoroutineTransaction()
     try {
-      session.value.session.beginTransaction()
+
+      when (walMode) {
+        // When in WAL mode, we want readers to be able to read while the writer is writing
+        WalMode.Enabled -> session.value.session.beginTransactionNonExclusive()
+        else -> session.value.session.beginTransaction()
+      }
       val result = withContext(transaction) { block() }
       // setting it successful makes it not rollback
       session.value.session.setTransactionSuccessful()

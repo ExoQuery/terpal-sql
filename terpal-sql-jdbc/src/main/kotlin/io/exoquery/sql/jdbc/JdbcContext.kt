@@ -1,15 +1,11 @@
 package io.exoquery.sql.jdbc
 
 import io.exoquery.sql.*
-import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
-import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.EmptySerializersModule
 import kotlinx.serialization.modules.SerializersModule
 import javax.sql.DataSource
-import kotlin.coroutines.CoroutineContext
-import kotlin.coroutines.coroutineContext
 import kotlinx.datetime.TimeZone
 import java.sql.*
 

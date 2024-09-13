@@ -7,9 +7,6 @@ import io.exoquery.sql.jdbc.TerpalContext
 import io.exoquery.sql.runOn
 import io.kotest.core.spec.style.FreeSpec
 import java.time.ZoneId
-import io.kotest.matchers.bigdecimal.shouldBeEqualIgnoringScale
-import io.kotest.matchers.equals.shouldBeEqual
-import kotlin.test.assertEquals
 
 class EncodingSpec: FreeSpec({
   val ds = TestDatabases.oracle

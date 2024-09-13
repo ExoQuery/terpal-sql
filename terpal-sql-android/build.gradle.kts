@@ -2,6 +2,7 @@ import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.ir.backend.js.compile
 import org.jetbrains.kotlin.konan.target.HostManager
 
 plugins {
@@ -12,6 +13,11 @@ plugins {
   kotlin("plugin.serialization") version "1.9.22"
   // Already on the classpath
   //id("org.jetbrains.kotlin.android") version "1.9.23"
+}
+
+configurations.forEach {
+  //create("cleanedAnnotations")
+  it.exclude(group = "com.sschr15.annotations", module = "jb-annotations-kmp")
 }
 
 android {

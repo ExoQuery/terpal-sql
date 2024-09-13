@@ -5,9 +5,7 @@ import io.exoquery.sql.jdbc.TerpalContext
 import io.exoquery.sql.jdbc.Sql
 import io.exoquery.sql.run
 import io.kotest.assertions.throwables.shouldThrow
-import io.kotest.core.extensions.install
 import io.kotest.core.spec.style.FreeSpec
-import io.kotest.extensions.testcontainers.JdbcDatabaseContainerExtension
 import io.kotest.matchers.shouldBe
 import kotlinx.serialization.Serializable
 

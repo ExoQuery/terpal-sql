@@ -8,10 +8,7 @@ import co.touchlab.sqliter.Statement
 import co.touchlab.sqliter.interop.SQLiteException
 import io.exoquery.sql.*
 import io.exoquery.sql.delight.*
-import io.exoquery.sql.sqlite.SqliteCursorWrapper
-import io.exoquery.sql.sqlite.SqliteSqlEncoding
-import io.exoquery.sql.sqlite.SqliteStatementWrapper
-import io.exoquery.sql.sqlite.Unused
+import io.exoquery.sql.sqlite.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlin.coroutines.CoroutineContext
@@ -172,7 +169,7 @@ class TerpalNativeContext internal constructor(
 
   override suspend fun <R> accessStmt(sql: String, conn: Connection, block: suspend (Statement) -> R): R {
     if (sql.trim().isEmpty()) throw IllegalStateException("SQL statement is empty")
-    println("------------- Creating: ${sql} ---------------")
+    //println("------------- Creating: ${sql} ---------------")
     val stmt = conn.value.createStatement(sql)
     return try {
       block(stmt)

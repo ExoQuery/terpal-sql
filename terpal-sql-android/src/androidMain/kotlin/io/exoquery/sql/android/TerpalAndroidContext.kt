@@ -8,31 +8,49 @@ import androidx.sqlite.db.SupportSQLiteOpenHelper
 import androidx.sqlite.db.SupportSQLiteStatement
 import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory
 import io.exoquery.sql.*
-import io.exoquery.sql.sqlite.SqliteCursorWrapper
-import io.exoquery.sql.sqlite.SqliteSqlEncoding
-import io.exoquery.sql.sqlite.SqliteStatementWrapper
-import io.exoquery.sql.sqlite.Unused
+import io.exoquery.sql.sqlite.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.coroutineContext
 import kotlin.experimental.ExperimentalTypeInference
 
+sealed interface WalMode {
+  object Enabled: WalMode
+  /** A.k.a. The WAL "Compatibility" mode */
+  object Default: WalMode
+  object Disabled: WalMode
+}
+
 class TerpalAndroidContext internal constructor(
   override val encodingConfig: AndroidEncodingConfig,
   override val pool: AndroidPool,
+  override val walMode: WalMode,
   private val windowSizeBytes: Long? = null
 ): ContextBase<Connection, SupportSQLiteStatement>, java.io.Closeable,
   WithEncoding<Unused, SqliteStatementWrapper, SqliteCursorWrapper>,
   WithReadOnlyVerbs,
   HasTransactionalityAndroid {
 
+  override fun prepareSession(session: Connection): Connection =
+    session.apply {
+      when (walMode) {
+        is WalMode.Enabled -> this.value.session.enableWriteAheadLogging()
+        is WalMode.Default -> Unit
+        is WalMode.Disabled -> this.value.session.disableWriteAheadLogging()
+      }
+    }
+
   override val startingStatementIndex = StartingIndex.One
   override val startingResultRowIndex = StartingIndex.Zero
 
   sealed interface PoolingMode {
-    object Single: PoolingMode
-    data class Multiple(val numReaders: Int): PoolingMode
+    /** Legacy Pre-WAL mode allowing only one reader and one writer */
+    object SingleSessionLegacy: PoolingMode
+    /** This is essentially Android's WAL-compatibility mode */
+    object SingleSessionWal: PoolingMode
+    /** Full-WAL mode allowing multiple readers and one single writer */
+    data class MultipleReaderWal(val numReaders: Int): PoolingMode
   }
   companion object {
     val DEFAULT_CACHE_CAPACITY = 5
@@ -43,7 +61,7 @@ class TerpalAndroidContext internal constructor(
       context: android.content.Context,
       callback: SupportSQLiteOpenHelper.Callback,
       factory: SupportSQLiteOpenHelper.Factory = FrameworkSQLiteOpenHelperFactory(),
-      poolingMode: PoolingMode = PoolingMode.Single,
+      poolingMode: PoolingMode = PoolingMode.SingleSessionWal,
       cacheCapacity: Int = DEFAULT_CACHE_CAPACITY,
       encodingConfig: AndroidEncodingConfig = AndroidEncodingConfig.Empty(),
       useNoBackupDirectory: Boolean = false,
@@ -61,25 +79,70 @@ class TerpalAndroidContext internal constructor(
       return TerpalAndroidContext.fromOpenHelper(openHelper, poolingMode, cacheCapacity, encodingConfig, windowSizeBytes)
     }
 
+    fun fromApplicationContextUnpooled(
+      databaseName: String,
+      context: android.content.Context,
+      callback: SupportSQLiteOpenHelper.Callback,
+      factory: SupportSQLiteOpenHelper.Factory = FrameworkSQLiteOpenHelperFactory(),
+      cacheCapacity: Int = DEFAULT_CACHE_CAPACITY,
+      encodingConfig: AndroidEncodingConfig = AndroidEncodingConfig.Empty(),
+      useNoBackupDirectory: Boolean = false,
+      windowSizeBytes: Long? = null
+    ): TerpalAndroidContext {
+      val openHelper =
+        factory.create(
+          SupportSQLiteOpenHelper.Configuration.builder(context)
+            .name(databaseName)
+            .noBackupDirectory(useNoBackupDirectory)
+            .callback(callback)
+            .build(),
+        )
+
+      val pool = AndroidPool.WrappedUnsafe(openHelper.writableDatabase, cacheCapacity)
+
+      return TerpalAndroidContext(encodingConfig, pool, WalMode.Default, windowSizeBytes)
+    }
+
+    suspend fun fromSchema(
+      schema: TerpalSchema<*>,
+      databaseName: String,
+      context: android.content.Context,
+      poolingMode: PoolingMode = PoolingMode.SingleSessionWal,
+      cacheCapacity: Int = DEFAULT_CACHE_CAPACITY,
+      encodingConfig: AndroidEncodingConfig = AndroidEncodingConfig.Empty(),
+      useNoBackupDirectory: Boolean = false,
+      windowSizeBytes: Long? = null
+    ): TerpalAndroidContext {
+      val openHelper = FrameworkSQLiteOpenHelperFactory().create(
+        SupportSQLiteOpenHelper.Configuration.builder(context)
+          .name(databaseName)
+          .noBackupDirectory(useNoBackupDirectory)
+          .callback(schema.asSyncCallback())
+          .build(),
+      )
+      return TerpalAndroidContext.fromOpenHelper(openHelper, poolingMode, cacheCapacity, encodingConfig, windowSizeBytes)
+    }
+
     fun fromOpenHelper(
       openHelper: SupportSQLiteOpenHelper,
-      poolingMode: PoolingMode = PoolingMode.Single,
+      poolingMode: PoolingMode = PoolingMode.SingleSessionWal,
       cacheCapacity: Int = DEFAULT_CACHE_CAPACITY,
       encodingConfig: AndroidEncodingConfig = AndroidEncodingConfig.Empty(),
       windowSizeBytes: Long? = null
     ): TerpalAndroidContext {
-      val pool =
+      val (pool, walMode) =
         when (poolingMode) {
-          is PoolingMode.Single -> AndroidPool.SingleConnection(openHelper, cacheCapacity)
-          is PoolingMode.Multiple -> AndroidPool.MultiConnection(openHelper, cacheCapacity, poolingMode.numReaders)
+          is PoolingMode.SingleSessionLegacy -> AndroidPool.SingleConnection(openHelper, cacheCapacity) to WalMode.Disabled
+          is PoolingMode.SingleSessionWal -> AndroidPool.SingleConnection(openHelper, cacheCapacity) to WalMode.Default
+          is PoolingMode.MultipleReaderWal -> AndroidPool.MultiConnection(openHelper, cacheCapacity, poolingMode.numReaders) to WalMode.Enabled
         }
 
-      return TerpalAndroidContext(encodingConfig, pool, windowSizeBytes)
+      return TerpalAndroidContext(encodingConfig, pool, walMode, windowSizeBytes)
     }
 
     fun fromSingleSession(
       connection: SupportSQLiteDatabase,
-      synchronizedAccess: Boolean,
+      synchronizedAccess: Boolean = true,
       cacheCapacity: Int = DEFAULT_CACHE_CAPACITY,
       encodingConfig: AndroidEncodingConfig = AndroidEncodingConfig.Empty(),
       windowSizeBytes: Long? = null
@@ -90,7 +153,7 @@ class TerpalAndroidContext internal constructor(
         else
           AndroidPool.WrappedUnsafe(connection, cacheCapacity)
 
-      return TerpalAndroidContext(encodingConfig, pool, windowSizeBytes)
+      return TerpalAndroidContext(encodingConfig, pool, WalMode.Default, windowSizeBytes)
     }
   }
 
@@ -100,12 +163,28 @@ class TerpalAndroidContext internal constructor(
     return session != null && session.isWriter && !isClosedSession(session)
   }
 
-  // For some reason we need to override this so the overridden hasOpenConnection (above) is called (I think)
-  // that is very odd. Need to investigate more.
   override suspend fun <T> withConnection(block: suspend CoroutineScope.() -> T): T {
     return if (coroutineContext.hasOpenConnection()) {
-      //println("----- (${currentThreadId()}) has open connection, running block")
-      withContext(coroutineContext + Dispatchers.IO) { block() }
+      // If there is an existing connection, run it on the whatever context it was set to run on. For example,
+      // when the context starts up it might use the main-thread to setup the database and only later
+      // switch to Dispatchers.IO. If we aggressively switch to Dispatchers.IO here we might cause
+      // a deadlock (i.e. since a writer connection is already opened on the main thread.)
+      withContext(coroutineContext) { block() }
+    } else {
+      val session = newSession()
+      try {
+        withContext(CoroutineSession(session, sessionKey) + Dispatchers.IO) { block() }
+      } finally { closeSession(session) }
+    }
+  }
+
+  suspend fun <T> withConnectionLabel(label: String?, block: suspend CoroutineScope.() -> T): T {
+    return if (coroutineContext.hasOpenConnection()) {
+      // If there is an existing connection, run it on the whatever context it was set to run on. For example,
+      // when the context starts up it might use the main-thread to setup the database and only later
+      // switch to Dispatchers.IO. If we aggressively switch to Dispatchers.IO here we might cause
+      // a deadlock (i.e. since a writer connection is already opened on the main thread.)
+      withContext(coroutineContext) { block() }
     } else {
       val session = newSession()
       try {
@@ -120,7 +199,6 @@ class TerpalAndroidContext internal constructor(
       row is AndroidxCursorWrapper -> {
         val realRow = row.cursor
         (0..<realRow.columnCount).map { idx ->
-          // TODO for getType get the row type name for sqlite (there should only be 5 actual types)
           ColumnInfo(realRow.getColumnName(idx), realRow.getType(idx).toString())
         }
       }
@@ -221,6 +299,21 @@ class TerpalAndroidContext internal constructor(
   override suspend fun <T> stream(query: Query<T>): Flow<T> =
     flowWithConnectionReadOnly {
       val conn = localConnection()
+      val queryParams = AndroidxArrayWrapper(query.params.size)
+      // No caching used here, get the session directly
+      tryCatchQuery(query.sql) {
+        val sqliteQuery = SimpleSQLiteQuery(query.sql, queryParams.array)
+        conn.value.session.query(sqliteQuery).use {
+          val cursorWrapper = AndroidxCursorWrapper(it, windowSizeBytes)
+          emitResultSet(cursorWrapper) { cursor -> query.resultMaker.makeExtractor(QueryDebugInfo(query.sql)).invoke(Unused, cursor) }
+        }
+      }
+    }
+
+  suspend fun <T> streamRaw(query: Query<T>): Flow<T> =
+    flowWithConnectionReadOnly {
+      val conn = localConnection()
+      val queryParams = AndroidxArrayWrapper(query.params.size)
       // No caching used here, get the session directly
       tryCatchQuery(query.sql) {
         conn.value.session.query(query.toSqliteQuery()).use {
@@ -245,7 +338,24 @@ class TerpalAndroidContext internal constructor(
       result
     }
 
-  open override suspend fun <T> run(query: Query<T>): List<T> = stream(query).toList()
+  override open suspend fun <T> run(query: Query<T>): List<T> = run {
+    withReadOnlyConnection() {
+      val conn = localConnection()
+      val result = mutableListOf<T>()
+      // No caching used here, get the session directly
+      tryCatchQuery(query.sql) {
+        conn.value.session.query(query.toSqliteQuery()).use { rs ->
+          val cursorWrapper = AndroidxCursorWrapper(rs, windowSizeBytes)
+          while (cursorWrapper.next()) {
+            val rowValue = query.resultMaker.makeExtractor(QueryDebugInfo(query.sql)).invoke(Unused, cursorWrapper)
+            result.add(rowValue)
+          }
+        }
+      }
+      result
+    }
+  }
+
   open override suspend fun run(query: Action): Long = runActionScoped(query.sql, query.params)
   open override suspend fun <T> run(query: ActionReturning<T>): T = runActionReturningScoped(query).first()
   open override suspend fun <T> stream(query: ActionReturning<T>): Flow<T> = runActionReturningScoped(query)
@@ -278,7 +388,10 @@ class TerpalAndroidContext internal constructor(
 interface WithReadOnlyVerbs: RequiresSession<Connection, SupportSQLiteStatement> {
   val pool: AndroidPool
 
-  suspend fun newReadOnlySession(): Connection = pool.borrowReader()
+  fun prepareSession(session: Connection): Connection
+
+  suspend fun newReadOnlySession(label: String? = null): Connection =
+    prepareSession(pool.borrowReader())
 
   // Check if there is at least a reader on th context, if it has a writer that's fine too
   fun CoroutineContext.hasOpenReadOrWriteConnection(): Boolean {
@@ -288,7 +401,11 @@ interface WithReadOnlyVerbs: RequiresSession<Connection, SupportSQLiteStatement>
 
   suspend fun <T> withReadOnlyConnection(block: suspend CoroutineScope.() -> T): T {
     return if (coroutineContext.hasOpenReadOrWriteConnection()) {
-      withContext(coroutineContext + Dispatchers.IO) { block() }
+      // If there is an existing connection, run it on the whatever context it was set to run on. For example,
+      // when the context starts up it might use the main-thread to setup the database and only later
+      // switch to Dispatchers.IO. If we aggressively switch to Dispatchers.IO here we might cause
+      // a deadlock (i.e. since a writer connection is already opened on the main thread.)
+      withContext(coroutineContext) { block() }
     } else {
       val session = newReadOnlySession()
       try {
@@ -305,7 +422,8 @@ interface WithReadOnlyVerbs: RequiresSession<Connection, SupportSQLiteStatement>
     // If there is any connection (including a writer) use it, otherwise create a reader
     // if we have a writer-connection already in the context use that for reading.
     return if (coroutineContext.hasOpenReadOrWriteConnection()) {
-      flowInvoke.flowOn(CoroutineSession(localConnection(), sessionKey) + Dispatchers.IO)
+      // Flows need to have their own context
+      flowInvoke.flowOn(CoroutineSession(localConnection(), sessionKey))
     } else {
       val session = newReadOnlySession()
       flowInvoke.flowOn(CoroutineSession(session, sessionKey) + Dispatchers.IO).onCompletion { _ ->
@@ -313,4 +431,5 @@ interface WithReadOnlyVerbs: RequiresSession<Connection, SupportSQLiteStatement>
       }
     }
   }
+
 }

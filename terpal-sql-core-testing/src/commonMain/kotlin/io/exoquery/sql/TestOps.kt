@@ -2,12 +2,13 @@ package io.exoquery.sql
 
 import app.cash.sqldelight.db.SqlDriver
 import kotlinx.coroutines.delay
+import kotlin.random.Random
 import kotlin.random.nextInt
 import kotlin.test.fail
 
-suspend fun waitRandom(lower: Int, upper: Int) {
+suspend fun waitRandom(lower: Int, upper: Int, rand: Random = Random.Default) {
   val r = IntRange(lower, upper)
-  val randNum = kotlin.random.Random.nextInt(r)
+  val randNum = rand.nextInt(r)
   delay(randNum.toLong())
 }
 

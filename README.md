@@ -4,7 +4,7 @@
 
 # terpal-sql
 
-Terpal is a Kotlin library that allows you to write SQL queries in Kotlin using interpolated strings
+Terpal is a Kotlin Multiplatform library that allows you to write SQL queries in Kotlin using interpolated strings
 in an SQL-injection-safe way. Inspired by Scala libraries such as Doobie and Zio-Jdbc, Terpal
 delays suspends the "$dollar $sign $variables" in strings in a separate data structure until they can be
 safely inject into an SQL statement.
@@ -46,7 +46,14 @@ val person: List<Person> = Sql("SELECT id, firstName, lastName FROM person WHERE
 
 # Getting Started
 
-Add the following to your `build.gradle.kts` file:
+## Dependencies
+
+Currently Terpal is supported 
+* **On the JVM** using JDBC with: PostgreSQL, MySQL, SQL Server, Oracle, SQLite, and H2. 
+* **On Android, iOS, OSX, Linux and Windows** with SQLite
+
+#### Using JDBC
+When using JDBC, add the following to your `build.gradle.kts` file:
 
 ```kotlin
 plugins {
@@ -57,15 +64,59 @@ plugins {
 
 dependencies {
     api("io.exoquery:terpal-sql-jdbc:1.9.22-0.3.0")
-
     api("org.jetbrains.kotlinx:kotlinx-serialization-core:1.6.2")
     api("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
-
     // Your databse driver for example postgres:
     implementation("org.postgresql:postgresql:42.7.0")
 }
+```
 
-// Make sure you have these repositories setup
+#### Using Android
+
+For Android development, add the following to your `build.gradle.kts` file:
+
+```kotlin
+plugins {
+    kotlin("android") version "1.9.22"
+    id("io.exoquery.terpal-plugin") version "1.9.22-1.0.0-RC1"
+    kotlin("plugin.serialization") version "1.9.22"
+}
+
+dependencies {
+    api("io.exoquery:terpal-sql-android:1.9.22-0.3.0")
+    api("org.jetbrains.kotlinx:kotlinx-serialization-core:1.6.2")
+    api("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
+    implementation("androidx.sqlite:sqlite-framework:2.4.0")
+}
+```
+
+#### Using iOS, OSX, Linux and Windows
+
+For iOS, OSX, Linux and Windows development, with Kotlin Multiplatform, add the following to your `build.gradle.kts` file:
+```kotlin
+plugins {
+    kotlin("multiplatform") version "1.9.22"
+    id("io.exoquery.terpal-plugin") version "1.9.22-1.0.0-RC1"
+    kotlin("plugin.serialization") version "1.9.22"
+}
+
+kotlin {
+    sourceSets {
+        val commonMain by getting {
+            dependencies {
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.6.2")
+                implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
+                // Note that terpal-sql-native supports iOS, OSX, Linux and Windows
+                api("io.exoquery:terpal-runtime:1.9.22-1.0.0-RC3")
+                implementation("io.exoquery:terpal-sql-native:1.9.22-0.3.0")
+            }
+        }
+    }
+}
+```
+
+Also, be sure that you have the correct repositories:
+```kotlin
 repositories {
   gradlePluginPortal()
   mavenCentral()
@@ -73,7 +124,13 @@ repositories {
 }
 ```
 
-Declaring a context:
+
+
+## Creating a Context
+
+A Terpal context is equivalent to a SQLite driver. It is the object that manages the connection to the database.
+
+#### When using JDBC:
 ```kotlin
 // You either construct a context from a JDBC DataSource:
 val ctx = TerpalContext.Postgres(dataSource)
@@ -92,7 +149,22 @@ myPostgresDB {
 ```
 Have a look at the Terpal-SQL [Sample Project](https://github.com/deusaquilus/terpal-sql-example) if anything is unclear.
 
+#### When using Android
+
+TBD
+
+#### When using iOS, OSX, Linux and Windows
+
+TBD
+
+(Also include instructions for running from SQLITE)
+
+
 # Features
+
+## IntelliJ Language Injection Support
+
+TBD
 
 ## Queries and Actions
 

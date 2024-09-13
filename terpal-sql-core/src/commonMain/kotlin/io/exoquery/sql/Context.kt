@@ -169,6 +169,8 @@ interface ContextBase<Session, Stmt>: Context, RequiresSession<Session, Stmt>, R
       val coroutineScope = this
       block(ExternalTransactionScope(coroutineScope, this@ContextBase))
     }
+
+  fun showStats(): String = ""
 }
 
 /**

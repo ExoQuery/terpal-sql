@@ -1,6 +1,5 @@
 package io.exoquery.sql.examples
 
-import io.exoquery.sql.run
 import io.exoquery.sql.Param
 import io.exoquery.sql.jdbc.*
 import io.exoquery.sql.runOn
@@ -15,10 +14,6 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
-import java.time.Instant
-import java.time.LocalDate
-import java.time.ZoneOffset
-import java.time.format.DateTimeFormatter
 
 object NewtypeColumnContextual_DifferentEncoders {
 

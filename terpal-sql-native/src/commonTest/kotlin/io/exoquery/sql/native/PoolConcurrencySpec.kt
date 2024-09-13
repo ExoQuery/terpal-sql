@@ -4,6 +4,7 @@ import app.cash.sqldelight.driver.native.NativeSqliteDriver
 import co.touchlab.sqliter.DatabaseFileContext.deleteDatabase
 import co.touchlab.sqliter.native.increment
 import io.exoquery.sql.BasicSchema
+import io.exoquery.sql.BasicSchemaTerpal
 import io.exoquery.sql.Sql
 import io.exoquery.sql.delight.runOnDriver
 import io.exoquery.sql.sqlite.SimplePool
@@ -17,8 +18,6 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.Serializable
 import kotlin.concurrent.AtomicInt
-import kotlin.random.nextInt
-import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

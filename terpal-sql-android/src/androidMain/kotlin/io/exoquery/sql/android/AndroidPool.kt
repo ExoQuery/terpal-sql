@@ -18,6 +18,7 @@ sealed interface AndroidPool: DoublePool<StatementCachingSession<SupportSQLiteDa
   data class MultiConnection(val db: SupportSQLiteOpenHelper, val numReaders: Int, val statementCacheCapacity: Int): AndroidPool, DoublePoolBase<StatementCachingSession<SupportSQLiteDatabase, SupportSQLiteStatement>>(
     DoublePoolType.Multi(numReaders),
     { AndroidSession(db.writableDatabase, statementCacheCapacity) },
+    //{ AndroidSession(db.writableDatabase, statementCacheCapacity) },
     { AndroidSession(db.readableDatabase, statementCacheCapacity) },
     { it.session.close() }
   )
@@ -25,7 +26,8 @@ sealed interface AndroidPool: DoublePool<StatementCachingSession<SupportSQLiteDa
     DoublePoolType.Single,
     { AndroidSession(conn, statementCacheCapacity) },
     { AndroidSession(conn, statementCacheCapacity) },
-    { it.session.close() }
+    // If it's a single connection that is be shared, it's the responsibility of the caller to close it
+    { Unit }
   )
   // In this mode, there is no concurrency gatekeeping over the connection at alll whatsoever. If two clients try to use the same connect
   // Use this for Android connections that are either not shared between operations or that already have built-in concurrency control
