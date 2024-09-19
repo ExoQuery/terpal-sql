@@ -130,7 +130,7 @@ object BasicSchema: SqlSchema<QueryResult.Value<Unit>> {
 object BasicSchemaTerpal: TerpalSchema<Unit> {
   override val version: Long = 1
   override suspend fun create(driver: Context): Unit {
-    Sql.invoke(
+    Sql(
       """
       CREATE TABLE Person (
           id INTEGER PRIMARY KEY,
@@ -140,7 +140,7 @@ object BasicSchemaTerpal: TerpalSchema<Unit> {
       )
       """
     ).action().runOn(driver)
-    Sql.invoke(
+    Sql(
       """
       CREATE TABLE Address (
           ownerId INT,
@@ -149,7 +149,7 @@ object BasicSchemaTerpal: TerpalSchema<Unit> {
       );
       """
     ).action().runOn(driver)
-    Sql.invoke(
+    Sql(
       """
       CREATE TABLE IF NOT EXISTS Product(
         id INTEGER PRIMARY KEY,
@@ -158,7 +158,7 @@ object BasicSchemaTerpal: TerpalSchema<Unit> {
       );
       """
     ).action().runOn(driver)
-    Sql.invoke(
+    Sql(
       """
     CREATE TABLE KmpTestEntity(
         timeLocalDate      INTEGER,                     -- java.time.LocalDate
@@ -172,7 +172,7 @@ object BasicSchemaTerpal: TerpalSchema<Unit> {
     );
     """
     ).action().runOn(driver)
-    Sql.invoke(
+    Sql(
       """
       CREATE TABLE TimeEntity(
           sqlDate        INTEGER,                     -- java.sql.Date
@@ -188,7 +188,7 @@ object BasicSchemaTerpal: TerpalSchema<Unit> {
       );
       """
     ).action().runOn(driver)
-    Sql.invoke(
+    Sql(
       """
       CREATE TABLE IF NOT EXISTS EncodingTestEntity(
           stringMan VARCHAR(255),
@@ -214,7 +214,7 @@ object BasicSchemaTerpal: TerpalSchema<Unit> {
       );
       """
     ).action().runOn(driver)
-    Sql.invoke(
+    Sql(
       """
       CREATE TABLE IF NOT EXISTS JavaTestEntity(
           bigDecimalMan DECIMAL(5,2),

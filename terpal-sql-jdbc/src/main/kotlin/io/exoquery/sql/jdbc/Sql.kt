@@ -1,8 +1,11 @@
 package io.exoquery.sql.jdbc
 
 import io.exoquery.sql.*
+import io.exoquery.terpal.InterpolatorFunction
+import io.exoquery.terpal.InterpolatorWithWrapper
 import io.exoquery.terpal.StrictType
 import io.exoquery.terpal.WrapFailureMessage
+import org.intellij.lang.annotations.Language
 import java.math.BigDecimal
 import java.sql.Connection
 import java.sql.PreparedStatement
@@ -14,7 +17,10 @@ import kotlin.reflect.KClass
 """For a datatype that does not have a wrap-function, use the Param(...) constructor to lift it into the proper type. You may
 need specify a serializer for the type or (if it is contextual) ensure that it has a encoder in the `additionalEncoders` of the context."""
 )
-object Sql: SqlJdbcBase()
+object SqlInterpolator: InterpolatorWithWrapper<SqlFragment, Statement>, SqlJdbcBase()
+
+@InterpolatorFunction<SqlInterpolator>(SqlInterpolator::class)
+fun Sql(@Language("SQL") query: String): Statement = io.exoquery.terpal.Messages.throwPluginNotExecuted()
 
 @WrapFailureMessage(
 """For a datatype that does not have a wrap-function, use the Param(...) constructor to lift it into the proper type. You may

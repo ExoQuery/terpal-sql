@@ -157,7 +157,7 @@ TBD
 
 TBD
 
-(Also include instructions for running from SQLITE)
+(Also include instructions for running from SqlDelight)
 
 
 # Features

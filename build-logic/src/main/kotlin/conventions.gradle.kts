@@ -46,6 +46,7 @@ tasks.withType<Test> {
             }
         }
 
+        // Get the summary of the tests in a neatly printed format
         override fun afterSuite(suite: TestDescriptor, result: TestResult) {
             if (suite.parent == null) {
                 logger.lifecycle("################ Summary::Start ################")

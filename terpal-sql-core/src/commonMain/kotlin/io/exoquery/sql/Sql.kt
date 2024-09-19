@@ -1,10 +1,8 @@
 package io.exoquery.sql
 
-import io.exoquery.terpal.InterpolatorBatchingWithWrapper
-import io.exoquery.terpal.InterpolatorWithWrapper
+import io.exoquery.terpal.*
 import io.exoquery.terpal.Messages
 import kotlinx.serialization.serializer
-import io.exoquery.terpal.WrapFailureMessage
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
@@ -87,11 +85,18 @@ abstract class SqlBase: InterpolatorWithWrapper<SqlFragment, Statement> {
   }
 }
 
+// Note that technically extending InterpolatorWithWrapper<SqlFragment, Statement> should not be needed
+// and just extending SqlCommonBase() should be sufficient. Unfortunately due to issues
+// with how Terpal-SQL traverses class hiearchcies looking for InterpolatorWithWrapper
+// is incomplete it is necessary to do it explicitly. Need to look into this more.
 @WrapFailureMessage(
   """For a datatype that does not have a wrap-function, use the Param(...) constructor to lift it into the proper type. You may
 need specify a serializer for the type or (if it is contextual) ensure that it has a encoder in the `additionalEncoders` of the context."""
 )
-object Sql: SqlCommonBase()
+object SqlInterpolator: InterpolatorWithWrapper<SqlFragment, Statement>, SqlCommonBase()
+
+@InterpolatorFunction<SqlInterpolator>(SqlInterpolator::class)
+fun Sql(@Language("SQL") query: String): Statement = Messages.throwPluginNotExecuted()
 
 @WrapFailureMessage(
   """For a datatype that does not have a wrap-function, use the Param(...) constructor to lift it into the proper type. You may

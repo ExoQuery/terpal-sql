@@ -45,6 +45,8 @@ class BasicQuerySpec {
     data class CustomRow2(val Person: Person, val Address: Address?)
   }
 
+  data class MyType(val value: String)
+
   @Test
   fun `joins - SELECT Person Address`() = runBlocking {
     ctx.run(Sql("SELECT p.id, p.firstName, p.lastName, p.age, a.ownerId, a.street, a.zip FROM Person p JOIN Address a ON p.id = a.ownerId").queryOf<kotlin.Pair<Joins.Person, Joins.Address>>()) shouldBe kotlin.collections.listOf(

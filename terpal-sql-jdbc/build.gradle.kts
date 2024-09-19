@@ -2,6 +2,7 @@ import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.jetbrains.kotlin.gradle.dsl.KotlinCompile
 
 plugins {
+  id("conventions")
   kotlin("multiplatform")
   id("io.exoquery.terpal-plugin") version "1.9.22-1.0.0-RC3"
   kotlin("plugin.serialization") version "1.9.22"

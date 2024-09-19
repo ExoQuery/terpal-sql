@@ -16,12 +16,17 @@ fun createConnection(type: SqliterPoolType, statementCacheCapacity: Int, isWrita
   when (type) {
     is SqliterPoolType.MultiConnection -> {
       val conn = type.db.createMultiThreadedConnection()
-      if (!isWritable) conn.withStatement("PRAGMA query_only = 1") { execute() }
+      // NOTE: query_only=1 is not actually used for WAL mode to determine what can be simultaneous
+      // and it is not needed to attain concurrent read access.
+      // If you use it doing Statement.resetStatement will throw an exception beccause the statement
+      // could technically be used for a write operation.
+      //if (!isWritable) conn.withStatement("PRAGMA query_only = 1") { execute() }
       SqliterSession(conn, statementCacheCapacity)
     }
     is SqliterPoolType.SingleConnection -> {
       val conn = type.db.createMultiThreadedConnection()
-      if (!isWritable) conn.withStatement("PRAGMA query_only = 1") { execute() }
+      // See note on query_only=1 above
+      //if (!isWritable) conn.withStatement("PRAGMA query_only = 1") { execute() }
       SqliterSession(conn, statementCacheCapacity)
     }
     is SqliterPoolType.Wrapped ->

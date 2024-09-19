@@ -20,7 +20,6 @@ class InstrumentedPerfTest: InstrumentedSpec {
 
   data class TestConfig(val maxReaders: Int?, val poolingMode: TerpalAndroidContext.PoolingMode)
 
-  @Ignore
   @Test
   fun runTest() {
     val name = "perf_test.db"

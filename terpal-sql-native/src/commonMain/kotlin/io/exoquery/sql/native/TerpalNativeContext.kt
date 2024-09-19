@@ -266,7 +266,7 @@ class TerpalNativeContext internal constructor(
     }
 
   override suspend fun <T> runRaw(query: Query<T>) =
-    withConnection {
+    withReadOnlyConnection {
       val conn = localConnection()
       accessStmt(query.sql, conn) { stmt ->
         prepare(DelightStatementWrapper(stmt), Unused, query.params)

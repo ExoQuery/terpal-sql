@@ -10,6 +10,7 @@ import kotlin.math.min
 import kotlin.random.Random
 import kotlin.test.fail
 import kotlin.time.measureTime
+import kotlin.time.measureTimedValue
 
 class WallPerformanceTest<Session, Stmt>(
   val driver: ContextBase<Session, Stmt>,
@@ -117,7 +118,7 @@ class WallPerformanceTest<Session, Stmt>(
       }
 
 
-      val timeTaken = measureTime {
+      val (kv, timeTaken) = measureTimedValue {
         val writeJobsLaunched = mutableListOf<Job>()
         coroutineScope {
           while (writeIntervals.isNotEmpty()) {
@@ -139,18 +140,23 @@ class WallPerformanceTest<Session, Stmt>(
           }
         }
 
-        // wait for all of the reader jobs to finish
-        readJobsLaunched.joinAll()
         writeJobsLaunched.joinAll()
+        // wait for the write jobs to finish, number of readers we count as completed are the ones that were done right when we finished with the readers
+        // If we wait for all of the joined readers to finish we will overcount because all of the readers that were blocked by the writers will also finish
+        val readersFinishedDuringWrites = readCount.value
+        // wait for all of the reader jobs to finish
+        readersFinishedDuringWrites to readJobsLaunched
       }
 
+      val (readersFinishedDuringWrites, readJobsLaunched) = kv
+      readJobsLaunched.joinAll() // readers join needs to be outside of the measureTimedValue block otherwise we will be measuring the time after the writes are done and readers are still running
       timerJob.cancelAndJoin()
       timerMessage.value = false
 
       println("---------------- Calculating Results ----------------")
 
       val modifiedRows = driver.stream(readerQueryFinal).filter { it.age == 1 }.count()
-      val stats = "(Writers:${intervalList.size}, Readers:${readCount.value})"
+      val stats = "(Writers:${intervalList.size}, Readers:${readersFinishedDuringWrites})"
       if (modifiedRows == maxRow) {
         val outputMsg = "----- All rows modified successfully in ${timeTaken} $stats ------"
         println(outputMsg)

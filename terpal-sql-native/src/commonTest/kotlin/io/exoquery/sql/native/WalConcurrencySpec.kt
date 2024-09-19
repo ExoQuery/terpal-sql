@@ -31,6 +31,7 @@ class WalConcurrencySpec {
     Sql("INSERT INTO MiscTest VALUES (${testData.id}, ${testData.value})").action().runOn(ctx)
   }
 
+  // TODO should have a test like this for android
   @Test
   fun `Write Should Not Block Read`() {
     val counter = AtomicInt(0)
