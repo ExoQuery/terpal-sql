@@ -10,6 +10,12 @@ plugins {
 
 val thisVersion = version
 
+// Exclude the jb-annotations-kmp in favor of the official jebrains one (in dependencies below)
+configurations.forEach {
+  //create("cleanedAnnotations")
+  it.exclude(group = "com.sschr15.annotations", module = "jb-annotations-kmp")
+}
+
 // Enable logging of wrappers
 //tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
 //    compilerOptions {
@@ -76,6 +82,7 @@ kotlin {
         implementation("com.zaxxer:HikariCP:5.0.1")
         implementation("com.typesafe:config:1.4.1")
         implementation("org.xerial:sqlite-jdbc:3.42.0.1")
+        implementation("org.jetbrains:annotations:24.1.0")
       }
     }
     jvmTest {
