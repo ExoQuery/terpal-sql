@@ -3,6 +3,7 @@ package io.exoquery.sql.native
 import io.exoquery.sql.Sql
 import io.exoquery.sql.encodingdata.shouldBe
 import io.exoquery.sql.native.TestDatabase.ctx
+import io.exoquery.sql.runOn
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
 import kotlin.test.BeforeTest
@@ -27,7 +28,7 @@ class BasicQuerySpec {
     @Serializable
     data class Person(val id: Int, val firstName: String, val lastName: String, val age: Int)
 
-    ctx.run(Sql("SELECT id, firstName, lastName, age FROM Person").queryOf<Person>()) shouldBe listOf(
+    Sql("SELECT id, firstName, lastName, age FROM Person").queryOf<Person>().runOn(ctx) shouldBe listOf(
       Person(1, "Joe", "Bloggs", 111),
       Person(2, "Jim", "Roogs", 222)
     )
