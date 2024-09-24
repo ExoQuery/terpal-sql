@@ -6,7 +6,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 
 class TransactionSpec {
-  val ops get() = TransactionSpecOps(ctx, ctx::runRaw)
+  val ops by lazy { TransactionSpecOps(ctx) }
 
   @BeforeTest
   fun clearTables() = ops.clearTables()

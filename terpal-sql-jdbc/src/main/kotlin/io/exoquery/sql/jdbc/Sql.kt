@@ -19,6 +19,7 @@ need specify a serializer for the type or (if it is contextual) ensure that it h
 )
 object SqlInterpolator: InterpolatorWithWrapper<SqlFragment, Statement>, SqlJdbcBase()
 
+@Deprecated("Use io.exoquery.sql.Sql instead", ReplaceWith("io.exoquery.sql.Sql"))
 @InterpolatorFunction<SqlInterpolator>(SqlInterpolator::class)
 fun Sql(@Language("SQL") query: String): Statement = io.exoquery.terpal.Messages.throwPluginNotExecuted()
 

@@ -14,8 +14,6 @@ import kotlinx.coroutines.withContext
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.coroutineContext
 
-typealias Connection = DoublePoolSession<StatementCachingSession<SupportSQLiteDatabase, SupportSQLiteStatement>>
-
 object AndroidCoroutineContext: CoroutineContext.Key<CoroutineSession<Connection>> {}
 
 interface HasSessionAndroid: RequiresSession<Connection, SupportSQLiteStatement> {
@@ -29,12 +27,6 @@ interface HasSessionAndroid: RequiresSession<Connection, SupportSQLiteStatement>
     prepareSession(pool.borrowWriter())
 
   fun prepareSession(session: Connection): Connection
-
-  suspend fun newSession(label: String?): Connection = run {
-    val session = pool.borrowWriter()
-    session.value.session.enableWriteAheadLogging()
-    session
-  }
 
   override fun closeSession(session: Connection): Unit = session.close()
   override fun isClosedSession(session: Connection): Boolean = !session.isOpen()
@@ -89,8 +81,14 @@ interface HasTransactionalityAndroid: RequiresTransactionality<Connection, Suppo
 
       when (walMode) {
         // When in WAL mode, we want readers to be able to read while the writer is writing
-        WalMode.Enabled -> session.value.session.beginTransactionNonExclusive()
-        else -> session.value.session.beginTransaction()
+        WalMode.Enabled -> {
+          //println("------- Beginning non-exclusive transaction")
+          session.value.session.beginTransactionNonExclusive()
+        }
+        else -> {
+          //println("------- Beginning transaction")
+          session.value.session.beginTransaction()
+        }
       }
       val result = withContext(transaction) { block() }
       // setting it successful makes it not rollback

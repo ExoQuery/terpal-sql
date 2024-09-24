@@ -10,7 +10,7 @@ import kotlin.test.BeforeTest
 @RunWith(AndroidJUnit4::class)
 class InstrumentedTransactionSpec: InstrumentedSpec {
   val ctx get() = createDriver("tran_spec.db", PersonSchema)
-  val ops get() = TransactionSpecOps(ctx, ctx::runRaw)
+  val ops get() = TransactionSpecOps(ctx)
 
   @BeforeTest
   fun clearTables() = ops.clearTables()

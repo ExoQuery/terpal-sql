@@ -21,7 +21,7 @@ data class Versions(val oldVersion: Int, val newVersion: Int)
 class TerpalNativeContext internal constructor(
   override val encodingConfig: EncodingConfig<Unused, SqliteStatementWrapper, SqliteCursorWrapper>,
   override val pool: SqliterPool,
-): ContextBase<Connection, Statement>, AutoCloseable,
+): ContextTransactional<Connection, Statement>, AutoCloseable,
   WithEncoding<Unused, SqliteStatementWrapper, SqliteCursorWrapper>,
   WithReadOnlyVerbs,
   HasTransactionalityNative {

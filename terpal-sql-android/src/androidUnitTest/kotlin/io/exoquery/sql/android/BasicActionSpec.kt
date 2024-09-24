@@ -10,7 +10,7 @@ import kotlin.test.Test
 @RunWith(RobolectricTestRunner::class)
 class BasicActionSpec {
   val ctx get() = TestDatabase.ctx
-  val ops = BasicActionOps(ctx, ctx::runRaw)
+  val ops = BasicActionOps(ctx)
 
   @BeforeTest
   fun clearTables() = ops.clearTables()

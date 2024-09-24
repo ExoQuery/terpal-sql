@@ -1,7 +1,7 @@
 package io.exoquery.sql.sqlite
 
 import io.exoquery.sql.*
-import io.exoquery.sql.jdbc.Sql
+import io.exoquery.sql.Sql
 import io.exoquery.sql.jdbc.TerpalContext
 import io.exoquery.sql.runOn
 import io.kotest.core.spec.style.FreeSpec

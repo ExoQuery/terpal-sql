@@ -4,7 +4,7 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinCompile
 plugins {
   id("conventions")
   kotlin("multiplatform")
-  id("io.exoquery.terpal-plugin") version "1.9.22-1.0.0-RC3"
+  id("io.exoquery.terpal-plugin") version "1.9.22-1.0.0-RC4.6"
   kotlin("plugin.serialization") version "1.9.22"
 }
 

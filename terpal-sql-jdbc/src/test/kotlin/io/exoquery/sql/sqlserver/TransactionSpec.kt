@@ -2,7 +2,7 @@ package io.exoquery.sql.sqlserver
 
 import io.exoquery.sql.TestDatabases
 import io.exoquery.sql.jdbc.TerpalContext
-import io.exoquery.sql.jdbc.Sql
+import io.exoquery.sql.Sql
 import io.exoquery.sql.run
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FreeSpec

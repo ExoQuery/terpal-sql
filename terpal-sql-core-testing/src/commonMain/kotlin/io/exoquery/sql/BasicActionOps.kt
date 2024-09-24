@@ -5,11 +5,10 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
 
 class BasicActionOps<Session, Stmt>(
-  val ctx: ContextBase<Session, Stmt>,
-  val runRaw: (String) -> Unit
+  val ctx: ContextTransactional<Session, Stmt>
 ) {
-  fun clearTables() {
-    runRaw(
+  fun clearTables(): Unit = runBlocking {
+    ctx.runActions(
       """
       DELETE FROM Person;
       DELETE FROM Address;

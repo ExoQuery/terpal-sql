@@ -34,13 +34,14 @@ fun createConnection(type: SqliterPoolType, statementCacheCapacity: Int, isWrita
   }
 
 class SqliterPool(type: SqliterPoolType, val statementCacheCapacity: Int):
-  DoublePoolBase<StatementCachingSession<DatabaseConnection, Statement>>(
+  DoublePoolBase<StatementCachingSession<DatabaseConnection, Statement>, Unit>(
     when(type) {
       is SqliterPoolType.SingleConnection, is SqliterPoolType.Wrapped -> DoublePoolType.Single
       is SqliterPoolType.MultiConnection -> DoublePoolType.Multi(type.numReaders)
     },
     { createConnection(type, statementCacheCapacity, true) },
     { createConnection(type, statementCacheCapacity, false) },
+    {}, {},
     { it.session.close() }
   )
 

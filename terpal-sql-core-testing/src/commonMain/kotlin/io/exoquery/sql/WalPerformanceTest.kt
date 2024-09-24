@@ -9,11 +9,10 @@ import kotlinx.serialization.serializer
 import kotlin.math.min
 import kotlin.random.Random
 import kotlin.test.fail
-import kotlin.time.measureTime
 import kotlin.time.measureTimedValue
 
 class WallPerformanceTest<Session, Stmt>(
-  val driver: ContextBase<Session, Stmt>,
+  val driver: ContextTransactional<Session, Stmt>,
   val maxRow: Int = 100000, val minIntervalSize: Int = 100,
   val maxIntervalSize: Int = 1000,
   val readWaitRange: Pair<Int, Int> = 10 to 100,

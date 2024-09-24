@@ -14,21 +14,25 @@ import kotlinx.coroutines.runBlocking
 object WalTestDatabase {
   val name = "wal_test.db"
   val basePath = "./"
-  fun resetTerpalTest() {
-    deleteDatabase(name)
-  }
 
-  val ctx by lazy { runBlocking { TerpalNativeContext.fromSqlDelightSchema(WalTestSchema, name, basePath, mode = TerpalNativeContext.PoolingMode.Multiple(3)) } }
+  val ctx by lazy {
+    runBlocking {
+      deleteDatabase(name)
+      TerpalNativeContext.fromSqlDelightSchema(WalTestSchema, name, basePath, mode = TerpalNativeContext.PoolingMode.Multiple(3))
+    }
+  }
 }
 
 object TestDatabase {
   val name = "terpal_test.db"
   //val basePath = "/home/alexi/git/terpal-sql/terpal-sql-native/"
   val basePath = "./"
-  fun resetTerpalTest() {
-    deleteDatabase(name)
+  val ctx by lazy {
+    runBlocking {
+      deleteDatabase(name, basePath)
+      TerpalNativeContext.fromSqlDelightSchema(BasicSchema, name, basePath)
+    }
   }
-  val ctx by lazy { runBlocking { TerpalNativeContext.fromSqlDelightSchema(BasicSchema, name, basePath) } }
 
   fun run(query: String) {
     createDatabaseManager(emptyDatabaseConfig()).withConnection {

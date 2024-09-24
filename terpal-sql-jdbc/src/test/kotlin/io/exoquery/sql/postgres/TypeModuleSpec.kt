@@ -3,7 +3,7 @@ package io.exoquery.sql.postgres
 import io.exoquery.sql.Param
 import io.exoquery.sql.examples.run
 import io.exoquery.sql.jdbc.JdbcEncodingConfig
-import io.exoquery.sql.jdbc.Sql
+import io.exoquery.sql.Sql
 import io.exoquery.sql.jdbc.TerpalContext
 import io.exoquery.sql.runOn
 import io.kotest.core.spec.style.FreeSpec

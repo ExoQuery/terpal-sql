@@ -2,7 +2,7 @@
 //
 //import io.exoquery.sql.jdbc.JdbcBasicEncoding.Companion.StringEncoder
 //import io.exoquery.sql.jdbc.JdbcEncodingConfig
-//import io.exoquery.sql.jdbc.Sql
+//import io.exoquery.sql.Sql
 //import io.exoquery.sql.jdbc.SqlBatch
 //import io.kotest.matchers.bigdecimal.shouldBeEqualIgnoringScale
 //import io.kotest.matchers.equals.shouldBeEqual

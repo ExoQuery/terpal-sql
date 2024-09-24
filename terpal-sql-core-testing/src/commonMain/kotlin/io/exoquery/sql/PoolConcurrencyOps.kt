@@ -1,23 +1,14 @@
-package io.exoquery.sql.native
+package io.exoquery.sql
 
-import app.cash.sqldelight.driver.native.NativeSqliteDriver
-import co.touchlab.sqliter.DatabaseFileContext.deleteDatabase
-import co.touchlab.sqliter.native.increment
-import io.exoquery.sql.BasicSchema
-import io.exoquery.sql.Sql
-import io.exoquery.sql.delight.runOnDriver
 import io.exoquery.sql.sqlite.SimplePool
 import io.exoquery.sql.sqlite.Waiter
 import io.exoquery.sql.sqlite.getNumProcessorsOnPlatform
-import io.exoquery.sql.waitRandom
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.*
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.Serializable
-import kotlin.concurrent.AtomicInt
-import kotlin.test.Test
 import kotlin.test.assertEquals
 
 fun <T> runBlockingWithTimeout(timeout: Long, block: suspend CoroutineScope.() -> T): T =
@@ -27,10 +18,10 @@ fun <T> runBlockingWithTimeout(timeout: Long, block: suspend CoroutineScope.() -
     }
   }
 
-class PoolConcurrencySpec {
+class PoolConcurrencyOps {
 
   class ContentionTest(val numSlots: Int, val waitMin: Int, val waitMax: Int, val totalTimeout: Long) {
-    val marks = Array(numSlots) { AtomicInt(0) }
+    val marks = Array(numSlots) { atomic(0) }
     val indexes = (0 until numSlots).toList().shuffled()
 
     fun run() {
@@ -60,8 +51,7 @@ class PoolConcurrencySpec {
     }
   }
 
-  @Test
-  fun `Pool Should be able to make progress when contended`() {
+  fun `Pool_Should_be_able_to_make_progress_when_contended`() {
     //val test = ContentionTest(1000, 5, 10, 6000)
     val numProcs = getNumProcessorsOnPlatform()
     val test = ContentionTest(numProcs * 100, 5, 10,
@@ -69,17 +59,15 @@ class PoolConcurrencySpec {
       // wait time should be less than 4000ms. Give it an upper bound of twice that of this test.
       (numProcs * 2000).toLong()
     )
-
   }
 
-  @Test
-  fun waiterSpec() {
-    val counter = AtomicInt(0)
+  fun `Pool_waiter_shuold_wait_until_notified`() {
+    val counter = atomic(0)
     val w = Waiter()
     runBlockingWithTimeout(3000) {
       launch {
         w.doWait()
-        counter.increment()
+        counter.incrementAndGet()
       }
       assertEquals(counter.value, 0, "Initial counter value was not 0")
       delay(1000)
@@ -93,9 +81,7 @@ class PoolConcurrencySpec {
     }
   }
 
-  // Need to have underscores or odd errors happen in android. Not sure why.
-  // ERROR: /home/alexi/git/terpal-sql/terpal-sql-core-testing/build/libs/terpal-sql-core-testing-jvm-1.9.22-0.3.0.jar: D8: com.android.tools.r8.internal.vc: Space characters in SimpleName 'io/exoquery/sql/PoolConcurrencyOps$Pool should wait once all connections are exhausted$1$1' are not allowed prior to DEX version 040
-  @Test
+
   fun `Pool_should_wait_once_all_connections_are_exhausted`() {
     fun currTime() = run {
       val now = Clock.System.now()
@@ -135,17 +121,6 @@ class PoolConcurrencySpec {
         assertEquals(4, counter.value, "Counter should have been 4 after bottom-launch wait ending")
       }
     }
-  }
-
-  @Test
-  fun basicDriver() {
-    val name = "testdb"
-    deleteDatabase(name)
-    val query = Sql("SELECT * from person").queryOf<Person>()
-    val nativeDriver = NativeSqliteDriver(BasicSchema, name)
-
-    println("reading list: " + query.runOnDriver(nativeDriver))
-    println("insert new records: " + Sql("INSERT INTO person (id, firstName, lastName, age) VALUES (3,'Abraham', 'Avinu', 123);").action().runOnDriver(nativeDriver).value)
   }
 }
 

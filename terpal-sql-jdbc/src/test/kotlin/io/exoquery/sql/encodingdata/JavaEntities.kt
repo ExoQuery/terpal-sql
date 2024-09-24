@@ -2,7 +2,7 @@ package io.exoquery.sql.encodingdata
 
 import io.exoquery.sql.Action
 import io.exoquery.sql.Param
-import io.exoquery.sql.jdbc.Sql
+import io.exoquery.sql.Sql
 import io.kotest.matchers.bigdecimal.shouldBeEqualIgnoringScale
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable

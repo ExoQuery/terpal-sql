@@ -21,6 +21,7 @@ class TerpalException(msg: String, cause: Throwable?): Exception(msg, cause) {
   constructor(msg: String): this(msg, null)
 }
 
+@OptIn(TerpalSqlInternal::class)
 interface EncodingConfig<Session, Stmt, ResultRow> {
   val additionalEncoders: Set<SqlEncoder<Session, Stmt, out Any>>
   val additionalDecoders: Set<SqlDecoder<Session, ResultRow, out Any>>
@@ -30,6 +31,7 @@ interface EncodingConfig<Session, Stmt, ResultRow> {
   val timezone: TimeZone
 }
 
+@OptIn(TerpalSqlInternal::class)
 interface WithEncoding<Session, Stmt, ResultRow> {
   val encodingConfig: EncodingConfig<Session, Stmt, ResultRow>
   val startingStatementIndex: StartingIndex get() = StartingIndex.Zero // default for JDBC is 1 so this needs to be overrideable
@@ -75,6 +77,7 @@ interface WithEncoding<Session, Stmt, ResultRow> {
     }
 }
 
+@OptIn(TerpalSqlInternal::class)
 interface RequiresSession<Session, Stmt> {
 
   // Methods that implementors need to provide
@@ -149,25 +152,30 @@ interface RequiresTransactionality<Session, Stmt>: RequiresSession<Session, Stmt
  * A minimal set of context-verbs needed to support Sql-interpolated query executions. This makes minimal assumptions
  * about how the context functionality is composed. Typically implementations will want to start with ContextBase or ContextCannonical.
  */
+@OptIn(TerpalSqlInternal::class)
 interface Context {
-  suspend fun <T> stream(query: Query<T>): Flow<T>
-  suspend fun <T> stream(query: BatchActionReturning<T>): Flow<T>
-  suspend fun <T> stream(query: ActionReturning<T>): Flow<T>
-  suspend fun <T> run(query: Query<T>): List<T>
-  suspend fun run(query: Action): Long
-  suspend fun run(query: BatchAction): List<Long>
-  suspend fun <T> run(query: ActionReturning<T>): T
-  suspend fun <T> run(query: BatchActionReturning<T>): List<T>
+  @OptIn(TerpalSqlInternal::class) suspend fun <T> stream(query: Query<T>): Flow<T>
+  @OptIn(TerpalSqlInternal::class) suspend fun <T> stream(query: BatchActionReturning<T>): Flow<T>
+  @OptIn(TerpalSqlInternal::class) suspend fun <T> stream(query: ActionReturning<T>): Flow<T>
+  @OptIn(TerpalSqlInternal::class) suspend fun <T> run(query: Query<T>): List<T>
+  @OptIn(TerpalSqlInternal::class) suspend fun run(query: Action): Long
+  @OptIn(TerpalSqlInternal::class) suspend fun run(query: BatchAction): List<Long>
+  @OptIn(TerpalSqlInternal::class) suspend fun <T> run(query: ActionReturning<T>): T
+  @OptIn(TerpalSqlInternal::class) suspend fun <T> run(query: BatchActionReturning<T>): List<T>
 
-  suspend fun <T> runRaw(query: Query<T>): List<Pair<String, String?>>
+  @OptIn(TerpalSqlInternal::class) suspend fun <T> runRaw(query: Query<T>): List<Pair<String, String?>>
 }
 
+@OptIn(TerpalSqlInternal::class)
+suspend fun Context.runActions(actions: String): List<Long> =
+  actions.split(";").map { it.trim() }.filter { it.isNotEmpty() }.map { run(Action(it, listOf())) }
 
-interface ContextBase<Session, Stmt>: Context, RequiresSession<Session, Stmt>, RequiresTransactionality<Session, Stmt> {
+@OptIn(TerpalSqlInternal::class)
+interface ContextTransactional<Session, Stmt>: Context, RequiresSession<Session, Stmt>, RequiresTransactionality<Session, Stmt> {
   suspend open fun <T> transaction(block: suspend ExternalTransactionScope.() -> T): T =
     withTransactionScope {
       val coroutineScope = this
-      block(ExternalTransactionScope(coroutineScope, this@ContextBase))
+      block(ExternalTransactionScope(coroutineScope, this@ContextTransactional))
     }
 
   fun showStats(): String = ""
@@ -178,7 +186,8 @@ interface ContextBase<Session, Stmt>: Context, RequiresSession<Session, Stmt>, R
  * and encoders. The assumption here is that the same Session/Row/Result types used in the encoders are used in the session-handling.
  * If this is not the case use ContextBase.
  */
-interface ContextCannonical<Session, Stmt, ResultRow>: ContextBase<Session, Stmt>, RequiresSession<Session, Stmt>, RequiresTransactionality<Session, Stmt>, WithEncoding<Session, Stmt, ResultRow>
+@OptIn(TerpalSqlInternal::class)
+interface ContextCannonical<Session, Stmt, ResultRow>: ContextTransactional<Session, Stmt>, RequiresSession<Session, Stmt>, RequiresTransactionality<Session, Stmt>, WithEncoding<Session, Stmt, ResultRow>
 
 class ExternalTransactionScope(private val scope: CoroutineScope, private val ctx: Context) {
   suspend fun <T> Query<T>.run(): List<T> = ctx.run(this)

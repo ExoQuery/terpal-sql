@@ -4,6 +4,7 @@ import app.cash.sqldelight.db.AfterVersion
 import app.cash.sqldelight.db.QueryResult
 import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.db.SqlSchema
+import io.exoquery.sql.sqlite.CallAfterVersion
 import io.exoquery.sql.sqlite.TerpalSchema
 
 object EmptySchema: SqlSchema<QueryResult.Value<Unit>> {
@@ -256,4 +257,20 @@ object WalTestSchema: SqlSchema<QueryResult.Value<Unit>> {
     newVersion: Long,
     vararg callbacks: AfterVersion,
   ) = QueryResult.Unit
+}
+
+object WalSchemaTerpal: TerpalSchema<Unit> {
+  override val version: Long = 1
+  override suspend fun create(driver: Context): Unit {
+    Sql(
+      """
+      CREATE TABLE MiscTest (
+          id INTEGER NOT NULL PRIMARY KEY,
+          value TEXT NOT NULL
+      )
+      """
+    ).action().runOn(driver)
+  }
+
+  override fun migrate(driver: Context, oldVersion: Long, newVersion: Long, vararg callbacks: CallAfterVersion) = Unit
 }

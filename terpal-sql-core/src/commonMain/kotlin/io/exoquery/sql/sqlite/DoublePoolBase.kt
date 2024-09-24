@@ -30,7 +30,7 @@ interface DoublePoolType {
     }
 }
 
-class DoublePoolSession<Session>(protected val conn: Borrowed<Session>, val isWriter: Boolean) {
+class DoublePoolSession<Session, Ctx>(protected val conn: Borrowed<Session>, val isWriter: Boolean) {
   fun close() = conn.close()
   fun isOpen() = conn.isOpen()
   val value get() = conn.value
@@ -51,40 +51,42 @@ expect fun getNumProcessorsOnPlatform():Int
  * the coroutines. A possible future direction is to introduce reader timeouts or some other mechanism
  * to prevent overly aggressive readers.
  */
-interface DoublePool<Session> {
-  suspend fun borrowReader(): DoublePoolSession<Session>
-  suspend fun borrowWriter(): DoublePoolSession<Session>
+interface DoublePool<Session, Ctx> {
+  suspend fun borrowReader(): DoublePoolSession<Session, Ctx>
+  suspend fun borrowWriter(): DoublePoolSession<Session, Ctx>
 
   fun finalize(): Unit
 }
 
-open class DoublePoolBase<Session>(
+open class DoublePoolBase<Session,  Ctx>(
   val mode: DoublePoolType,
-  protected val aquireWriter: (PoolContext) -> Session,
-  protected val aquireReader: (PoolContext) -> Session,
-  protected val finalize: (Session) -> Unit
-): DoublePool<Session> {
-  lateinit var readerPool: SimplePool<Session>
-  lateinit var writerPool: SimplePool<Session>
+  protected val aquireWriter: (PoolContext<Ctx>) -> Session,
+  protected val aquireReader: (PoolContext<Ctx>) -> Session,
+  protected val aquireContext: () -> Ctx,
+  protected val finalizeContext: (Ctx) -> Unit,
+  protected val finalizePool: (Session) -> Unit
+): DoublePool<Session, Ctx> {
+  lateinit var readerPool: SimplePool<Session, Ctx>
+  lateinit var writerPool: SimplePool<Session, Ctx>
 
   init {
     when(mode) {
       is DoublePoolType.Single -> {
-        writerPool = SimplePool(1, aquireWriter, finalize)
+        writerPool = SimplePool(1, aquireWriter, finalizePool, aquireContext, finalizeContext)
         readerPool = writerPool
 
       }
       is DoublePoolType.Multi -> {
-        readerPool = SimplePool(mode.numReaders, aquireReader, finalize)
-        writerPool = SimplePool(1, aquireWriter, finalize)
+        readerPool = SimplePool(mode.numReaders, aquireReader, finalizePool, aquireContext, finalizeContext)
+        writerPool = SimplePool(1, aquireWriter, finalizePool, aquireContext, finalizeContext)
       }
     }
   }
 
   // Borrow the a reader, mark it as non-writable unless there is a single connection
-  override suspend fun borrowReader(): DoublePoolSession<Session> =
+  override suspend fun borrowReader(): DoublePoolSession<Session, Ctx> =
     DoublePoolSession(readerPool.borrow(), if (mode == DoublePoolType.Single) true else false)
-  override suspend fun borrowWriter(): DoublePoolSession<Session> =
+  override suspend fun borrowWriter(): DoublePoolSession<Session, Ctx> =
     DoublePoolSession(writerPool.borrow(), true)
 
   override fun finalize() {
@@ -108,7 +110,7 @@ interface Borrowed<Session> {
   companion object {
     // Simpler lifecycle, can only be open once and then when closed that's forever
     // delegates the actual release to pooled-entry which can be reused
-    internal class BorrowedImpl<Session>(private val entry: PooledEntry<Session>): Borrowed<Session> {
+    internal class BorrowedImpl<Session>(private val entry: PooledEntry<Session, *>): Borrowed<Session> {
       private val isAvailable: AtomicBoolean = atomic(true)
       override val value get() = entry.value
       override fun isOpen() = isAvailable.value
@@ -129,14 +131,14 @@ interface Borrowed<Session> {
     }
 
     // This is the only way to create a borrowed instance
-    fun <Session> fromPool(entry: PooledEntry<Session>): Borrowed<Session> = BorrowedImpl(entry)
+    fun <Session, Ctx> fromPool(entry: PooledEntry<Session, Ctx>): Borrowed<Session> = BorrowedImpl(entry)
     fun <Session> dummy(entry: Session): Borrowed<Session> = BorrowedDummy(entry)
   }
 }
 
 
 
-class PooledEntry<T>(val value: T, val orderNum: Int, internal val poolLock: ReentrantLock, private val waiter: Waiter) {
+class PooledEntry<Conn, Ctx>(val value: Conn, val orderNum: Int, internal val poolLock: ReentrantLock, private val waiter: Waiter, val context: Ctx) {
   val isAvailable = atomic(true)
   internal fun tryToAcquire(): Boolean = isAvailable.compareAndSet(expect = true, update = false)
   fun release() {
@@ -166,35 +168,36 @@ inline class Waiter(private val channel: Channel<Unit> = Channel<Unit>(0)) {
   fun doNotify() { channel.trySend(Unit) }
 }
 
-data class PoolContext(val numEntries: Int)
+data class PoolContext<Ctx>(val numEntries: Int, val context: Ctx)
 
 // Remove generic. This pool is only used for Sqliter connections.
-class SimplePool<T>(val capacity: Int, val aquire: (PoolContext) -> T, val finalize: (T) -> Unit) {
-  private val connsRef = atomic<List<PooledEntry<T>>?>(listOf())
+class SimplePool<Conn, Ctx>(val capacity: Int, val aquire: (PoolContext<Ctx>) -> Conn, val finalize: (Conn) -> Unit, val aquireContext: () -> Ctx, val finalizeContext: (Ctx) -> Unit) {
+  private val entries = atomic<List<PooledEntry<Conn, Ctx>>?>(listOf())
   private val poolLock = reentrantLock()
   private val waiter = Waiter()
 
-  suspend fun borrow(): Borrowed<T> {
+  suspend fun borrow(): Borrowed<Conn> {
     val nextAvailable = poolLock.withLock {
       // Reload the list since it could've been updated by other threads concurrently.
-      val currConnections = connsRef.value ?: throw RuntimeException("pool closed")
+      val currConnections = entries.value ?: throw RuntimeException("pool closed")
       val currConnectionsNum = currConnections.count()
 
       if (currConnectionsNum < capacity) {
         // Capacity hasn't been reached — create a new entry to serve this call.
-        val rawConn = aquire(PoolContext(currConnectionsNum))
-        val conn = PooledEntry(rawConn, currConnectionsNum + 1, poolLock, waiter)
+        val newContext = aquireContext()
+        val rawConn = aquire(PoolContext(currConnectionsNum, newContext))
+        val conn = PooledEntry(rawConn, currConnectionsNum + 1, poolLock, waiter, newContext)
         val aquired = conn.tryToAcquire()
         check(aquired)
 
-        connsRef.value = (currConnections + listOf(conn))
+        entries.value = (currConnections + listOf(conn))
         conn
       } else {
-        val connections = connsRef.value ?: throw RuntimeException("pool closed")
+        val connections = entries.value ?: throw RuntimeException("pool closed")
         var firstConn = connections.firstOrNull { it.tryToAcquire() }
         while (firstConn == null) {
           waiter.doWait()
-          val connections = connsRef.value ?: throw RuntimeException("pool closed")
+          val connections = entries.value ?: throw RuntimeException("pool closed")
           firstConn = connections.firstOrNull { it.tryToAcquire() }
         }
         firstConn
@@ -205,7 +208,15 @@ class SimplePool<T>(val capacity: Int, val aquire: (PoolContext) -> T, val final
   }
 
   fun finalize(): Unit = poolLock.withLock {
-    connsRef.value?.forEach { finalize(it.value) }
-    connsRef.value = null
+    // Go through the pool entries, release all connections (and contexts if needed)
+    entries.value?.forEach {
+      try { finalize(it.value) } catch (e: Exception) {
+        // Logging might be useful here
+      }
+      try { finalizeContext(it.context) } catch (e: Exception) {
+        // Logging might be useful here
+      }
+    }
+    entries.value = null
   }
 }

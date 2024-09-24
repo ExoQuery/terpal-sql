@@ -6,7 +6,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 
 class BasicActionSpec {
-  val ops = BasicActionOps(ctx, ctx::runRaw)
+  val ops = BasicActionOps(ctx)
 
   @BeforeTest
   fun clearTables() = ops.clearTables()

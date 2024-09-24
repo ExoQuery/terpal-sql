@@ -1,6 +1,7 @@
 package io.exoquery.sql.examples
 
 import io.exoquery.sql.Param
+import io.exoquery.sql.Sql
 import io.exoquery.sql.jdbc.*
 import io.exoquery.sql.jdbc.JdbcTimeEncodingLegacy.JZonedDateTimeEncoder
 import io.exoquery.sql.jdbc.JdbcTimeEncodingLegacy.JZonedDateTimeDecoder

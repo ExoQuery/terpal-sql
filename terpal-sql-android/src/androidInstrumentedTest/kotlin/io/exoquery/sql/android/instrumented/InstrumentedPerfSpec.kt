@@ -55,21 +55,18 @@ class InstrumentedPerfTest: InstrumentedSpec {
       TestConfig(100, TerpalAndroidContext.PoolingMode.MultipleReaderWal(5)),
       TestConfig(100, TerpalAndroidContext.PoolingMode.MultipleReaderWal(8)),
       TestConfig(100, TerpalAndroidContext.PoolingMode.MultipleReaderWal(10)),
-      TestConfig(100, TerpalAndroidContext.PoolingMode.MultipleReaderWal(15)),
       TestConfig(1000, TerpalAndroidContext.PoolingMode.SingleSessionWal),
       TestConfig(1000, TerpalAndroidContext.PoolingMode.MultipleReaderWal(1)),
       TestConfig(1000, TerpalAndroidContext.PoolingMode.MultipleReaderWal(3)),
       TestConfig(1000, TerpalAndroidContext.PoolingMode.MultipleReaderWal(5)),
       TestConfig(1000, TerpalAndroidContext.PoolingMode.MultipleReaderWal(8)),
       TestConfig(1000, TerpalAndroidContext.PoolingMode.MultipleReaderWal(10)),
-      TestConfig(1000, TerpalAndroidContext.PoolingMode.MultipleReaderWal(15)),
       TestConfig(null, TerpalAndroidContext.PoolingMode.SingleSessionWal),
       TestConfig(null, TerpalAndroidContext.PoolingMode.MultipleReaderWal(1)),
       TestConfig(null, TerpalAndroidContext.PoolingMode.MultipleReaderWal(3)),
       TestConfig(null, TerpalAndroidContext.PoolingMode.MultipleReaderWal(5)),
       TestConfig(null, TerpalAndroidContext.PoolingMode.MultipleReaderWal(8)),
-      TestConfig(null, TerpalAndroidContext.PoolingMode.MultipleReaderWal(10)),
-      TestConfig(null, TerpalAndroidContext.PoolingMode.MultipleReaderWal(15))
+      TestConfig(null, TerpalAndroidContext.PoolingMode.MultipleReaderWal(10))
     ).forEach(::runTest)
 
     println("------------- Done with all tests --------------")

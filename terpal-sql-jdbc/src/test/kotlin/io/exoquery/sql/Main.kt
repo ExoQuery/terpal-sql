@@ -1,6 +1,6 @@
 package io.exoquery.sql
 
-import io.exoquery.sql.jdbc.Sql
+import io.exoquery.sql.Sql
 import io.exoquery.sql.jdbc.SqlBatch
 import io.exoquery.sql.jdbc.TerpalContext
 import io.zonky.test.db.postgres.embedded.EmbeddedPostgres

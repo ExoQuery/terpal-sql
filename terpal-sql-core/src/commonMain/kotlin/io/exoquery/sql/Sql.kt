@@ -67,9 +67,10 @@ abstract class SqlBatchBase: InterpolatorBatchingWithWrapper<Param<*>> {
 }
 
 abstract class SqlBase: InterpolatorWithWrapper<SqlFragment, Statement> {
-  override operator fun invoke(@Language("SQL") string: String): Statement = Messages.throwPluginNotExecuted()
+  operator fun invoke(@Language("SQL") string: String): Statement = Messages.throwPluginNotExecuted()
 
-  override fun interpolate(parts: () -> List<String>, params: () -> List<SqlFragment>): Statement {
+  @InterpolatorBackend
+  fun interpolate(parts: () -> List<String>, params: () -> List<SqlFragment>): Statement {
     val partsList = parts().map { IR.Part(it) }
     val paramsList = params().map {
       when (it) {

@@ -1,7 +1,7 @@
 package io.exoquery.sql.encodingdata
 
 import io.exoquery.sql.Action
-import io.exoquery.sql.jdbc.Sql
+import io.exoquery.sql.Sql
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
 import java.time.*

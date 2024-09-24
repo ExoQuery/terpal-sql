@@ -1,7 +1,7 @@
 package io.exoquery.sql
 
 import io.exoquery.sql.examples.id
-import io.exoquery.sql.jdbc.Sql
+import io.exoquery.sql.Sql
 import io.exoquery.sql.jdbc.SqlBatch
 
 

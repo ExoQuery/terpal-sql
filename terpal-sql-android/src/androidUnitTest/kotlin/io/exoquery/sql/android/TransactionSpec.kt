@@ -9,7 +9,7 @@ import kotlin.test.Test
 
 @RunWith(RobolectricTestRunner::class)
 class TransactionSpec {
-  val ops get() = TransactionSpecOps(ctx, ctx::runRaw)
+  val ops get() = TransactionSpecOps(ctx)
 
   @BeforeTest
   fun clearTables() = ops.clearTables()
