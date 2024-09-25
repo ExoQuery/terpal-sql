@@ -9,7 +9,7 @@ plugins {
   id("conventions")
   kotlin("multiplatform")
   id("com.android.library")
-  id("io.exoquery.terpal-plugin") version "1.9.22-1.0.0-RC4.6"
+  id("io.exoquery.terpal-plugin") version "1.9.22-1.0.0-RC5"
   kotlin("plugin.serialization") version "1.9.22"
   // Already on the classpath
   //id("org.jetbrains.kotlin.android") version "1.9.23"
@@ -74,7 +74,7 @@ kotlin {
           api("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
           api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
           //api("org.jetbrains.kotlinx:kotlinx-datetime:0.6.0")
-          api("io.exoquery:terpal-runtime:1.9.22-1.0.0-RC4.6")
+          api("io.exoquery:terpal-runtime:1.9.22-1.0.0-RC5")
 
           //implementation("androidx.sqlite:sqlite:2.4.0")
           //implementation("androidx.sqlite:sqlite-ktx:2.4.0")
