@@ -26,3 +26,11 @@ class CallAfterVersion(
   val afterVersion: Long,
   val block: suspend (Context) -> Unit,
 )
+
+object EmptyTerpalSchema : TerpalSchema<Unit> {
+  override val version: Long = 0
+  override suspend fun create(driver: Context) {
+  }
+  override fun migrate(driver: Context, oldVersion: Long, newVersion: Long, vararg callbacks: CallAfterVersion) {
+  }
+}

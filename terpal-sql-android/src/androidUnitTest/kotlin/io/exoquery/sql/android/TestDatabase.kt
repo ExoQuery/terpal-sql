@@ -3,7 +3,6 @@ package io.exoquery.sql.android
 import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.sqlite.db.SupportSQLiteOpenHelper
 import androidx.test.core.app.ApplicationProvider
-import app.cash.sqldelight.driver.android.AndroidSqliteDriver
 import io.exoquery.sql.BasicSchemaTerpal
 import io.exoquery.sql.WalSchemaTerpal
 import kotlinx.coroutines.runBlocking
@@ -21,7 +20,7 @@ object TestDatabase {
     ShadowLog.stream = System.out
     System.setProperty("robolectric.logging","stdout")
     runBlocking {
-      TerpalAndroidContext.fromSchema(BasicSchemaTerpal, databaseName, ApplicationProvider.getApplicationContext())
+      TerpalAndroidContext.fromApplicationContext(databaseName, ApplicationProvider.getApplicationContext(), BasicSchemaTerpal)
     }
     //TerpalAndroidContext.fromApplicationContext(databaseName, ApplicationProvider.getApplicationContext(), AndroidSqliteDriver.Callback(BasicSchema))
   }
@@ -34,7 +33,7 @@ object WalTestDatabase {
     ShadowLog.stream = System.out
     System.setProperty("robolectric.logging","stdout")
     runBlocking {
-      TerpalAndroidContext.fromSchema(WalSchemaTerpal, databaseName, ApplicationProvider.getApplicationContext(), poolingMode = TerpalAndroidContext.PoolingMode.MultipleReaderWal(3))
+      TerpalAndroidContext.fromApplicationContext(databaseName, ApplicationProvider.getApplicationContext(), WalSchemaTerpal, poolingMode = TerpalAndroidContext.PoolingMode.MultipleReaderWal(3))
     }
   }
 }

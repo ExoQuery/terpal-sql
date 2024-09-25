@@ -46,8 +46,6 @@ val person: List<Person> = Sql("SELECT id, firstName, lastName FROM person WHERE
 
 # Getting Started
 
-## Dependencies
-
 Currently Terpal is supported 
 * **On the JVM** using JDBC with: PostgreSQL, MySQL, SQL Server, Oracle, SQLite, and H2. 
 * **On Android, iOS, OSX, Linux and Windows** with SQLite
@@ -71,6 +69,27 @@ dependencies {
 }
 ```
 
+A Terpal context is equivalent to a SQLite driver. It is the object that manages the connection to the database.
+
+#### When using JDBC:
+```kotlin
+// You either construct a context from a JDBC DataSource:
+val ctx = TerpalContext.Postgres(dataSource)
+
+// Or you can use the fromConfig helper to read from a configuration file
+val ctx = TerpalContext.Postgres.fromConfig("myPostgresDB")
+
+// ====== application.conf ======
+// myPostgresDB {
+//   dataSourceClassName=org.postgresql.ds.PGSimpleDataSource
+//   dataSource.user=postgres
+//   dataSource.password=mysecretpassword
+//   dataSource.portNumber=35433
+//   dataSource.serverName=localhost 
+// }
+```
+Have a look at the Terpal-SQL [Sample Project](https://github.com/deusaquilus/terpal-sql-example) for more details.
+
 #### Using Android
 
 For Android development, add the following to your `build.gradle.kts` file:
@@ -89,6 +108,63 @@ dependencies {
     implementation("androidx.sqlite:sqlite-framework:2.4.0")
 }
 ```
+
+Then create the `TerpalAndroidContext` using one of the following constructors.
+
+
+Use the `TerpalAndroidContext.fromApplicationContext` method to create a terpal context from an Android Application Context
+```kotlin
+val ctx = 
+  TerpalAndroidContext.fromApplicationContext(
+    databaseName = "mydb",
+    applicationContext = ApplicationProvider.getApplicationContext(),
+    // Optional: A TerpalSchema object defining the database schema and migrations. Similar to an SqlDelight SqlSchema object.
+    //           Alternatively, a SqlDelight SqlSchema object or any SupportSQLiteOpenHelper.Callback can be used.
+    schema = MyTerpalSchema,
+    // Optional: A setting describing how to pool connections. The default is a single-threaded pool.
+    poolingModel =
+      // The default mode that uses Android WAL compatibility mode
+      PoolingMode.SingleSessionWal
+      // Use this to get MVCC-like transaction isolation and real multi-reader concurrency. 
+      // Mutiple instances of SupportSQLiteOpenHelper are used so be careful with memory consumption.
+      PoolingMode.MultipleReaderWal(2)
+      // Use Pre-WAL mode for compatibility with older Android versions
+      PoolingMode.SingleSessionLegacy
+  )
+// Run a query:
+val person: List<Person> = Sql("SELECT * FROM Person").queryOf<Person>().runOn(ctx)
+```
+Use the `TerpalAndroidContext.fromSingleOpenHelper` method to create a terpal context from a single instance of `SupportSQLiteOpenHelper`
+```kotlin
+val myOpenHelperInstance = FrameworkSQLiteOpenHelperFactory().create(
+  SupportSQLiteOpenHelper.Configuration.builder(androidApplicationContext)
+    .name(databaseName)
+    // Other options e.g. callback, factory, etc.
+    .build(),
+)
+val ctx =
+  TerpalAndroidContext.fromSingleOpenHelper(
+    openHelper = myOpenHelperInstance
+  )
+// Run a query:
+val person: List<Person> = Sql("SELECT * FROM Person").queryOf<Person>().runOn(ctx)
+```
+
+Use the `TerpalAndroidContext.fromSingleSession` method to create a terpal context from a single instance of `SupportSQLiteDatabase`
+```kotlin
+val myDatabaseInstance = myOpenHelperInstance.writableDatabase
+val ctx =
+  TerpalAndroidContext.fromSingleSession(
+    database = myDatabaseInstance
+  )
+// Run a query:
+val person: List<Person> = Sql("SELECT * FROM Person").queryOf<Person>().runOn(ctx)
+```
+
+> Note that most of the constructors on the `TerpalAndroidContext` object are suspended functions. This is because
+> creating a `SupportSQLiteDatabase` frequently involves database schema creation and migration that is done
+> as part of the SupportSQLiteOpenHelper.Callback. These contexts are required to be create from a coroutine
+> to avoid blocking the main thread.
 
 #### Using iOS, OSX, Linux and Windows
 
@@ -124,40 +200,6 @@ repositories {
 }
 ```
 
-
-
-## Creating a Context
-
-A Terpal context is equivalent to a SQLite driver. It is the object that manages the connection to the database.
-
-#### When using JDBC:
-```kotlin
-// You either construct a context from a JDBC DataSource:
-val ctx = TerpalContext.Postgres(dataSource)
-
-// Or you can use the fromConfig helper to read from a configuration file
-val ctx = TerpalContext.Postgres.fromConfig("myPostgresDB")
-
-// ====== application.conf ======
-myPostgresDB {
-  dataSourceClassName=org.postgresql.ds.PGSimpleDataSource
-  dataSource.user=postgres
-  dataSource.password=mysecretpassword
-  dataSource.portNumber=35433
-  dataSource.serverName=localhost 
-}
-```
-Have a look at the Terpal-SQL [Sample Project](https://github.com/deusaquilus/terpal-sql-example) if anything is unclear.
-
-#### When using Android
-
-TBD
-
-#### When using iOS, OSX, Linux and Windows
-
-TBD
-
-(Also include instructions for running from SqlDelight)
 
 
 # Features

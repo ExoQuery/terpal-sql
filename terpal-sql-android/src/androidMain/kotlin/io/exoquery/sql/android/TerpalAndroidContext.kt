@@ -1,5 +1,6 @@
 package io.exoquery.sql.android
 
+import android.content.Context
 import android.database.sqlite.SQLiteException
 import android.os.Build
 import androidx.sqlite.db.SimpleSQLiteQuery
@@ -86,6 +87,21 @@ class TerpalAndroidContext internal constructor(
         is PoolingMode.MultipleReaderWal -> AndroidPool.MultiConnection(makeHelper, cacheCapacity, poolingMode.numReaders) to WalMode.Enabled
       }
 
+    suspend fun fromApplicationContext(
+      databaseName: String,
+      context: Context,
+      schema: TerpalSchema<*> = EmptyTerpalSchema,
+      poolingMode: PoolingMode = PoolingMode.SingleSessionWal,
+      cacheCapacity: Int = DEFAULT_CACHE_CAPACITY,
+      encodingConfig: AndroidEncodingConfig = AndroidEncodingConfig.Empty(),
+      useNoBackupDirectory: Boolean = false,
+      windowSizeBytes: Long? = null
+    ): TerpalAndroidContext {
+      val makeHelper = { makeOpenHelper(FrameworkSQLiteOpenHelperFactory(), context, databaseName, schema.asSyncCallback(), useNoBackupDirectory, poolingMode) }
+      val (pool, walMode) = determinePoolingSetting(poolingMode, makeHelper, cacheCapacity)
+      return TerpalAndroidContext(encodingConfig, pool, walMode, windowSizeBytes)
+    }
+
     fun fromApplicationContext(
       databaseName: String,
       context: android.content.Context,
@@ -102,52 +118,14 @@ class TerpalAndroidContext internal constructor(
       return TerpalAndroidContext(encodingConfig, pool, walMode, windowSizeBytes)
     }
 
-    fun fromApplicationContextUnpooled(
-      databaseName: String,
-      context: android.content.Context,
-      callback: SupportSQLiteOpenHelper.Callback,
-      factory: SupportSQLiteOpenHelper.Factory = FrameworkSQLiteOpenHelperFactory(),
-      cacheCapacity: Int = DEFAULT_CACHE_CAPACITY,
-      encodingConfig: AndroidEncodingConfig = AndroidEncodingConfig.Empty(),
-      useNoBackupDirectory: Boolean = false,
-      windowSizeBytes: Long? = null
-    ): TerpalAndroidContext {
-      val openHelper =
-        factory.create(
-          SupportSQLiteOpenHelper.Configuration.builder(context)
-            .name(databaseName)
-            .noBackupDirectory(useNoBackupDirectory)
-            .callback(callback)
-            .build(),
-        )
-      openHelper.setWriteAheadLoggingEnabled(true)
-      val pool = AndroidPool.WrappedUnsafe(openHelper.writableDatabase, cacheCapacity)
-      return TerpalAndroidContext(encodingConfig, pool, WalMode.Default, windowSizeBytes)
-    }
-
-    suspend fun fromSchema(
-      schema: TerpalSchema<*>,
-      databaseName: String,
-      context: android.content.Context,
-      poolingMode: PoolingMode = PoolingMode.SingleSessionWal,
-      cacheCapacity: Int = DEFAULT_CACHE_CAPACITY,
-      encodingConfig: AndroidEncodingConfig = AndroidEncodingConfig.Empty(),
-      useNoBackupDirectory: Boolean = false,
-      windowSizeBytes: Long? = null
-    ): TerpalAndroidContext {
-      val makeHelper = { makeOpenHelper(FrameworkSQLiteOpenHelperFactory(), context, databaseName, schema.asSyncCallback(), useNoBackupDirectory, poolingMode) }
-      val (pool, walMode) = determinePoolingSetting(poolingMode, makeHelper, cacheCapacity)
-      return TerpalAndroidContext(encodingConfig, pool, walMode, windowSizeBytes)
-    }
-
     fun fromSingleOpenHelper(
       openHelper: SupportSQLiteOpenHelper,
       cacheCapacity: Int = DEFAULT_CACHE_CAPACITY,
       encodingConfig: AndroidEncodingConfig = AndroidEncodingConfig.Empty(),
       windowSizeBytes: Long? = null
     ): TerpalAndroidContext {
-      val (pool, walMode) = AndroidPool.SingleConnection(openHelper, cacheCapacity) to WalMode.Default
-      return TerpalAndroidContext(encodingConfig, pool, walMode, windowSizeBytes)
+      val pool = AndroidPool.WrappedUnsafe(openHelper.writableDatabase, cacheCapacity)
+      return TerpalAndroidContext(encodingConfig, pool, WalMode.Default, windowSizeBytes)
     }
 
     fun fromSingleSession(
