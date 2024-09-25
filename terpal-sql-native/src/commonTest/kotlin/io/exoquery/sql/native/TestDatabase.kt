@@ -6,7 +6,6 @@ import co.touchlab.sqliter.DatabaseFileContext.deleteDatabase
 import co.touchlab.sqliter.createDatabaseManager
 import co.touchlab.sqliter.withConnection
 import io.exoquery.sql.BasicSchema
-import io.exoquery.sql.BasicSchemaTerpal
 import io.exoquery.sql.WalTestSchema
 import io.exoquery.sql.executeSimple
 import kotlinx.coroutines.runBlocking
@@ -18,7 +17,7 @@ object WalTestDatabase {
   val ctx by lazy {
     runBlocking {
       deleteDatabase(name)
-      TerpalNativeContext.fromSqlDelightSchema(WalTestSchema, name, basePath, mode = TerpalNativeContext.PoolingMode.Multiple(3))
+      TerpalNativeContext.fromSchema(WalTestSchema, name, basePath, mode = TerpalNativeContext.PoolingMode.Multiple(3))
     }
   }
 }
@@ -30,7 +29,7 @@ object TestDatabase {
   val ctx by lazy {
     runBlocking {
       deleteDatabase(name, basePath)
-      TerpalNativeContext.fromSqlDelightSchema(BasicSchema, name, basePath)
+      TerpalNativeContext.fromSchema(BasicSchema, name, basePath)
     }
   }
 

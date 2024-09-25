@@ -60,7 +60,7 @@ class TerpalNativeContext internal constructor(
     }
 
     suspend fun fromSchema(
-      schema: TerpalSchema<QueryResult.Value<Unit>>,
+      schema: TerpalSchema<Unit>,
       dbName: String,
       basePath: String? = null,
       mode: PoolingMode = PoolingMode.Single,
@@ -93,7 +93,7 @@ class TerpalNativeContext internal constructor(
      * Since during creation of the NativeContext we will potentially run SQL migration scripts
      * the creation of the context needs to be run in Dispatchers.IO.
      */
-    suspend fun fromSqlDelightSchema(
+    suspend fun fromSchema(
       schema: SqlSchema<QueryResult.Value<Unit>>,
       dbName: String,
       basePath: String? = null,

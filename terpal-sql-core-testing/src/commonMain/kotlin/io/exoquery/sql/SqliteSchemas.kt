@@ -229,7 +229,7 @@ object BasicSchemaTerpal: TerpalSchema<Unit> {
     ).action().runOn(driver)
   }
 
-  override fun migrate(
+  override suspend fun migrate(
     driver: Context,
     oldVersion: Long,
     newVersion: Long,
@@ -272,5 +272,5 @@ object WalSchemaTerpal: TerpalSchema<Unit> {
     ).action().runOn(driver)
   }
 
-  override fun migrate(driver: Context, oldVersion: Long, newVersion: Long, vararg callbacks: CallAfterVersion) = Unit
+  override suspend fun migrate(driver: Context, oldVersion: Long, newVersion: Long, vararg callbacks: CallAfterVersion) = Unit
 }

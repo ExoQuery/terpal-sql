@@ -50,6 +50,16 @@ Currently Terpal is supported
 * **On the JVM** using JDBC with: PostgreSQL, MySQL, SQL Server, Oracle, SQLite, and H2. 
 * **On Android, iOS, OSX, Linux and Windows** with SQLite
 
+Fistly, be sure that you have the following repositories defined:
+```kotlin
+repositories {
+  gradlePluginPortal()
+  mavenCentral()
+  mavenLocal()
+}
+```
+
+
 #### Using JDBC
 When using JDBC, add the following to your `build.gradle.kts` file:
 
@@ -120,6 +130,7 @@ val ctx =
     applicationContext = ApplicationProvider.getApplicationContext(),
     // Optional: A TerpalSchema object defining the database schema and migrations. Similar to an SqlDelight SqlSchema object.
     //           Alternatively, a SqlDelight SqlSchema object or any SupportSQLiteOpenHelper.Callback can be used.
+    //           See the section below on how to define a schema.
     schema = MyTerpalSchema,
     // Optional: A setting describing how to pool connections. The default is a single-threaded pool.
     poolingModel =
@@ -191,16 +202,31 @@ kotlin {
 }
 ```
 
-Also, be sure that you have the correct repositories:
+The create the TerpalNativeContext using one of the following constructors.
+
+Use the `TerpalNativeContext.fromSchema` method to create a native Terpal context from a `TerpalSchema` object.
+
 ```kotlin
-repositories {
-  gradlePluginPortal()
-  mavenCentral()
-  mavenLocal()
-}
+val ctx = 
+  TerpalNativeContext.fromSchema(
+    schema = MyTerpalSchema
+  )
 ```
 
-
+The `TerpalNativeContext` uses SQLighter as the underlying database driver.
+```kotlin
+val ctx =
+  TerpalNativeContext.fromSchema(
+    // Optional: A TerpalSchema object defining the database schema and migrations. Similar to an SqlDelight SqlSchema object.
+    //           Alternatively, a SqlDelight SqlSchema object can be used.
+    //           See the section below on how to define a schema.
+    schema = MyTerpalSchema,
+    // Name of the database file to use
+    databaseName = "mydb",
+    // Base-Path fo the database file to use (this will be the Kotlin working directory by default)
+    basePath = "/my/custom/path"
+  )
+```
 
 # Features
 

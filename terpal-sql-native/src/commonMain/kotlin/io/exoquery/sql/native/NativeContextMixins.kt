@@ -14,7 +14,7 @@ import kotlin.coroutines.coroutineContext
 // I.e. a connection is a Sqliter session wrapped in a StatementCachingSession object (which caches the
 // prepared-statements) pooled in a DoublePool which consists of a reader/writer pool references
 // configured based on sqliter needs.
-typealias Connection = DoublePoolSession<StatementCachingSession<DatabaseConnection, Statement>>
+typealias Connection = DoublePoolSession<StatementCachingSession<DatabaseConnection, Statement>, Unit>
 
 object NativeCoroutineContext: CoroutineContext.Key<CoroutineSession<Connection>> {}
 
@@ -72,6 +72,7 @@ interface HasTransactionalityNative: RequiresTransactionality<Connection, Statem
   // methods that only have a reader connection but they are not used here.
   override suspend fun <T> runTransactionally(block: suspend CoroutineScope.() -> T): T {
     val session = coroutineContext.get(sessionKey)?.session ?: error("No connection found")
+
     val transaction = CoroutineTransaction()
     try {
       //println("---------- Calling beginTransaction")

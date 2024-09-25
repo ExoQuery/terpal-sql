@@ -15,7 +15,7 @@ interface TerpalSchema<T> {
    * Each of the [callbacks] are executed during the migration whenever the upgrade to the version specified by
    * [CallAfterVersion.afterVersion] has been completed.
    */
-  fun migrate(driver: Context, oldVersion: Long, newVersion: Long, vararg callbacks: CallAfterVersion): T
+  suspend fun migrate(driver: Context, oldVersion: Long, newVersion: Long, vararg callbacks: CallAfterVersion): T
 }
 
 /**
@@ -31,6 +31,6 @@ object EmptyTerpalSchema : TerpalSchema<Unit> {
   override val version: Long = 0
   override suspend fun create(driver: Context) {
   }
-  override fun migrate(driver: Context, oldVersion: Long, newVersion: Long, vararg callbacks: CallAfterVersion) {
+  override suspend fun migrate(driver: Context, oldVersion: Long, newVersion: Long, vararg callbacks: CallAfterVersion) {
   }
 }
