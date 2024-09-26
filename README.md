@@ -230,10 +230,6 @@ val ctx =
 
 # Features
 
-## IntelliJ Language Injection Support
-
-TBD
-
 ## Queries and Actions
 
 Terpal SQL supports queries i.e. SELECT, actions i.e. INSERT, UPDATE, DELETE and actions that return a value i.e. INSERT... RETURNING.
@@ -358,7 +354,7 @@ try {
 
 
 ## Custom Parameters
-When a varible used in a Sql clause e.g. `Sql("... $dollar_sign_variable ...")` it needs
+When a variable used in a Sql clause e.g. `Sql("... $dollar_sign_variable ...")` it needs
 to be wrapped in a `Param` object.
 
 ### Automatic Wrapping
@@ -666,4 +662,31 @@ println(Json.encodeToString(ListSerializer(Customer.serializer()), customers))
 
 See the [Playing Well using Row-Surrogate Encoder](terpal-sql-jdbc/src/test/kotlin/io/exoquery/sql/examples/PlayingWell_RowSurrogate.kt)
 section for more details.
+
+## IntelliJ Language Injection Support
+
+Terpal-SQL is optimized for IntelliJ [Language Injection](https://www.jetbrains.com/help/idea/using-language-injections.html) support. As such, IntelliJ will understand that
+strings inside of the `Sql(...)` clause should be treated as SQL constructs and provide custom auto-completion as such:
+
+<p align="center">
+<img src="https://github.com/user-attachments/assets/1bd4c247-9594-4eab-a7b1-9a8c0dc08864" width=70% height=70% >
+</p>
+
+It is important to note that this auto-complete is based on what database IntelliJ believes the current SQL code snippet is actually related to, and conveying this information to IntelliJ may require some manual steps.
+Typically you need to click on the [Intention-actions](https://www.jetbrains.com/help/idea/intention-actions.html) i.e. small yellow lightbulb menu (Alt+Enter) and then on Run query in console. Based on the database that you select, IntelliJ will deduce appropriate hints and code completion.
+
+<p align="center">
+<img src="https://github.com/user-attachments/assets/136ada30-5ba3-4e1f-aded-9360e50507a1" width=70% height=70% >
+</p>
+
+As in all things related to auto-complete and IDEs, your personal mileage may vary. Particularly when it comes to other integrated tools such as Copilot or Jetbrains AI.
+One additional note, when looking for correct Intention-action, make sure that your cursor is in the SQL string itself not in the surrounding `Sql(...)` function.
+The following two screenshots demonstrate this.
+
+<p align="center">
+<img src="https://github.com/user-attachments/assets/07f834ca-15cd-4f82-83f4-95d12b8a4f86" width=40% height=40% >
+<img src="https://github.com/user-attachments/assets/1cee7c6e-d932-4e81-be66-b02b8b268b46" width=40% height=40% >
+</p>
+
+
 
