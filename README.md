@@ -44,6 +44,14 @@ val ctx = TerpalContext.Postgres.fromConfig("mydb")
 val person: List<Person> = Sql("SELECT id, firstName, lastName FROM person WHERE id = $id").queryOf<Person>().runOn(ctx)
 ```
 
+Terpal SQL:
+* Uses no reflection!
+* Uses no code-generation!
+* Allows $dollar_sign_variables to be used safely in SQL queries!
+* Does not require queries to be written in a separate file.
+* Is built on top of kotlinx-serialization.
+* Works idiomatically with Kotlin coroutines suspended functions.
+
 # Getting Started
 
 Currently Terpal is supported 
