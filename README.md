@@ -1,5 +1,8 @@
 
-![terpal_intro_stiched_3_compressed](https://github.com/user-attachments/assets/f9a9ac27-47e2-429e-997a-beb72a1bb81e)
+
+<p align="center">
+<img src="https://github.com/user-attachments/assets/f9a9ac27-47e2-429e-997a-beb72a1bb81e" width=70% height=70% >
+</p>
 
 # terpal-sql
 
