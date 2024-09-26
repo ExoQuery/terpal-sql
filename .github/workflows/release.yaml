@@ -31,7 +31,6 @@ jobs:
             # On ubuntu publish everything you can i.e. the linuxX64 and jvm binaries
             # (Need to do >- or for some reason it preserves a newline after all the entries)
             publish_command: >-
-              build
               :terpal-sql-core:publishAllPublicationsToOss
               :terpal-sql-jdbc:publishAllPublicationsToOss
               :terpal-sql-native:publishAllPublicationsToOss
@@ -40,20 +39,19 @@ jobs:
           - os: macOS-latest
             # (Need to do >- or for some reason it preserves a newline after all the entries)
             publish_command: >-
-              build
               :terpal-sql-native:publishMacosX64PublicationToOss
               :terpal-sql-native:publishMacosArm64PublicationToOss
               :terpal-sql-native:publishIosX64PublicationToOss
               :terpal-sql-native:publishIosArm64PublicationToOssRepository
               :terpal-sql-native:publishIosSimulatorArm64PublicationToOss
-#              :terpal-sql-native:publishTvosX64PublicationToOss
-#              :terpal-sql-native:publishTvosArm64PublicationToOss
-#              :terpal-sql-native:publishWatchosX64PublicationToOss
-#              :terpal-sql-native:publishWatchosArm32PublicationToOss
-#              :terpal-sql-native:publishWatchosArm64PublicationToOss
+              :terpal-sql-native:publishTvosX64PublicationToOss
+              :terpal-sql-native:publishTvosArm64PublicationToOss
+              :terpal-sql-native:publishWatchosX64PublicationToOss
+              :terpal-sql-native:publishWatchosArm32PublicationToOss
+              :terpal-sql-native:publishWatchosArm64PublicationToOss
             platform: mac
           - os: windows-latest
-            publish_command: build :terpal-sql-native:publishMingwX64PublicationToOss
+            publish_command: :terpal-sql-native:publishMingwX64PublicationToOss
             platform: windows
     env:
       SONATYPE_REPOSITORY_ID: ${{ needs.create_staging_repository.outputs.repository_id }}
@@ -77,7 +75,7 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: >-
           docker compose build && docker compose run --rm --service-ports setup && 
-          ./gradlew ${{ matrix.publish_command }} -Pplatform=${{ matrix.platform }} -PisCI -no-daemon --stacktrace
+          ./gradlew build ${{ matrix.publish_command }} -Pplatform=${{ matrix.platform }} -PisCI -no-daemon --stacktrace
 
       - name: 'Run MacOS Tests'
         if: matrix.os == 'macOS-latest'
