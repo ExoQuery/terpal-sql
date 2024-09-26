@@ -1,5 +1,5 @@
 <p align="center">
-<img src="https://github.com/deusaquilus/terpal-sql/assets/1369480/24964b82-57f0-4286-ad81-a9ce13d9f0e0" width=50% height=50% >
+<img src="https://github.com/user-attachments/assets/e29e9da9-77d0-4803-a412-7c622d77a91e" width=50% height=50% >
 </p>
 
 # terpal-sql
