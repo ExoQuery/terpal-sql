@@ -1,6 +1,5 @@
-<p align="center">
-<img src="https://github.com/user-attachments/assets/e29e9da9-77d0-4803-a412-7c622d77a91e" width=70% height=70% >
-</p>
+
+![terpal_intro_stiched_3_compressed](https://github.com/user-attachments/assets/f9a9ac27-47e2-429e-997a-beb72a1bb81e)
 
 # terpal-sql
 
@@ -677,24 +676,29 @@ Terpal-SQL is optimized for IntelliJ [Language Injection](https://www.jetbrains.
 strings inside of the `Sql(...)` clause should be treated as SQL constructs and provide custom auto-completion as such:
 
 <p align="center">
-<img src="https://github.com/user-attachments/assets/1bd4c247-9594-4eab-a7b1-9a8c0dc08864" width=70% height=70% >
+<img src="https://github.com/user-attachments/assets/2d211073-bacf-49ae-9f2f-545c9558a544" width=70% height=70% >
 </p>
 
 It is important to note that this auto-complete is based on what database IntelliJ believes the current SQL code snippet is actually related to, and conveying this information to IntelliJ may require some manual steps.
 Typically you need to click on the [Intention-actions](https://www.jetbrains.com/help/idea/intention-actions.html) i.e. small yellow lightbulb menu (Alt+Enter) and then on Run query in console. Based on the database that you select, IntelliJ will deduce appropriate hints and code completion.
 
 <p align="center">
-<img src="https://github.com/user-attachments/assets/136ada30-5ba3-4e1f-aded-9360e50507a1" width=70% height=70% >
+<img src="https://github.com/user-attachments/assets/f0a95a6d-2cf7-479f-872e-428f1040307e" width=70% height=70% >
 </p>
 
 As in all things related to auto-complete and IDEs, your personal mileage may vary. Particularly when it comes to other integrated tools such as Copilot or Jetbrains AI.
 One additional note, when looking for correct Intention-action, make sure that your cursor is in the SQL string itself not in the surrounding `Sql(...)` function.
 The following two screenshots demonstrate this.
 
+
+
 <p align="center">
-<img src="https://github.com/user-attachments/assets/07f834ca-15cd-4f82-83f4-95d12b8a4f86" width=40% height=40% >
-<img src="https://github.com/user-attachments/assets/1cee7c6e-d932-4e81-be66-b02b8b268b46" width=40% height=40% >
+<img src="https://github.com/user-attachments/assets/03fe9db2-19da-452b-9b92-acacff1ed48e" width=40% height=40% >
+<img src="https://github.com/user-attachments/assets/f09a3f97-d70a-4a8b-b7e6-afb6aa790113" width=40% height=40% >
 </p>
+
+
+
 
 
 
