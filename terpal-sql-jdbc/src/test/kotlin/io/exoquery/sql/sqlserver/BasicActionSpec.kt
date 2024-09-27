@@ -1,7 +1,7 @@
 package io.exoquery.sql.sqlserver
 
 import io.exoquery.sql.TestDatabases
-import io.exoquery.sql.jdbc.TerpalContext
+import io.exoquery.sql.jdbc.TerpalDriver
 import io.exoquery.sql.Sql
 import io.exoquery.sql.runOn
 import io.exoquery.sql.run
@@ -12,7 +12,7 @@ import kotlinx.serialization.Serializable
 class BasicActionSpec : FreeSpec({
 
   val ds = TestDatabases.sqlServer
-  val ctx by lazy { TerpalContext.SqlServer(ds)  }
+  val ctx by lazy { TerpalDriver.SqlServer(ds)  }
 
   beforeEach {
     ds.run(

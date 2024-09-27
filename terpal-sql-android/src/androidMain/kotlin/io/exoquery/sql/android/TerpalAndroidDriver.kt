@@ -23,12 +23,12 @@ sealed interface WalMode {
   object Disabled: WalMode
 }
 
-class TerpalAndroidContext internal constructor(
+class TerpalAndroidDriver internal constructor(
   override val encodingConfig: AndroidEncodingConfig,
   override val pool: AndroidPool,
   override val walMode: WalMode,
   private val windowSizeBytes: Long? = null
-): ContextTransactional<Connection, SupportSQLiteStatement>, java.io.Closeable,
+): DriverTransactional<Connection, SupportSQLiteStatement>, java.io.Closeable,
   WithEncoding<Unused, SqliteStatementWrapper, SqliteCursorWrapper>,
   WithReadOnlyVerbs,
   HasTransactionalityAndroid {
@@ -96,10 +96,10 @@ class TerpalAndroidContext internal constructor(
       encodingConfig: AndroidEncodingConfig = AndroidEncodingConfig.Empty(),
       useNoBackupDirectory: Boolean = false,
       windowSizeBytes: Long? = null
-    ): TerpalAndroidContext {
+    ): TerpalAndroidDriver {
       val makeHelper = { makeOpenHelper(FrameworkSQLiteOpenHelperFactory(), context, databaseName, schema.asSyncCallback(), useNoBackupDirectory, poolingMode) }
       val (pool, walMode) = determinePoolingSetting(poolingMode, makeHelper, cacheCapacity)
-      return TerpalAndroidContext(encodingConfig, pool, walMode, windowSizeBytes)
+      return TerpalAndroidDriver(encodingConfig, pool, walMode, windowSizeBytes)
     }
 
     fun fromApplicationContext(
@@ -112,10 +112,10 @@ class TerpalAndroidContext internal constructor(
       encodingConfig: AndroidEncodingConfig = AndroidEncodingConfig.Empty(),
       useNoBackupDirectory: Boolean = false,
       windowSizeBytes: Long? = null
-      ): TerpalAndroidContext {
+      ): TerpalAndroidDriver {
       val makeHelper = { makeOpenHelper(factory, context, databaseName, callback, useNoBackupDirectory, poolingMode) }
       val (pool, walMode) = determinePoolingSetting(poolingMode, makeHelper, cacheCapacity)
-      return TerpalAndroidContext(encodingConfig, pool, walMode, windowSizeBytes)
+      return TerpalAndroidDriver(encodingConfig, pool, walMode, windowSizeBytes)
     }
 
     fun fromSingleOpenHelper(
@@ -123,9 +123,9 @@ class TerpalAndroidContext internal constructor(
       cacheCapacity: Int = DEFAULT_CACHE_CAPACITY,
       encodingConfig: AndroidEncodingConfig = AndroidEncodingConfig.Empty(),
       windowSizeBytes: Long? = null
-    ): TerpalAndroidContext {
+    ): TerpalAndroidDriver {
       val pool = AndroidPool.WrappedUnsafe(openHelper.writableDatabase, cacheCapacity)
-      return TerpalAndroidContext(encodingConfig, pool, WalMode.Default, windowSizeBytes)
+      return TerpalAndroidDriver(encodingConfig, pool, WalMode.Default, windowSizeBytes)
     }
 
     fun fromSingleSession(
@@ -134,14 +134,14 @@ class TerpalAndroidContext internal constructor(
       cacheCapacity: Int = DEFAULT_CACHE_CAPACITY,
       encodingConfig: AndroidEncodingConfig = AndroidEncodingConfig.Empty(),
       windowSizeBytes: Long? = null
-    ): TerpalAndroidContext {
+    ): TerpalAndroidDriver {
       val pool =
         if (synchronizedAccess)
           AndroidPool.Wrapped(connection, cacheCapacity)
         else
           AndroidPool.WrappedUnsafe(connection, cacheCapacity)
 
-      return TerpalAndroidContext(encodingConfig, pool, WalMode.Default, windowSizeBytes)
+      return TerpalAndroidDriver(encodingConfig, pool, WalMode.Default, windowSizeBytes)
     }
   }
 

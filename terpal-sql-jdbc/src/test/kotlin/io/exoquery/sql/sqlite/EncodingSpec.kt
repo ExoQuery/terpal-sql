@@ -2,7 +2,7 @@ package io.exoquery.sql.sqlite
 
 import io.exoquery.sql.*
 import io.exoquery.sql.Sql
-import io.exoquery.sql.jdbc.TerpalContext
+import io.exoquery.sql.jdbc.TerpalDriver
 import io.exoquery.sql.runOn
 import io.kotest.core.spec.style.FreeSpec
 import java.time.ZoneId
@@ -12,7 +12,7 @@ import io.exoquery.sql.encodingdata.*
 
 class EncodingSpec: FreeSpec({
   val ds = TestDatabases.sqlite
-  val ctx by lazy { TerpalContext.Sqlite(ds, encodingConfig) }
+  val ctx by lazy { TerpalDriver.Sqlite(ds, encodingConfig) }
 
   beforeEach {
     ds.run("DELETE FROM EncodingTestEntity")

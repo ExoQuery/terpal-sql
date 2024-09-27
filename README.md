@@ -13,7 +13,7 @@ safely inject into an SQL statement.
 
 ```kotlin
 val ds: DataSource = PGSimpleDataSource(...)
-val ctx = TerpalContext.Postgres(ds)
+val ctx = TerpalDriver.Postgres(ds)
 
 // Let's try a pesky SQL injection attack:
 val name = "'Joe'; DROP TABLE Person"
@@ -40,7 +40,7 @@ the kotlinx-serialization library.
 data class Person(val id: Int, val firstName: String, val lastName: String)
 
 // Declare a Terpal context
-val ctx = TerpalContext.Postgres.fromConfig("mydb")
+val ctx = TerpalDriver.Postgres.fromConfig("mydb")
 
 // Run a Query
 val person: List<Person> = Sql("SELECT id, firstName, lastName FROM person WHERE id = $id").queryOf<Person>().runOn(ctx)
@@ -94,10 +94,10 @@ A Terpal context is equivalent to a SQLite driver. It is the object that manages
 #### When using JDBC:
 ```kotlin
 // You either construct a context from a JDBC DataSource:
-val ctx = TerpalContext.Postgres(dataSource)
+val ctx = TerpalDriver.Postgres(dataSource)
 
 // Or you can use the fromConfig helper to read from a configuration file
-val ctx = TerpalContext.Postgres.fromConfig("myPostgresDB")
+val ctx = TerpalDriver.Postgres.fromConfig("myPostgresDB")
 
 // ====== application.conf ======
 // myPostgresDB {
@@ -129,13 +129,13 @@ dependencies {
 }
 ```
 
-Then create the `TerpalAndroidContext` using one of the following constructors.
+Then create the `TerpalAndroidDriver` using one of the following constructors.
 
 
-Use the `TerpalAndroidContext.fromApplicationContext` method to create a terpal context from an Android Application Context
+Use the `TerpalAndroidDriver.fromApplicationDriver` method to create a terpal context from an Android Application Driver
 ```kotlin
 val ctx = 
-  TerpalAndroidContext.fromApplicationContext(
+  TerpalAndroidDriver.fromApplicationContext(
     databaseName = "mydb",
     applicationContext = ApplicationProvider.getApplicationContext(),
     // Optional: A TerpalSchema object defining the database schema and migrations. Similar to an SqlDelight SqlSchema object.
@@ -155,7 +155,7 @@ val ctx =
 // Run a query:
 val person: List<Person> = Sql("SELECT * FROM Person").queryOf<Person>().runOn(ctx)
 ```
-Use the `TerpalAndroidContext.fromSingleOpenHelper` method to create a terpal context from a single instance of `SupportSQLiteOpenHelper`
+Use the `TerpalAndroidDriver.fromSingleOpenHelper` method to create a terpal context from a single instance of `SupportSQLiteOpenHelper`
 ```kotlin
 val myOpenHelperInstance = FrameworkSQLiteOpenHelperFactory().create(
   SupportSQLiteOpenHelper.Configuration.builder(androidApplicationContext)
@@ -164,25 +164,25 @@ val myOpenHelperInstance = FrameworkSQLiteOpenHelperFactory().create(
     .build(),
 )
 val ctx =
-  TerpalAndroidContext.fromSingleOpenHelper(
+  TerpalAndroidDriver.fromSingleOpenHelper(
     openHelper = myOpenHelperInstance
   )
 // Run a query:
 val person: List<Person> = Sql("SELECT * FROM Person").queryOf<Person>().runOn(ctx)
 ```
 
-Use the `TerpalAndroidContext.fromSingleSession` method to create a terpal context from a single instance of `SupportSQLiteDatabase`
+Use the `TerpalAndroidDriver.fromSingleSession` method to create a terpal context from a single instance of `SupportSQLiteDatabase`
 ```kotlin
 val myDatabaseInstance = myOpenHelperInstance.writableDatabase
 val ctx =
-  TerpalAndroidContext.fromSingleSession(
+  TerpalAndroidDriver.fromSingleSession(
     database = myDatabaseInstance
   )
 // Run a query:
 val person: List<Person> = Sql("SELECT * FROM Person").queryOf<Person>().runOn(ctx)
 ```
 
-> Note that most of the constructors on the `TerpalAndroidContext` object are suspended functions. This is because
+> Note that most of the constructors on the `TerpalAndroidDriver` object are suspended functions. This is because
 > creating a `SupportSQLiteDatabase` frequently involves database schema creation and migration that is done
 > as part of the SupportSQLiteOpenHelper.Callback. These contexts are required to be create from a coroutine
 > to avoid blocking the main thread.
@@ -212,21 +212,21 @@ kotlin {
 }
 ```
 
-The create the TerpalNativeContext using one of the following constructors.
+The create the TerpalNativeDriver using one of the following constructors.
 
-Use the `TerpalNativeContext.fromSchema` method to create a native Terpal context from a `TerpalSchema` object.
+Use the `TerpalNativeDriver.fromSchema` method to create a native Terpal context from a `TerpalSchema` object.
 
 ```kotlin
 val ctx = 
-  TerpalNativeContext.fromSchema(
+  TerpalNativeDriver.fromSchema(
     schema = MyTerpalSchema
   )
 ```
 
-The `TerpalNativeContext` uses SQLighter as the underlying database driver.
+The `TerpalNativeDriver` uses SQLighter as the underlying database driver.
 ```kotlin
 val ctx =
-  TerpalNativeContext.fromSchema(
+  TerpalNativeDriver.fromSchema(
     // Optional: A TerpalSchema object defining the database schema and migrations. Similar to an SqlDelight SqlSchema object.
     //           Alternatively, a SqlDelight SqlSchema object can be used.
     //           See the section below on how to define a schema.
@@ -341,7 +341,7 @@ Terpal supports transactions using the `transaction` method. The transaction met
 contains the actions to be performed in the transaction. If the lambda throws an exception the transaction
 is rolled back, otherwise it is committed.
 ```kotlin
-val ctx = TerpalContext.Postgres.fromConfig("mydb")
+val ctx = TerpalDriver.Postgres.fromConfig("mydb")
 ctx.transaction {
   Sql("INSERT INTO Person (id, firstName, lastName) VALUES (1, 'Joe', 'Bloggs')").action().run()
   Sql("INSERT INTO Person (id, firstName, lastName) VALUES (2, 'Jim', 'Roogs')").action().run()
@@ -442,7 +442,7 @@ data class ByteContent(val bytes: InputStream) {
 data class Image(val id: Int, @Contextual val content: ByteContent)
 
 // Then we provide an encoder and decoder for it on the driver-level (i.e. JDBC) when creating the context:
-val ctx = object: TerpalContext.Postgres(postgres.postgresDatabase) {
+val ctx = object: TerpalDriver.Postgres(postgres.postgresDatabase) {
   override val additionalDecoders =
     super.additionalDecoders + JdbcDecoderAny.fromFunction { ctx, i -> ByteContent(ctx.row.getBinaryStream(i)) }
   override val additionalEncoders =
@@ -614,9 +614,9 @@ object DateAsIsoSerializer: KSerializer<LocalDate> {
   override fun deserialize(decoder: Decoder): LocalDate = LocalDate.parse(decoder.decodeString(), DateTimeFormatter.ISO_LOCAL_DATE)
 }
 
-// When working with the database, the LocalDate will be encoded as a SQL DATE type. The Terpal Context knows
+// When working with the database, the LocalDate will be encoded as a SQL DATE type. The Terpal Driver knows
 // will behave this way by default when a field is marked as @Contextual.
-val ctx = TerpalContext.Postgres.fromConfig("mydb")
+val ctx = TerpalDriver.Postgres.fromConfig("mydb")
 val customer = Customer(1, "Alice", "Smith", LocalDate.of(2021, 1, 1))
 Sql("INSERT INTO customers (first_name, last_name, created_at) VALUES (${customer.firstName}, ${customer.lastName}, ${customer.createdAt})").action().runOn(ctx)
 

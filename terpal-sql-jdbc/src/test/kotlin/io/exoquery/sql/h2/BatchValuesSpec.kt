@@ -3,14 +3,14 @@ package io.exoquery.sql.h2
 import io.exoquery.sql.*
 import io.exoquery.sql.Ex3_BatchReturnIds.products
 import io.exoquery.sql.jdbc.SqlBatch
-import io.exoquery.sql.jdbc.TerpalContext
+import io.exoquery.sql.jdbc.TerpalDriver
 import io.exoquery.sql.runOn
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe
 
 class BatchValuesSpec: FreeSpec ({
   val ds = TestDatabases.h2
-  val ctx by lazy { TerpalContext.H2(ds)  }
+  val ctx by lazy { TerpalDriver.H2(ds)  }
 
   beforeEach {
     ds.run("TRUNCATE TABLE Product; ALTER TABLE Product ALTER COLUMN id RESTART WITH 1;")

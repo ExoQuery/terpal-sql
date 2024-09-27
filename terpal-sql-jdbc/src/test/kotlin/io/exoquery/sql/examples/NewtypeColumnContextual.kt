@@ -34,7 +34,7 @@ object NewtypeColumnContextual {
     val postgres = EmbeddedPostgres.start()
     postgres.run("CREATE TABLE customers (id SERIAL PRIMARY KEY, firstName TEXT, lastName TEXT, email TEXT)")
     val ctx =
-      TerpalContext.Postgres(
+      TerpalDriver.Postgres(
         postgres.postgresDatabase,
         JdbcEncodingConfig.Default(module = SerializersModule { contextual(Email::class, EmailSerialzier) })
       )

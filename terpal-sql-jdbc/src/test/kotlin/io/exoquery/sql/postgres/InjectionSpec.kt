@@ -4,7 +4,7 @@ import io.exoquery.sql.*
 import io.exoquery.sql.encodingdata.EncodingTestEntity
 import io.exoquery.sql.Sql
 import io.exoquery.sql.encodingdata.insert
-import io.exoquery.sql.jdbc.TerpalContext
+import io.exoquery.sql.jdbc.TerpalDriver
 import io.exoquery.sql.runOn
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe
@@ -13,7 +13,7 @@ import kotlinx.serialization.Serializable
 class InjectionSpec: FreeSpec({
   val ds = TestDatabases.postgres
   val ctx by lazy {
-    TerpalContext.Postgres(ds)
+    TerpalDriver.Postgres(ds)
   }
 
   beforeEach {

@@ -1,9 +1,7 @@
 package io.exoquery.sql
 
 import io.exoquery.sql.examples.id
-import io.exoquery.sql.Sql
-import io.exoquery.sql.jdbc.TerpalContext
-import io.exoquery.sql.runOn
+import io.exoquery.sql.jdbc.TerpalDriver
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.serialization.Serializable
@@ -14,7 +12,7 @@ class NestedInterpolationSpec: FreeSpec({
   data class Person(val id: Int, val firstName: String, val lastName: String, val age: Int)
 
   val ds = TestDatabases.postgres
-  val ctx by lazy { TerpalContext.Postgres(ds)  }
+  val ctx by lazy { TerpalDriver.Postgres(ds)  }
 
   beforeSpec {
     ds.run(

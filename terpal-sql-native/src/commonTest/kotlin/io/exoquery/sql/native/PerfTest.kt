@@ -19,7 +19,7 @@ class PerfTest {
     val schema = PerfSchema(maxRow)
     deleteDatabase(name, basePath)
     runBlocking {
-      val driver = TerpalNativeContext.fromSchema(schema, name, basePath, TerpalNativeContext.PoolingMode.Multiple(10))
+      val driver = TerpalNativeDriver.fromSchema(schema, name, basePath, TerpalNativeDriver.PoolingMode.Multiple(10))
       driver.runRaw(schema.clearQuery)
       driver.runRaw(schema.loadQuery)
       WallPerformanceTest(driver, maxRow).walPerfTest()

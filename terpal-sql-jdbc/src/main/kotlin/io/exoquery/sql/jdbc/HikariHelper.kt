@@ -15,23 +15,23 @@ object HikariHelper {
   }
 }
 
-fun TerpalContext.Postgres.Companion.fromConfig(prefix: String) =
-  TerpalContext.Postgres(HikariHelper.makeDataSource(prefix))
+fun TerpalDriver.Postgres.Companion.fromConfig(prefix: String) =
+  TerpalDriver.Postgres(HikariHelper.makeDataSource(prefix))
 
-fun TerpalContext.PostgresLegacy.Companion.fromConfig(prefix: String) =
-  TerpalContext.PostgresLegacy(HikariHelper.makeDataSource(prefix))
+fun TerpalDriver.PostgresLegacy.Companion.fromConfig(prefix: String) =
+  TerpalDriver.PostgresLegacy(HikariHelper.makeDataSource(prefix))
 
-fun TerpalContext.H2.Companion.fromConfig(prefix: String) =
-  TerpalContext.H2(HikariHelper.makeDataSource(prefix))
+fun TerpalDriver.H2.Companion.fromConfig(prefix: String) =
+  TerpalDriver.H2(HikariHelper.makeDataSource(prefix))
 
-fun TerpalContext.Mysql.Companion.fromConfig(prefix: String) =
-  TerpalContext.Mysql(HikariHelper.makeDataSource(prefix))
+fun TerpalDriver.Mysql.Companion.fromConfig(prefix: String) =
+  TerpalDriver.Mysql(HikariHelper.makeDataSource(prefix))
 
-fun TerpalContext.Sqlite.Companion.fromConfig(prefix: String) =
-  TerpalContext.Sqlite(HikariHelper.makeDataSource(prefix))
+fun TerpalDriver.Sqlite.Companion.fromConfig(prefix: String) =
+  TerpalDriver.Sqlite(HikariHelper.makeDataSource(prefix))
 
-fun TerpalContext.SqlServer.Companion.fromConfig(prefix: String) =
-  TerpalContext.SqlServer(HikariHelper.makeDataSource(prefix))
+fun TerpalDriver.SqlServer.Companion.fromConfig(prefix: String) =
+  TerpalDriver.SqlServer(HikariHelper.makeDataSource(prefix))
 
-fun TerpalContext.Oracle.Companion.fromConfig(prefix: String) =
-  TerpalContext.Oracle(HikariHelper.makeDataSource(prefix))
+fun TerpalDriver.Oracle.Companion.fromConfig(prefix: String) =
+  TerpalDriver.Oracle(HikariHelper.makeDataSource(prefix))

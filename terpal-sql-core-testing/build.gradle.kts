@@ -4,7 +4,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
   kotlin("multiplatform")
-  id("io.exoquery.terpal-plugin") version "1.9.22-1.0.0-RC5"
+  id("io.exoquery.terpal-plugin") version "1.9.22-1.0.0.PL"
   kotlin("plugin.serialization") version "1.9.22"
   id("nativebuild")
 }
@@ -34,7 +34,7 @@ kotlin {
         api("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
         api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
         //api("org.jetbrains.kotlinx:kotlinx-datetime:0.6.0")
-        api("io.exoquery:terpal-runtime:1.9.22-1.0.0-RC5")
+        api("io.exoquery:terpal-runtime:1.9.22-1.0.0.PL")
         implementation("org.jetbrains.kotlinx:atomicfu:0.23.1")
         implementation("app.cash.sqldelight:runtime:2.0.2")
 

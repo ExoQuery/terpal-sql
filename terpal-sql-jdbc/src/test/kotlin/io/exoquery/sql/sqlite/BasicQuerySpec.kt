@@ -1,7 +1,7 @@
 package io.exoquery.sql.sqlite
 
 import io.exoquery.sql.TestDatabases
-import io.exoquery.sql.jdbc.TerpalContext
+import io.exoquery.sql.jdbc.TerpalDriver
 import io.exoquery.sql.Sql
 import io.exoquery.sql.run
 import io.kotest.core.spec.style.FreeSpec
@@ -11,7 +11,7 @@ import kotlinx.serialization.Serializable
 class BasicQuerySpec : FreeSpec({
 
   val ds = TestDatabases.sqlite
-  val ctx by lazy { TerpalContext.Sqlite(ds)  }
+  val ctx by lazy { TerpalDriver.Sqlite(ds)  }
 
   beforeSpec {
     ds.run(

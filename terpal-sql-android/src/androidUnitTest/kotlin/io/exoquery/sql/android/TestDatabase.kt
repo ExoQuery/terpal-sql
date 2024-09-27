@@ -20,7 +20,7 @@ object TestDatabase {
     ShadowLog.stream = System.out
     System.setProperty("robolectric.logging","stdout")
     runBlocking {
-      TerpalAndroidContext.fromApplicationContext(databaseName, ApplicationProvider.getApplicationContext(), BasicSchemaTerpal)
+      TerpalAndroidDriver.fromApplicationContext(databaseName, ApplicationProvider.getApplicationContext(), BasicSchemaTerpal)
     }
     //TerpalAndroidContext.fromApplicationContext(databaseName, ApplicationProvider.getApplicationContext(), AndroidSqliteDriver.Callback(BasicSchema))
   }
@@ -33,7 +33,7 @@ object WalTestDatabase {
     ShadowLog.stream = System.out
     System.setProperty("robolectric.logging","stdout")
     runBlocking {
-      TerpalAndroidContext.fromApplicationContext(databaseName, ApplicationProvider.getApplicationContext(), WalSchemaTerpal, poolingMode = TerpalAndroidContext.PoolingMode.MultipleReaderWal(3))
+      TerpalAndroidDriver.fromApplicationContext(databaseName, ApplicationProvider.getApplicationContext(), WalSchemaTerpal, poolingMode = TerpalAndroidDriver.PoolingMode.MultipleReaderWal(3))
     }
   }
 }

@@ -4,7 +4,7 @@ import io.exoquery.sql.JsonValue
 import io.exoquery.sql.Param
 import io.exoquery.sql.SqlJsonValue
 import io.exoquery.sql.Sql
-import io.exoquery.sql.jdbc.TerpalContext
+import io.exoquery.sql.jdbc.TerpalDriver
 import io.exoquery.sql.runOn
 import io.zonky.test.db.postgres.embedded.EmbeddedPostgres
 import kotlinx.serialization.Serializable
@@ -21,7 +21,7 @@ object JsonColumnExample1 {
   suspend fun main() {
     val postgres = EmbeddedPostgres.start()
     postgres.run("CREATE TABLE JsonbExample(id SERIAL PRIMARY KEY, jsonbValue JSONB)")
-    val ctx = TerpalContext.Postgres(postgres.postgresDatabase)
+    val ctx = TerpalDriver.Postgres(postgres.postgresDatabase)
     val je = JsonbExample(1, MyPerson("Alice", 30))
     Sql("INSERT INTO JsonbExample (id, jsonbValue) VALUES (1, ${Param.withSer(je.jsonbValue, MyPerson.serializer())})").action().runOn(ctx)
     //val customers = Sql("SELECT id, jsonbValue FROM JsonbExample").queryOf<JsonbExample>().runOn(ctx)
@@ -43,7 +43,7 @@ object JsonColumnExample2 {
   suspend fun main() {
     val postgres = EmbeddedPostgres.start()
     postgres.run("CREATE TABLE JsonbExample(id SERIAL PRIMARY KEY, jsonbValue JSONB)")
-    val ctx = TerpalContext.Postgres(postgres.postgresDatabase)
+    val ctx = TerpalDriver.Postgres(postgres.postgresDatabase)
     val je = JsonbExample(1, MyPerson("Alice", 30))
     //Sql("INSERT INTO JsonbExample (id, jsonbValue) VALUES (1, ${Param.withSer(je.jsonbValue, MyPerson.serializer())})").action().runOn(ctx)
     Sql("""INSERT INTO JsonbExample (id, jsonbValue) VALUES (1, '{"name":"Joe", "age":123}')""").action().runOn(ctx)
@@ -63,7 +63,7 @@ object JsonColumnExample4 {
   suspend fun main() {
     val postgres = EmbeddedPostgres.start()
     postgres.run("CREATE TABLE JsonbExample(id SERIAL PRIMARY KEY, jsonbValue JSONB)")
-    val ctx = TerpalContext.Postgres(postgres.postgresDatabase)
+    val ctx = TerpalDriver.Postgres(postgres.postgresDatabase)
     val je = JsonbExample(1, JsonValue(MyPerson("Alice", 30)))
     Sql("INSERT INTO JsonbExample (id, jsonbValue) VALUES (1, ${Param.withSer(je.jsonbValue)})").action().runOn(ctx)
     //Sql("""INSERT INTO JsonbExample (id, jsonbValue) VALUES (1, '{"name":"Joe", "age":123}')""").action().runOn(ctx)
@@ -84,7 +84,7 @@ object JsonColumnExample5 {
   suspend fun main() {
     val postgres = EmbeddedPostgres.start()
     postgres.run("CREATE TABLE JsonbExample(id SERIAL PRIMARY KEY, jsonbValue JSONB)")
-    val ctx = TerpalContext.Postgres(postgres.postgresDatabase)
+    val ctx = TerpalDriver.Postgres(postgres.postgresDatabase)
     val je = JsonbExample(1, JsonValue(MyPerson("Alice", 30)))
     //Sql("INSERT INTO JsonbExample (id, jsonbValue) VALUES (1, ${Param.withSer(je.jsonbValue, MyPerson.serializer())})").action().runOn(ctx)
     Sql("""INSERT INTO JsonbExample (id, jsonbValue) VALUES (1, '{"name":"Joe", "age":123}')""").action().runOn(ctx)
@@ -105,7 +105,7 @@ object JsonColumnExample6 {
   suspend fun main() {
     val postgres = EmbeddedPostgres.start()
     postgres.run("CREATE TABLE JsonbExample(id SERIAL PRIMARY KEY, jsonbValue JSONB)")
-    val ctx = TerpalContext.Postgres(postgres.postgresDatabase)
+    val ctx = TerpalDriver.Postgres(postgres.postgresDatabase)
     val jsonValue = JsonValue(listOf("Joe", "Jack"))
     val je = JsonbExample(1, jsonValue)
     Sql("INSERT INTO JsonbExample (id, jsonbValue) VALUES (1, ${Param.withSer(jsonValue)})").action().runOn(ctx)
@@ -129,7 +129,7 @@ object JsonColumnExample7 {
   suspend fun main() {
     val postgres = EmbeddedPostgres.start()
     postgres.run("CREATE TABLE JsonbExample(id SERIAL PRIMARY KEY, jsonbValue JSONB)")
-    val ctx = TerpalContext.Postgres(postgres.postgresDatabase)
+    val ctx = TerpalDriver.Postgres(postgres.postgresDatabase)
     val joe = MyPerson("Joe", 123)
     val jack = MyPerson("Jack", 456)
 

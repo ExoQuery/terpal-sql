@@ -1,14 +1,14 @@
 package io.exoquery.sql.sqlite
 
 import io.exoquery.sql.*
-import io.exoquery.sql.jdbc.TerpalContext
+import io.exoquery.sql.jdbc.TerpalDriver
 import io.exoquery.sql.runOn
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe
 
 class BatchValuesSpec: FreeSpec ({
   val ds = TestDatabases.sqlite
-  val ctx by lazy { TerpalContext.Sqlite(ds)  }
+  val ctx by lazy { TerpalDriver.Sqlite(ds)  }
 
   beforeEach {
     ds.run("DELETE FROM Product")

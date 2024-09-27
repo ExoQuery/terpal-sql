@@ -3,14 +3,14 @@ package io.exoquery.sql.sqlserver
 import io.exoquery.sql.*
 import io.exoquery.sql.encodingdata.*
 import io.exoquery.sql.Sql
-import io.exoquery.sql.jdbc.TerpalContext
+import io.exoquery.sql.jdbc.TerpalDriver
 import io.exoquery.sql.runOn
 import io.kotest.core.spec.style.FreeSpec
 import java.time.ZoneId
 
 class EncodingSpec: FreeSpec({
   val ds = TestDatabases.sqlServer
-  val ctx by lazy { TerpalContext.SqlServer(ds, encodingConfig) }
+  val ctx by lazy { TerpalDriver.SqlServer(ds, encodingConfig) }
 
   beforeEach {
     ds.run("DELETE FROM EncodingTestEntity")

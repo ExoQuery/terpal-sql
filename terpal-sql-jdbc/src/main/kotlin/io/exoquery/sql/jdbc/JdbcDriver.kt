@@ -61,10 +61,20 @@ data class JdbcEncodingConfig private constructor(
   }
 }
 
+@Deprecated("Use JdbcDriver instead", ReplaceWith("JdbcDriver"))
+typealias JdbcContext = JdbcDriver
 
-abstract class JdbcContext internal constructor(
+/**
+ * This is a Terpal Driver, NOT a JDBC driver! It is the base class for all JDBC-based implementations of the
+ * Terpal Driver base class `io.exoquery.sql.Driver`. This naming follows the conventions of SQL Delight
+ * which is android/mobile centric and uses the term "Driver" to refer to refer to anything
+ * involving the database connectivity susbsystem while the term Context is reserved for
+ * semantics involving UI session control. As a JVM developer I am willing to use this naming convention
+ * but only by the skin of my teeth.
+ */
+abstract class JdbcDriver internal constructor(
   override open val database: DataSource,
-): ContextCannonical<Connection, PreparedStatement, ResultSet>,
+): DriverCannonical<Connection, PreparedStatement, ResultSet>,
   WithEncoding<Connection, PreparedStatement, ResultSet>,
   HasTransactionalityJdbc
 {

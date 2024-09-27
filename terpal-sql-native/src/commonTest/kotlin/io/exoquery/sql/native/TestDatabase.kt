@@ -17,7 +17,7 @@ object WalTestDatabase {
   val ctx by lazy {
     runBlocking {
       deleteDatabase(name)
-      TerpalNativeContext.fromSchema(WalTestSchema, name, basePath, mode = TerpalNativeContext.PoolingMode.Multiple(3))
+      TerpalNativeDriver.fromSchema(WalTestSchema, name, basePath, mode = TerpalNativeDriver.PoolingMode.Multiple(3))
     }
   }
 }
@@ -29,7 +29,7 @@ object TestDatabase {
   val ctx by lazy {
     runBlocking {
       deleteDatabase(name, basePath)
-      TerpalNativeContext.fromSchema(BasicSchema, name, basePath)
+      TerpalNativeDriver.fromSchema(BasicSchema, name, basePath)
     }
   }
 

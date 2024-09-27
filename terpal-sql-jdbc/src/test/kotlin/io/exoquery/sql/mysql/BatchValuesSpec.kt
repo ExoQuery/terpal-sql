@@ -3,14 +3,14 @@ package io.exoquery.sql.mysql
 import io.exoquery.sql.*
 import io.exoquery.sql.Ex3_BatchReturnIds.products
 import io.exoquery.sql.jdbc.SqlBatch
-import io.exoquery.sql.jdbc.TerpalContext
+import io.exoquery.sql.jdbc.TerpalDriver
 import io.exoquery.sql.runOn
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe
 
 class BatchValuesSpec: FreeSpec ({
   val ds = TestDatabases.mysql
-  val ctx by lazy { TerpalContext.Mysql(ds)  }
+  val ctx by lazy { TerpalDriver.Mysql(ds)  }
 
   beforeEach {
     ds.run("""

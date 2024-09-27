@@ -26,7 +26,7 @@ object ContextualColumnClob {
     val postgres = EmbeddedPostgres.start()
     postgres.run("CREATE TABLE images (id SERIAL PRIMARY KEY, content BYTEA)")
 
-    val ctx = TerpalContext.Postgres(
+    val ctx = TerpalDriver.Postgres(
       postgres.postgresDatabase,
       JdbcEncodingConfig(
         setOf(JdbcEncoderAny(Types.BLOB, ByteContent::class) { ctx, v: ByteContent, i -> ctx.stmt.setBinaryStream(i, v.bytes) }),

@@ -18,10 +18,10 @@ import kotlin.experimental.ExperimentalTypeInference
 data class Versions(val oldVersion: Int, val newVersion: Int)
 
 @OptIn(ExperimentalStdlibApi::class)
-class TerpalNativeContext internal constructor(
+class TerpalNativeDriver internal constructor(
   override val encodingConfig: EncodingConfig<Unused, SqliteStatementWrapper, SqliteCursorWrapper>,
   override val pool: SqliterPool,
-): ContextTransactional<Connection, Statement>, AutoCloseable,
+): DriverTransactional<Connection, Statement>, AutoCloseable,
   WithEncoding<Unused, SqliteStatementWrapper, SqliteCursorWrapper>,
   WithReadOnlyVerbs,
   HasTransactionalityNative {
@@ -47,7 +47,7 @@ class TerpalNativeContext internal constructor(
       poolingMode: PoolingMode = PoolingMode.Single,
       cacheCapacity: Int = DEFAULT_CACHE_CAPACITY,
       encodingConfig: NativeEncodingConfig = NativeEncodingConfig()
-    ): TerpalNativeContext = withContext(Dispatchers.IO) {
+    ): TerpalNativeDriver = withContext(Dispatchers.IO) {
       val db = createDatabaseManager(nativeConfig)
       val pool = SqliterPool(
         when (poolingMode) {
@@ -56,7 +56,7 @@ class TerpalNativeContext internal constructor(
         },
         cacheCapacity
       )
-      TerpalNativeContext(encodingConfig, pool)
+      TerpalNativeDriver(encodingConfig, pool)
     }
 
     suspend fun fromSchema(
@@ -66,16 +66,16 @@ class TerpalNativeContext internal constructor(
       mode: PoolingMode = PoolingMode.Single,
       cacheCapacity: Int = DEFAULT_CACHE_CAPACITY,
       encodingConfig: NativeEncodingConfig = NativeEncodingConfig()
-    ): TerpalNativeContext {
+    ): TerpalNativeDriver {
       val nativeConfig =
         DatabaseConfiguration(
           name = dbName,
           inMemory = false,
           version = schema.version.toInt(),
-          create = { conn -> schema.toCreateCallbackSync(TerpalNativeContext.fromSingleConnection(conn)) },
+          create = { conn -> schema.toCreateCallbackSync(TerpalNativeDriver.fromSingleConnection(conn)) },
           upgrade = { connection, oldVersion, newVersion ->
             schema.toMigrateCallbackSync(
-              TerpalNativeContext.fromSingleConnection(connection),
+              TerpalNativeDriver.fromSingleConnection(connection),
               oldVersion.toLong(),
               newVersion.toLong()
             )
@@ -100,7 +100,7 @@ class TerpalNativeContext internal constructor(
       mode: PoolingMode = PoolingMode.Single,
       cacheCapacity: Int = DEFAULT_CACHE_CAPACITY,
       encodingConfig: NativeEncodingConfig = NativeEncodingConfig()
-    ): TerpalNativeContext {
+    ): TerpalNativeDriver {
       val nativeConfig =
         DatabaseConfiguration(
           name = dbName,
@@ -122,16 +122,16 @@ class TerpalNativeContext internal constructor(
       mode: PoolingMode = PoolingMode.Single,
       cacheCapacity: Int = DEFAULT_CACHE_CAPACITY,
       encodingConfig: NativeEncodingConfig = NativeEncodingConfig(),
-      createCallback: (TerpalNativeContext) -> Unit = {},
-      updateCallback: (TerpalNativeContext, Versions) -> Unit = { _, _ -> }
-    ): TerpalNativeContext {
+      createCallback: (TerpalNativeDriver) -> Unit = {},
+      updateCallback: (TerpalNativeDriver, Versions) -> Unit = { _, _ -> }
+    ): TerpalNativeDriver {
       val nativeConfig =
         DatabaseConfiguration(
           name = dbFileName,
           inMemory = false,
           version = version,
-          create = { createCallback(TerpalNativeContext.fromSingleConnection(it)) },
-          upgrade = { db, old, new -> updateCallback(TerpalNativeContext.fromSingleConnection(db), Versions(old, new)) },
+          create = { createCallback(TerpalNativeDriver.fromSingleConnection(it)) },
+          upgrade = { db, old, new -> updateCallback(TerpalNativeDriver.fromSingleConnection(db), Versions(old, new)) },
           extendedConfig = DatabaseConfiguration.Extended(basePath = dbfilePath)
         )
       return fromDatabaseConfiguration(nativeConfig, mode, cacheCapacity, encodingConfig)
@@ -141,8 +141,8 @@ class TerpalNativeContext internal constructor(
      * Create a NativeContext from a single connection. Doesn't need to be suspended because there is no effect happening.
      * The connection is already open.
      */
-    fun fromSingleConnection(conn: DatabaseConnection, encodingConfig: NativeEncodingConfig = NativeEncodingConfig()): TerpalNativeContext =
-      TerpalNativeContext(encodingConfig, SqliterPool(SqliterPoolType.Wrapped(conn), DEFAULT_CACHE_CAPACITY))
+    fun fromSingleConnection(conn: DatabaseConnection, encodingConfig: NativeEncodingConfig = NativeEncodingConfig()): TerpalNativeDriver =
+      TerpalNativeDriver(encodingConfig, SqliterPool(SqliterPoolType.Wrapped(conn), DEFAULT_CACHE_CAPACITY))
   }
 
   // Is there an open writer?

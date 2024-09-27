@@ -2,7 +2,7 @@ package io.exoquery.sql.postgres
 
 import io.exoquery.sql.*
 import io.exoquery.sql.Sql
-import io.exoquery.sql.jdbc.TerpalContext
+import io.exoquery.sql.jdbc.TerpalDriver
 import io.exoquery.sql.runOn
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe
@@ -23,7 +23,7 @@ object JsonSpecData {
 class JsonSpec: FreeSpec({
   val ds = TestDatabases.postgres
   val ctx by lazy {
-    TerpalContext.Postgres(ds)
+    TerpalDriver.Postgres(ds)
   }
 
   beforeEach {

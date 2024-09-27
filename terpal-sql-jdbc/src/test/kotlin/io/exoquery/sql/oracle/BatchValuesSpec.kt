@@ -2,14 +2,14 @@ package io.exoquery.sql.oracle
 
 import io.exoquery.sql.*
 import io.exoquery.sql.jdbc.SqlBatch
-import io.exoquery.sql.jdbc.TerpalContext
+import io.exoquery.sql.jdbc.TerpalDriver
 import io.exoquery.sql.runOn
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe
 
 class BatchValuesSpec: FreeSpec ({
   val ds = TestDatabases.oracle
-  val ctx by lazy { TerpalContext.Oracle(ds)  }
+  val ctx by lazy { TerpalDriver.Oracle(ds)  }
 
   beforeEach {
     ds.run("""

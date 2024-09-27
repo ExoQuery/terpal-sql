@@ -7,7 +7,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import kotlin.test.assertEquals
 
-class WalConcurrencyOps<Session, Stmt>(val ctx: ContextTransactional<Session, Stmt>) {
+class WalConcurrencyOps<Session, Stmt>(val ctx: DriverTransactional<Session, Stmt>) {
 
   fun clearTables(): Unit = runBlocking {
     ctx.runActions(

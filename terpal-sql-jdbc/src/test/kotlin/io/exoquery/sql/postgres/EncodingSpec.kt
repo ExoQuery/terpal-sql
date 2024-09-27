@@ -3,14 +3,14 @@ package io.exoquery.sql.postgres
 import io.exoquery.sql.*
 import io.exoquery.sql.encodingdata.*
 import io.exoquery.sql.Sql
-import io.exoquery.sql.jdbc.TerpalContext
+import io.exoquery.sql.jdbc.TerpalDriver
 import io.exoquery.sql.runOn
 import io.kotest.core.spec.style.FreeSpec
 import java.time.ZoneId
 
 class EncodingSpec: FreeSpec({
   val ds = TestDatabases.postgres
-  val ctx by lazy { TerpalContext.Postgres(ds, encodingConfig) }
+  val ctx by lazy { TerpalDriver.Postgres(ds, encodingConfig) }
 
   beforeEach {
     ds.run("DELETE FROM EncodingTestEntity")

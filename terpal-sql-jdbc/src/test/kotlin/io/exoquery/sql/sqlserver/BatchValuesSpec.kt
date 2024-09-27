@@ -4,14 +4,14 @@ import io.exoquery.sql.*
 import io.exoquery.sql.Ex3_BatchReturnIds.products
 import io.exoquery.sql.examples.id
 import io.exoquery.sql.jdbc.SqlBatch
-import io.exoquery.sql.jdbc.TerpalContext
+import io.exoquery.sql.jdbc.TerpalDriver
 import io.exoquery.sql.runOn
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe
 
 class BatchValuesSpec: FreeSpec ({
   val ds = TestDatabases.sqlServer
-  val ctx by lazy { TerpalContext.SqlServer(ds)  }
+  val ctx by lazy { TerpalDriver.SqlServer(ds)  }
 
   beforeEach {
     ds.run("TRUNCATE TABLE Product; DBCC CHECKIDENT ('Person', RESEED, 1);")

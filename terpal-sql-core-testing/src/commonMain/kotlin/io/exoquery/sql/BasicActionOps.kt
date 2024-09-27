@@ -5,7 +5,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
 
 class BasicActionOps<Session, Stmt>(
-  val ctx: ContextTransactional<Session, Stmt>
+  val ctx: DriverTransactional<Session, Stmt>
 ) {
   fun clearTables(): Unit = runBlocking {
     ctx.runActions(

@@ -130,7 +130,7 @@ object BasicSchema: SqlSchema<QueryResult.Value<Unit>> {
 
 object BasicSchemaTerpal: TerpalSchema<Unit> {
   override val version: Long = 1
-  override suspend fun create(driver: Context): Unit {
+  override suspend fun create(driver: Driver): Unit {
     Sql(
       """
       CREATE TABLE Person (
@@ -230,7 +230,7 @@ object BasicSchemaTerpal: TerpalSchema<Unit> {
   }
 
   override suspend fun migrate(
-    driver: Context,
+    driver: Driver,
     oldVersion: Long,
     newVersion: Long,
     vararg callbacks: io.exoquery.sql.sqlite.CallAfterVersion) {
@@ -261,7 +261,7 @@ object WalTestSchema: SqlSchema<QueryResult.Value<Unit>> {
 
 object WalSchemaTerpal: TerpalSchema<Unit> {
   override val version: Long = 1
-  override suspend fun create(driver: Context): Unit {
+  override suspend fun create(driver: Driver): Unit {
     Sql(
       """
       CREATE TABLE MiscTest (
@@ -272,5 +272,5 @@ object WalSchemaTerpal: TerpalSchema<Unit> {
     ).action().runOn(driver)
   }
 
-  override suspend fun migrate(driver: Context, oldVersion: Long, newVersion: Long, vararg callbacks: CallAfterVersion) = Unit
+  override suspend fun migrate(driver: Driver, oldVersion: Long, newVersion: Long, vararg callbacks: CallAfterVersion) = Unit
 }
