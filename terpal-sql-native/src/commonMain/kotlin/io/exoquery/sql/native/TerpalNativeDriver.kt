@@ -42,12 +42,12 @@ class TerpalNativeDriver internal constructor(
      * Since during creation of the NativeContext we will potentially run SQL migration scripts
      * the creation of the context needs to be run in Dispatchers.IO.
      */
-    suspend fun fromDatabaseConfiguration(
+    fun fromDatabaseConfiguration(
       nativeConfig: DatabaseConfiguration,
       poolingMode: PoolingMode = PoolingMode.Single,
       cacheCapacity: Int = DEFAULT_CACHE_CAPACITY,
       encodingConfig: NativeEncodingConfig = NativeEncodingConfig()
-    ): TerpalNativeDriver = withContext(Dispatchers.IO) {
+    ): TerpalNativeDriver {
       val db = createDatabaseManager(nativeConfig)
       val pool = SqliterPool(
         when (poolingMode) {
@@ -56,7 +56,7 @@ class TerpalNativeDriver internal constructor(
         },
         cacheCapacity
       )
-      TerpalNativeDriver(encodingConfig, pool)
+      return TerpalNativeDriver(encodingConfig, pool)
     }
 
     suspend fun fromSchema(
@@ -93,7 +93,7 @@ class TerpalNativeDriver internal constructor(
      * Since during creation of the NativeContext we will potentially run SQL migration scripts
      * the creation of the context needs to be run in Dispatchers.IO.
      */
-    suspend fun fromSchema(
+    fun fromSchema(
       schema: SqlSchema<QueryResult.Value<Unit>>,
       dbName: String,
       basePath: String? = null,
@@ -115,7 +115,7 @@ class TerpalNativeDriver internal constructor(
       return fromDatabaseConfiguration(nativeConfig, mode, cacheCapacity, encodingConfig)
     }
 
-    suspend fun create(
+    fun create(
       dbFileName: String,
       dbfilePath: String? = null,
       version: Int = 1,

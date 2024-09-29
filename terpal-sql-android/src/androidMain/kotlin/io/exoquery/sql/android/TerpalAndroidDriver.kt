@@ -265,7 +265,8 @@ class TerpalAndroidDriver internal constructor(
             val sqliteQuery = SimpleSQLiteQuery(act.sql, queryParams.array)
             conn.value.session.query(sqliteQuery).use {
               val cursorWrapper = AndroidxCursorWrapper(it, windowSizeBytes)
-              emitResultSet(cursorWrapper) { cursor -> act.resultMaker.makeExtractor(QueryDebugInfo(act.sql)).invoke(Unused, cursor) }
+              val extractor = act.resultMaker.makeExtractor(QueryDebugInfo(act.sql))
+              emitResultSet(cursorWrapper) { cursor -> extractor.invoke(Unused, cursor) }
             }
           }
         }
@@ -295,7 +296,8 @@ class TerpalAndroidDriver internal constructor(
         val sqliteQuery = SimpleSQLiteQuery(query.sql, queryParams.array)
         conn.value.session.query(sqliteQuery).use {
           val cursorWrapper = AndroidxCursorWrapper(it, windowSizeBytes)
-          emitResultSet(cursorWrapper) { cursor -> query.resultMaker.makeExtractor(QueryDebugInfo(query.sql)).invoke(Unused, cursor) }
+          val extractor = query.resultMaker.makeExtractor(QueryDebugInfo(query.sql))
+          emitResultSet(cursorWrapper) { cursor -> extractor.invoke(Unused, cursor) }
         }
       }
     }
@@ -308,7 +310,8 @@ class TerpalAndroidDriver internal constructor(
       tryCatchQuery(query.sql) {
         conn.value.session.query(query.toSqliteQuery()).use {
           val cursorWrapper = AndroidxCursorWrapper(it, windowSizeBytes)
-          emitResultSet(cursorWrapper) { cursor -> query.resultMaker.makeExtractor(QueryDebugInfo(query.sql)).invoke(Unused, cursor) }
+          val extractor = query.resultMaker.makeExtractor(QueryDebugInfo(query.sql))
+          emitResultSet(cursorWrapper) { cursor -> extractor.invoke(Unused, cursor) }
         }
       }
     }
@@ -334,10 +337,11 @@ class TerpalAndroidDriver internal constructor(
       val result = mutableListOf<T>()
       // No caching used here, get the session directly
       tryCatchQuery(query.sql) {
+        val extractor = query.resultMaker.makeExtractor(QueryDebugInfo(query.sql))
         conn.value.session.query(query.toSqliteQuery()).use { rs ->
           val cursorWrapper = AndroidxCursorWrapper(rs, windowSizeBytes)
           while (cursorWrapper.next()) {
-            val rowValue = query.resultMaker.makeExtractor(QueryDebugInfo(query.sql)).invoke(Unused, cursorWrapper)
+            val rowValue = extractor.invoke(Unused, cursorWrapper)
             result.add(rowValue)
           }
         }

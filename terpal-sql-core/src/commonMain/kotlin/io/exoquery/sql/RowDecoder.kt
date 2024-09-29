@@ -19,6 +19,10 @@ fun SerialDescriptor.isJsonClassAnnotated() =
 fun SerialDescriptor.isJsonFieldAnnotated(fieldIndex: Int) =
   this.getElementAnnotations(fieldIndex).find { it is io.exoquery.sql.SqlJsonValue } != null
 
+@OptIn(ExperimentalSerializationApi::class)
+fun SerialDescriptor.isSqlSkipAnnotated() =
+  this.annotations.find { it is io.exoquery.sql.SqlSkip } != null
+
 fun SerialDescriptor.isJsonValue() =
   this.serialName == "io.exoquery.sql.JsonValue"
 
@@ -46,7 +50,7 @@ fun SerialDescriptor.verifyColumns(columns: List<ColumnInfo>): Unit {
         listOf("<unamed>" to desc.serialName)
 
       desc.kind == StructureKind.CLASS ->
-        (desc.elementDescriptors.toList()
+        (desc.elementDescriptors.filter { !it.isSqlSkipAnnotated() }.toList()
           .zip(desc.elementNames.toList()))
           .withIndex()
           .flattenEach()

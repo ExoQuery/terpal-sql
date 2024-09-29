@@ -15,6 +15,9 @@ import kotlinx.serialization.encoding.Encoder
 @Target(AnnotationTarget.CLASS, AnnotationTarget.PROPERTY, AnnotationTarget.TYPE)
 annotation class SqlJsonValue
 
+@Target(AnnotationTarget.CLASS, AnnotationTarget.PROPERTY, AnnotationTarget.TYPE)
+annotation class SqlSkip
+
 @Serializable
 data class JsonValue<T>(val value: T)
 
