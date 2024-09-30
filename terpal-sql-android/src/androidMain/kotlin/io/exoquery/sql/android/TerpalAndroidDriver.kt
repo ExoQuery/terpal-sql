@@ -87,7 +87,7 @@ class TerpalAndroidDriver internal constructor(
         is PoolingMode.MultipleReaderWal -> AndroidPool.MultiConnection(makeHelper, cacheCapacity, poolingMode.numReaders) to WalMode.Enabled
       }
 
-    suspend fun fromApplicationContext(
+    fun fromApplicationContext(
       databaseName: String,
       context: Context,
       schema: TerpalSchema<*> = EmptyTerpalSchema,
