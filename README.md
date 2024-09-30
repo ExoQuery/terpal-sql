@@ -367,6 +367,46 @@ try {
 When a variable used in a Sql clause e.g. `Sql("... $dollar_sign_variable ...")` it needs
 to be wrapped in a `Param` object.
 
+### Transient Values
+
+Frequently, serializeable classes will have additional values that are not stored in the database
+but rather can be computed by default. For example:
+```kotlin
+@Serializable
+data class Person(val name: String, val age: Int) {
+  val title = "Mr " + name
+}
+
+// Given the database schema:
+// CREATE TABLE person (name TEXT, age INT)
+```
+Make sure to add the annotation `@Transient` to the field that is not stored in the database!
+```kotlin
+@Serializable
+data class Person(val name: String, val age: Int) {
+  @Transient
+  val title = "Mr " + name
+}
+```
+If you forget to add this annotation, the Kotlin Serialization library will attempt to read the field
+from the database row i.e. as though the database schema had a third `title` column 
+(and then write it into the `val title` field... which should technically be impossible, see the note).
+
+> NOTE: As of version 1.6.2 the behavior of kotlinx-serialization regarding `val` fields in data classes is highly
+> unintuitive. The Kotlin serialization library will create a hidden constructor that takes the `val` fields marked
+> inside the class body that technically are not accessible at all. It is as though the `Person` class actually 
+> looks like this:
+> ```kotlin
+> // This primary constructor is hidden:
+> data class Person(val name: String, val age: Int, val title: String, val title: String) {
+>  constructor(name: String, age: Int, title: Int = "Mr " + name) : this(name, age, name)
+> }
+> ```
+> This is why the `@Transient` annotation is required to prevent the Kotlin Serialization library from trying to
+> alter the class structure in this bizarre way.
+
+
+
 ### Automatic Wrapping
 
 ```kotlin
