@@ -15,13 +15,8 @@ import kotlinx.serialization.encoding.Encoder
 @Target(AnnotationTarget.CLASS, AnnotationTarget.PROPERTY, AnnotationTarget.TYPE)
 annotation class SqlJsonValue
 
-@Target(AnnotationTarget.CLASS, AnnotationTarget.PROPERTY, AnnotationTarget.TYPE)
-annotation class SqlSkip
-
 @Serializable
 data class JsonValue<T>(val value: T)
-
-
 
 data class Statement(val ir: IR.Splice): SqlFragment {
   operator fun plus(other: Statement) = Statement(IR.Splice(listOf(IR.Part.Empty, IR.Part.Empty, IR.Part.Empty), listOf(this.ir, other.ir)))
