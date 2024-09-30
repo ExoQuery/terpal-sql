@@ -11,6 +11,10 @@ import kotlinx.serialization.modules.SerializersModule
 
 data class ColumnInfo(val name: String, val type: String)
 
+// Note, this is a class-level annotation so to use Descriptor.annotations.find(...) on it is actually possible
+// i.e. you can find the annotation on the object itself. Normally annotations that are on the field-level
+// can't be found on the Descriptor.annotations list but only the parentDescriptor.getElementAnnotations(index)
+// lookup.
 @OptIn(ExperimentalSerializationApi::class)
 fun SerialDescriptor.isJsonClassAnnotated() =
   this.annotations.find { it is io.exoquery.sql.SqlJsonValue } != null
@@ -18,10 +22,6 @@ fun SerialDescriptor.isJsonClassAnnotated() =
 @OptIn(ExperimentalSerializationApi::class)
 fun SerialDescriptor.isJsonFieldAnnotated(fieldIndex: Int) =
   this.getElementAnnotations(fieldIndex).find { it is io.exoquery.sql.SqlJsonValue } != null
-
-@OptIn(ExperimentalSerializationApi::class)
-fun SerialDescriptor.isSqlSkipAnnotated() =
-  this.annotations.find { it is io.exoquery.sql.SqlSkip } != null
 
 fun SerialDescriptor.isJsonValue() =
   this.serialName == "io.exoquery.sql.JsonValue"
@@ -33,13 +33,6 @@ fun <A, B> Iterable<IndexedValue<Pair<A, B>>>.flattenEach() =
     Triple(i, a, b)
   }
 
-//fun <A, B, C> Iterable<Pair<A, Pair<B, C>>>.flattenEach() =
-//  this.map {
-//    val (a, bc) = it
-//    val (b, c) = bc
-//    Triple(a, b, c)
-//  }
-
 @OptIn(ExperimentalSerializationApi::class)
 fun SerialDescriptor.verifyColumns(columns: List<ColumnInfo>): Unit {
 
@@ -50,7 +43,7 @@ fun SerialDescriptor.verifyColumns(columns: List<ColumnInfo>): Unit {
         listOf("<unamed>" to desc.serialName)
 
       desc.kind == StructureKind.CLASS ->
-        (desc.elementDescriptors.filter { !it.isSqlSkipAnnotated() }.toList()
+        (desc.elementDescriptors.toList()
           .zip(desc.elementNames.toList()))
           .withIndex()
           .flattenEach()
@@ -286,12 +279,15 @@ class RowDecoder<Session, Row> private constructor(
         // Only if all the columns are null (and the returned element can be null) can we assume that the decoded element should be null
         // Since we're always at the current index (e.g. (Person(name,age),Address(street,zip)) when we're on `street` the index will be 3
         // so we need to check [street..<zip] indexes i.e. [3..<(3+2)] for nullity
-        val allRowsNull =
+        val allColsNull =
           (rowIndex until (rowIndex + childDesc.elementsCount)).all {
             api.isNull(it, ctx.row)
           }
 
-        if (allRowsNull) {
+        // If all columns are null and the parent object is nullable e.g. Person(name:Name?, age:Int), where: Name(first:String?, last:String?)
+        // and first/last are both null make Name null (i.e. Person(null, 123)). If Name is not nullable (i.e. Person(name:Name, age:Int))
+        // make it Name(null, null)
+        if (allColsNull && descriptor.isNullable) {
           decodeNull()
         } else {
           deserializer.deserialize(cloneSelf(ctx, rowIndex, type, { childIndex -> this.rowIndex = childIndex }))
