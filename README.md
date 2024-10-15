@@ -70,7 +70,7 @@ repositories {
 ```
 
 
-#### Using JDBC
+## Using JDBC
 When using JDBC, add the following to your `build.gradle.kts` file:
 
 ```kotlin
@@ -110,7 +110,7 @@ val ctx = TerpalDriver.Postgres.fromConfig("myPostgresDB")
 ```
 Have a look at the Terpal-SQL [Sample Project](https://github.com/deusaquilus/terpal-sql-sample) for more details.
 
-#### Using Android
+## Using Android
 
 For Android development, add the following to your `build.gradle.kts` file:
 
@@ -129,7 +129,7 @@ dependencies {
 }
 ```
 
-> ### Duplicate class issue
+> #### Duplicate class issue
 > When using the `terpal-sql-android` dependency with `terpal-sql-core` in commonMain, be sure
 > to add and exclusion for `jb-annotations-kmp` otherwise symbol conflicts will occur e.g.
 > ```
@@ -148,7 +148,7 @@ dependencies {
 
 Then create the `TerpalAndroidDriver` using one of the following constructors.
 
-
+### Construct from ApplicationContext
 Use the `TerpalAndroidDriver.fromApplicationDriver` method to create a terpal context from an Android Application Driver
 ```kotlin
 val ctx = 
@@ -172,6 +172,8 @@ val ctx =
 // Run a query:
 val person: List<Person> = Sql("SELECT * FROM Person").queryOf<Person>().runOn(ctx)
 ```
+
+### Constuct from SupportSQLiteOpenHelper
 Use the `TerpalAndroidDriver.fromSingleOpenHelper` method to create a terpal context from a single instance of `SupportSQLiteOpenHelper`
 ```kotlin
 val myOpenHelperInstance = FrameworkSQLiteOpenHelperFactory().create(
@@ -204,7 +206,7 @@ val person: List<Person> = Sql("SELECT * FROM Person").queryOf<Person>().runOn(c
 > as part of the SupportSQLiteOpenHelper.Callback. These contexts are required to be create from a coroutine
 > to avoid blocking the main thread.
 
-#### Using iOS, OSX, Linux and Windows
+## Using iOS, OSX, Linux and Windows
 
 For iOS, OSX, Linux and Windows development, with Kotlin Multiplatform, add the following to your `build.gradle.kts` file:
 ```kotlin
