@@ -54,7 +54,7 @@ android {
 }
 
 kotlin {
-  if (HostManager.hostIsLinux) {
+  if (HostManager.hostIsLinux || !project.hasProperty("isCI")) {
 
     androidTarget {
       compilations.all {

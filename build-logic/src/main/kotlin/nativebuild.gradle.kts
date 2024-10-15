@@ -23,10 +23,15 @@ repositories {
 kotlin {
 
   val isCI = project.hasProperty("isCI")
+  // I.e. set this environment variable specifically to true to build (most) targets
   val fullLocal = !isCI && System.getenv("TERPAL_FULL_LOCAL")?.toBoolean() ?: false
 
   if (HostManager.hostIsLinux || fullLocal) {
     linuxX64()
+    iosX64()
+    iosArm64()
+    iosSimulatorArm64()
+
     if (isCI) {
       linuxArm64()
 
