@@ -39,6 +39,16 @@ jobs:
           - os: macOS-latest
             # (Need to do >- or for some reason it preserves a newline after all the entries)
             publish_command: >-
+              :terpal-sql-core:publishMacosX64PublicationToOss
+              :terpal-sql-core:publishMacosArm64PublicationToOss
+              :terpal-sql-core:publishIosX64PublicationToOss
+              :terpal-sql-core:publishIosArm64PublicationToOssRepository
+              :terpal-sql-core:publishIosSimulatorArm64PublicationToOss
+              :terpal-sql-core:publishTvosX64PublicationToOss
+              :terpal-sql-core:publishTvosArm64PublicationToOss
+              :terpal-sql-core:publishWatchosX64PublicationToOss
+              :terpal-sql-core:publishWatchosArm32PublicationToOss
+              :terpal-sql-core:publishWatchosArm64PublicationToOss
               :terpal-sql-native:publishMacosX64PublicationToOss
               :terpal-sql-native:publishMacosArm64PublicationToOss
               :terpal-sql-native:publishIosX64PublicationToOss
@@ -51,7 +61,9 @@ jobs:
               :terpal-sql-native:publishWatchosArm64PublicationToOss
             platform: mac
           - os: windows-latest
-            publish_command: :terpal-sql-native:publishMingwX64PublicationToOss
+            publish_command:  >-
+              :terpal-sql-core:publishMingwX64PublicationToOss
+              :terpal-sql-native:publishMingwX64PublicationToOss
             platform: windows
     env:
       SONATYPE_REPOSITORY_ID: ${{ needs.create_staging_repository.outputs.repository_id }}
