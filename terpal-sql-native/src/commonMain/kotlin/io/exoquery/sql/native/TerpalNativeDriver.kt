@@ -59,7 +59,7 @@ class TerpalNativeDriver internal constructor(
       return TerpalNativeDriver(encodingConfig, pool)
     }
 
-    suspend fun fromSchema(
+    fun fromSchema(
       schema: TerpalSchema<Unit>,
       dbName: String,
       basePath: String? = null,
