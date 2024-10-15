@@ -25,7 +25,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ macOS-latest, windows-latest ] #ubuntu-latest,
+        os: [ ubuntu-latest, macOS-latest, windows-latest ]
         include:
           - os: ubuntu-latest
             # On ubuntu publish everything you can i.e. the linuxX64 and jvm binaries
@@ -49,21 +49,21 @@ jobs:
               :terpal-sql-core:publishWatchosX64PublicationToOss
               :terpal-sql-core:publishWatchosArm32PublicationToOss
               :terpal-sql-core:publishWatchosArm64PublicationToOss
-#              :terpal-sql-native:publishMacosX64PublicationToOss
-#              :terpal-sql-native:publishMacosArm64PublicationToOss
-#              :terpal-sql-native:publishIosX64PublicationToOss
-#              :terpal-sql-native:publishIosArm64PublicationToOssRepository
-#              :terpal-sql-native:publishIosSimulatorArm64PublicationToOss
-#              :terpal-sql-native:publishTvosX64PublicationToOss
-#              :terpal-sql-native:publishTvosArm64PublicationToOss
-#              :terpal-sql-native:publishWatchosX64PublicationToOss
-#              :terpal-sql-native:publishWatchosArm32PublicationToOss
-#              :terpal-sql-native:publishWatchosArm64PublicationToOss
+              :terpal-sql-native:publishMacosX64PublicationToOss
+              :terpal-sql-native:publishMacosArm64PublicationToOss
+              :terpal-sql-native:publishIosX64PublicationToOss
+              :terpal-sql-native:publishIosArm64PublicationToOssRepository
+              :terpal-sql-native:publishIosSimulatorArm64PublicationToOss
+              :terpal-sql-native:publishTvosX64PublicationToOss
+              :terpal-sql-native:publishTvosArm64PublicationToOss
+              :terpal-sql-native:publishWatchosX64PublicationToOss
+              :terpal-sql-native:publishWatchosArm32PublicationToOss
+              :terpal-sql-native:publishWatchosArm64PublicationToOss
             platform: mac
           - os: windows-latest
             publish_command:  >-
               :terpal-sql-core:publishMingwX64PublicationToOss
-#              :terpal-sql-native:publishMingwX64PublicationToOss
+              :terpal-sql-native:publishMingwX64PublicationToOss
             platform: windows
     env:
       SONATYPE_REPOSITORY_ID: ${{ needs.create_staging_repository.outputs.repository_id }}
