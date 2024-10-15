@@ -284,10 +284,10 @@ class RowDecoder<Session, Row> private constructor(
             api.isNull(it, ctx.row)
           }
 
-        // If all columns are null and the parent object is nullable e.g. Person(name:Name?, age:Int), where: Name(first:String?, last:String?)
+        // If all columns are null and the object (that is currently childDesc) is nullable e.g. childDesc=Person(name:Name?, age:Int), Name(first:String?, last:String?)
         // and first/last are both null make Name null (i.e. Person(null, 123)). If Name is not nullable (i.e. Person(name:Name, age:Int))
         // make it Name(null, null)
-        if (allColsNull && descriptor.isNullable) {
+        if (allColsNull && childDesc.isNullable) {
           decodeNull()
         } else {
           deserializer.deserialize(cloneSelf(ctx, rowIndex, type, { childIndex -> this.rowIndex = childIndex }))

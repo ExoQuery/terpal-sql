@@ -41,6 +41,9 @@ class BasicQuerySpec : FreeSpec({
     @Serializable
     data class Address(val ownerId: Int, val street: String, val zip: String)
 
+    @Serializable
+    data class AddressAllNullable(val ownerId: Int?, val street: String?, val zip: String?)
+
     "SELECT Person, Address - join" {
       ctx.run(Sql("SELECT p.id, p.firstName, p.lastName, p.age, a.ownerId, a.street, a.zip FROM Person p JOIN Address a ON p.id = a.ownerId").queryOf<Pair<Person, Address>>()) shouldBe listOf(
         Person(1, "Joe", "Bloggs", 111) to Address(1, "123 Main St", "12345")
@@ -50,6 +53,20 @@ class BasicQuerySpec : FreeSpec({
     "SELECT Person, Address - leftJoin + null" {
       ctx.run(Sql("SELECT p.id, p.firstName, p.lastName, p.age, a.ownerId, a.street, a.zip FROM Person p LEFT JOIN Address a ON p.id = a.ownerId").queryOf<Pair<Person, Address?>>()) shouldBe listOf(
         Person(1, "Joe", "Bloggs", 111) to Address(1, "123 Main St", "12345"),
+        Person(2, "Jim", "Roogs", 222) to null
+      )
+    }
+
+    "SELECT Person, Address - leftJoin + null" {
+      ctx.run(Sql("SELECT p.id, p.firstName, p.lastName, p.age, a.ownerId, a.street, a.zip FROM Person p LEFT JOIN Address a ON p.id = a.ownerId").queryOf<Pair<Person, AddressAllNullable>>()) shouldBe listOf(
+        Person(1, "Joe", "Bloggs", 111) to AddressAllNullable(1, "123 Main St", "12345"),
+        Person(2, "Jim", "Roogs", 222) to AddressAllNullable(null, null, null)
+      )
+    }
+
+    "SELECT Person, Address - leftJoin + null - both variants" {
+      ctx.run(Sql("SELECT p.id, p.firstName, p.lastName, p.age, a.ownerId, a.street, a.zip FROM Person p LEFT JOIN Address a ON p.id = a.ownerId").queryOf<Pair<Person, AddressAllNullable?>>()) shouldBe listOf(
+        Person(1, "Joe", "Bloggs", 111) to AddressAllNullable(1, "123 Main St", "12345"),
         Person(2, "Jim", "Roogs", 222) to null
       )
     }
