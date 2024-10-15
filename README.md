@@ -81,7 +81,7 @@ plugins {
 }
 
 dependencies {
-    api("io.exoquery:terpal-sql-jdbc:1.9.22-0.3.0")
+    api("io.exoquery:terpal-sql-jdbc:1.0.0.PL-1.0.0")
     api("org.jetbrains.kotlinx:kotlinx-serialization-core:1.6.2")
     api("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
     // Your databse driver for example postgres:
@@ -108,7 +108,7 @@ val ctx = TerpalDriver.Postgres.fromConfig("myPostgresDB")
 //   dataSource.serverName=localhost 
 // }
 ```
-Have a look at the Terpal-SQL [Sample Project](https://github.com/deusaquilus/terpal-sql-example) for more details.
+Have a look at the Terpal-SQL [Sample Project](https://github.com/deusaquilus/terpal-sql-sample) for more details.
 
 #### Using Android
 
@@ -122,12 +122,29 @@ plugins {
 }
 
 dependencies {
-    api("io.exoquery:terpal-sql-android:1.9.22-0.3.0")
+    api("io.exoquery:terpal-sql-android:1.0.0.PL-1.0.0")
     api("org.jetbrains.kotlinx:kotlinx-serialization-core:1.6.2")
     api("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
     implementation("androidx.sqlite:sqlite-framework:2.4.0")
 }
 ```
+
+> ### Duplicate class issue
+> When using the `terpal-sql-android` dependency with `terpal-sql-core` in commonMain, be sure
+> to add and exclusion for `jb-annotations-kmp` otherwise symbol conflicts will occur e.g.
+> ```
+> Duplicate class org.intellij.lang.annotations.Flow found in modules annotations-26.0.1.jar -> annotations-26.0.1 (org.jetbrains:annotations:26.0.1) and jb-annotations-kmp-jvm-24.1.0+apple.jar -> jb-annotations-kmp-jvm-24.1.0+apple (com.sschr15.annotations:jb-annotations-kmp-jvm:24.1.0+apple)
+> Duplicate class org.intellij.lang.annotations.Identifier found in modules annotations-26.0.1.jar -> annotations-26.0.1 (org.jetbrains:annotations:26.0.1) and jb-annotations-kmp-jvm-24.1.0+apple.jar -> jb-annotations-kmp-jvm-24.1.0+apple (com.sschr15.annotations:jb-annotations-kmp-jvm:24.1.0+apple)
+> ...
+> ```
+> To fix it do this:
+> ```kotlin
+> commonMain.dependencies {
+>   implementation("io.exoquery:terpal-sql-core:1.0.0.PL-1.0.0") {
+>     exclude("com.sschr15.annotations","jb-annotations-kmp")
+>   }
+> }
+> ```
 
 Then create the `TerpalAndroidDriver` using one of the following constructors.
 
@@ -205,7 +222,7 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
                 // Note that terpal-sql-native supports iOS, OSX, Linux and Windows
                 api("io.exoquery:terpal-runtime:1.9.22-1.0.0.PL")
-                implementation("io.exoquery:terpal-sql-native:1.9.22-0.3.0")
+                implementation("io.exoquery:terpal-sql-native:1.0.0.PL-1.0.0")
             }
         }
     }
