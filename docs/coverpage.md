@@ -8,4 +8,4 @@
 
 
 [Get Started](#main)
-[GitHub](https://github.com/deusaquilus/terpal-sql)
+[GitHub](https://github.com/ExoQuery/terpal-sql)

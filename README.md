@@ -6,7 +6,7 @@
 
 # terpal-sql
 
-Terpal is a Kotlin Multiplatform library that allows you to write SQL queries in Kotlin using interpolated strings
+Terpal is a Kotlin Multiplatform library that allows you to write SQL queries using interpolated strings
 in an SQL-injection-safe way. Inspired by Scala libraries such as Doobie and Zio-Jdbc, Terpal
 suspends the splicing of "$dollar $sign $variables" in `SQL("...")` strings and preserves them in a separate data structure until they can be
 safely injected into an SQL statement.
@@ -29,7 +29,7 @@ Sql("SELECT * FROM Person WHERE name = $name").queryOf<Person>().runOn(ctx)
 // val query = "SELECT * FROM Person WHERE name = ?", params = listOf(Param(name))
 // conn.prepareStatement(query).use { stmt -> stmt.setString(1, name); stmt.executeQuery() }
 ```
-For a deep dive on how this works, have Have a look at the [Terpal Compiler Plugin](https://github.com/deusaquilus/terpal).
+For a deep dive on how this works, have Have a look at the [Terpal Compiler Plugin](https://github.com/ExoQuery/Terpal).
 
 In addition Terpal allows you to decode the results of SQL queries into Kotlin data classes using
 the kotlinx-serialization library.
@@ -108,7 +108,7 @@ val ctx = TerpalDriver.Postgres.fromConfig("myPostgresDB")
 //   dataSource.serverName=localhost 
 // }
 ```
-Have a look at the Terpal-SQL [Sample Project](https://github.com/deusaquilus/terpal-sql-sample) for more details.
+Have a look at the Terpal-SQL [Sample Project](https://github.com/ExoQuery/terpal-sql-sample) for more details.
 
 ## Using Android
 
