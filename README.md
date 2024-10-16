@@ -292,10 +292,14 @@ Use the `actionReturning<Datatype>()` method to run an action that returns a val
 ```kotlin
 val firstName = "Joe"
 val lastName = "Bloggs"
-val id = Sql("INSERT INTO Person (firstName, lastName) VALUES ($firstName, $lastName) RETURNING id").actionReturning<Int>().runOn(ctx)
+val id = 
+  Sql("INSERT INTO Person (firstName, lastName) VALUES ($firstName, $lastName) RETURNING id")
+    .actionReturning<Int>().runOn(ctx)
 
 // You can also decode the results into a data class
-val person: Person = Sql("INSERT INTO Person (firstName, lastName) VALUES ($firstName, $lastName) RETURNING id, firstName, lastName").queryOf<Person>().runOn(ctx)
+val person: Person = 
+  Sql("INSERT INTO Person (firstName, lastName) VALUES ($firstName, $lastName) RETURNING id, firstName, lastName")
+    .queryOf<Person>().runOn(ctx)
 
 // Note that the fields and field-ordering in the table must match the data class (we are assuming the id column is auto-generated)
 // @Serializable
@@ -467,7 +471,8 @@ object EmailSerializer : KSerializer<Email> {
 }
 
 // Then use in the Param wrapper (`withSer` is an alias for `withSerializer`) giving it a serializer. 
-Sql("INSERT INTO customers (firstName, lastName, email) VALUES ($firstName, $lastName, ${Param.withSer(email, EmailSerialzier)})").action().runOn(ctx)
+Sql("INSERT INTO customers (firstName, lastName, email) VALUES ($firstName, $lastName, ${Param.withSer(email, EmailSerialzier)})")
+  .action().runOn(ctx)
 ```
 
 Keep in mind that if you want to use this custom datatype in a parent case-class you will need to let kotlinx-serialization
@@ -552,7 +557,9 @@ data class Person(val name: String, val age: Int)
 @Serializeable
 data class JsonExample(val id: Int, @SqlJsonValue val person: Person)
 
+// Inserting an example value directly:
 Sql("""INSERT INTO JsonExample (id, person) VALUES (1, '{"name": "Joe", "value": 30}')""").action().runOn(ctx)
+// Retrieve it like this:
 val values: List<JsonExample> = Sql("SELECT id, person FROM JsonExample").queryOf<JsonExample>().runOn(ctx)
 //> List(JsonExample(1, Person(name=Joe, value=30)))
 ```
@@ -701,7 +708,12 @@ for the target format. The surrogate data-class needs to also be serializable an
 ```kotlin
 // Create the "original" data class
 @Serializable
-data class Customer(val id: Int, val firstName: String, val lastName: String, @Serializable(with = DateAsIsoSerializer::class) val createdAt: LocalDate)
+data class Customer(
+  val id: Int, 
+  val firstName: String, 
+  val lastName: String, 
+  @Serializable(with = DateAsIsoSerializer::class) val createdAt: LocalDate
+)
 
 // Create the "surrogate" data class
 @Serializable
@@ -713,14 +725,21 @@ data class CustomerSurrogate(val id: Int, val firstName: String, val lastName: S
     }
   }
 }
+```
 
-// Create a surrogate serializer which uses the surrogate data-class to encode the original data-class.
+Then create a surrogate serializer which uses the surrogate data-class to encode the original data-class.
+```kotlin
 object CustomerSurrogateSerializer: KSerializer<Customer> {
   override val descriptor = CustomerSurrogate.serializer().descriptor
-  override fun serialize(encoder: Encoder, value: Customer) = encoder.encodeSerializableValue(CustomerSurrogate.serializer(), CustomerSurrogate.fromCustomer(value))
-  override fun deserialize(decoder: Decoder): Customer = decoder.decodeSerializableValue(CustomerSurrogate.serializer()).toCustomer()
+  override fun serialize(encoder: Encoder, value: Customer) = 
+    encoder.encodeSerializableValue(CustomerSurrogate.serializer(), CustomerSurrogate.fromCustomer(value))
+  override fun deserialize(decoder: Decoder): Customer = 
+    decoder.decodeSerializableValue(CustomerSurrogate.serializer()).toCustomer()
 }
+```
 
+Then use the surrogate serializer when reading data from the database.
+```kotlin
 // You can then use the surrogate class when reading/writing information from the database:
 val customers = ctx.run(Sql("SELECT * FROM customers").queryOf<Customer>(CustomerSurrogateSerializer))
 
