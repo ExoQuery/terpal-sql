@@ -8,8 +8,8 @@
 
 Terpal is a Kotlin Multiplatform library that allows you to write SQL queries in Kotlin using interpolated strings
 in an SQL-injection-safe way. Inspired by Scala libraries such as Doobie and Zio-Jdbc, Terpal
-delays suspends the "$dollar $sign $variables" in strings in a separate data structure until they can be
-safely inject into an SQL statement.
+suspends the splicing of "$dollar $sign $variables" in `SQL("...")` strings and preserves them in a separate data structure until they can be
+safely injected into an SQL statement.
 
 ```kotlin
 val ds: DataSource = PGSimpleDataSource(...)
@@ -758,9 +758,3 @@ The following two screenshots demonstrate this.
 <img src="https://github.com/user-attachments/assets/03fe9db2-19da-452b-9b92-acacff1ed48e" width=40% height=40% >
 <img src="https://github.com/user-attachments/assets/f09a3f97-d70a-4a8b-b7e6-afb6aa790113" width=40% height=40% >
 </p>
-
-
-
-
-
-
