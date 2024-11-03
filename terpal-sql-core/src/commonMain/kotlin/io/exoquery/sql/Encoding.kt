@@ -6,6 +6,12 @@ import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
 import kotlinx.datetime.Instant
 
+// TODO add this to SqlDecoder to denote possible list decoders
+sealed interface DecoderType {
+  data object Plain
+  data class Array(val elementType: KClass<*>)
+}
+
 abstract class SqlDecoder<Session, Row, T> {
   abstract val type: KClass<*> // Don't want to force T to be non-nullable so using KClass instead of KClass<T>
   abstract fun decode(ctx: DecodingContext<Session, Row>, index: Int): T

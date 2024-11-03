@@ -10,7 +10,7 @@ repositories {
 
 group = "io.exoquery"
 // Everything inherits the version from here
-version = "1.0.0.PL-1.0.0"
+version = "1.0.0.PL-1.1.0"
 
 check("$version".isNotBlank() && version != "unspecified")
     { "invalid version $version" }

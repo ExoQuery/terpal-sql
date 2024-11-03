@@ -1,3 +1,5 @@
+@file:OptIn(TerpalSqlInternal::class)
+
 package io.exoquery.sql
 
 import io.exoquery.terpal.*
@@ -66,6 +68,7 @@ abstract class SqlBatchBase: InterpolatorBatchingWithWrapper<Param<*>> {
     SqlBatchCall<A>(parts(), params as (A) -> List<Param<A>>)
 }
 
+@TerpalSqlInternal
 abstract class SqlBase: InterpolatorWithWrapper<SqlFragment, Statement> {
   operator fun invoke(@Language("SQL") string: String): Statement = Messages.throwPluginNotExecuted()
 

@@ -22,7 +22,7 @@ fun kotlinx.datetime.TimeZone.toJava(): TimeZone = TimeZone.getTimeZone(this.toJ
 class JdbcEncoderAny<T: Any>(
   override val dataType: Int,
   override val type: KClass<T>,
-  override val f: (JdbcEncodingContext, T, Int) -> Unit
+  override val f: (JdbcEncodingContext, T, Int) -> Unit,
 ): EncoderAny<T, Int, Connection, PreparedStatement>(
   dataType, type,
   { i, stmt, dbType -> stmt.setNull(i, dbType) },
