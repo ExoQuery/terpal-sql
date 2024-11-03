@@ -1,15 +1,13 @@
 package io.exoquery.sql
 
-import io.exoquery.sql.Param.Companion
 import kotlinx.serialization.ContextualSerializer
 import kotlinx.serialization.ExperimentalSerializationApi as SerApi
 import kotlinx.serialization.SerializationStrategy
-import kotlinx.serialization.Serializer
 import kotlinx.serialization.builtins.serializer
-import kotlinx.serialization.descriptors.SerialKind
 import kotlinx.serialization.serializer
 //import java.math.BigDecimal
 import kotlinx.datetime.*
+import kotlin.jvm.JvmName
 import kotlin.reflect.KClass
 
 // Note that T can't extend Any because then T will not be allowed to be null when it is being decoded
@@ -52,21 +50,23 @@ data class Param<T>(val serializer: SerializationStrategy<T>, val cls: KClass<*>
   }
 }
 
-data class Params<T> @PublishedApi internal constructor (val serializer: SerializationStrategy<T>, val cls: KClass<*>, val values: List<T>?): SqlFragment {
-  fun flatten(): List<Param<T>> = values?.map { Param(serializer, cls, it) } ?: emptyList()
+data class Params<T> @PublishedApi internal constructor (val serializer: SerializationStrategy<T>, val cls: KClass<*>, val values: List<T>): SqlFragment {
+  fun toParamList(): List<Param<T>> = values?.map { Param(serializer, cls, it) } ?: emptyList()
 
   companion object {
     @OptIn(SerApi::class)
-    inline fun <reified T: Any> contextual(vararg values: T): Params<T> = Params(ContextualSerializer(T::class), T::class, values.asList())
+    inline fun <reified T: Any> contextual(values: List<T>): Params<T> = Params(ContextualSerializer(T::class), T::class, values)
     /** Alias for Param.contextual */
-    inline fun <reified T: Any> ctx(vararg values: T): Params<T> = Params.contextual(*values)
+    inline fun <reified T: Any> ctx(values: List<T>): Params<T> = Params.contextual(values)
 
-    inline fun <reified T> withSerializer(vararg values: T, serializer: SerializationStrategy<T>): Params<T> = Params(serializer, T::class, values.asList())
-    inline fun <reified T> withSerializer(vararg values: T): Params<T> = Params(serializer<T>(), T::class, values.asList())
+    inline fun <reified T> withSerializer(values: List<T>, serializer: SerializationStrategy<T>): Params<T> = Params(serializer, T::class, values)
+    inline fun <reified T> withSerializer(values: List<T>): Params<T> = Params(serializer<T>(), T::class, values)
 
     /** Alias for Param.withSerializer */
-    inline fun <reified T> withSer(vararg values: T, serializer: SerializationStrategy<T>): Params<T> = withSerializer<T>(*values, serializer = serializer)
-    inline fun <reified T> withSer(vararg values: T): Params<T> = withSerializer(*values)
+    inline fun <reified T> withSer(values: List<T>, serializer: SerializationStrategy<T>): Params<T> = withSerializer<T>(values, serializer = serializer)
+    inline fun <reified T> withSer(values: List<T>): Params<T> = withSerializer(values)
+
+    inline fun empty(): Params<String> = Params(serializer<String>(), Nothing::class, emptyList())
 
     operator fun invoke(vararg values: String): Params<String> = Params(String.serializer(), String::class, values.asList())
     operator fun invoke(vararg values: Int): Params<Int> = Params(Int.serializer(), Int::class, values.asList())
@@ -82,5 +82,29 @@ data class Params<T> @PublishedApi internal constructor (val serializer: Seriali
     @OptIn(SerApi::class) operator fun invoke(vararg values: LocalTime): Params<LocalTime> = Params(ContextualSerializer(LocalTime::class), LocalTime::class, values.asList())
     @OptIn(SerApi::class) operator fun invoke(vararg values: LocalDateTime): Params<LocalDateTime> = Params(ContextualSerializer(LocalDateTime::class), LocalDateTime::class, values.asList())
     @OptIn(SerApi::class) operator fun invoke(vararg values: Instant): Params<Instant> = Params(ContextualSerializer(Instant::class), Instant::class, values.asList())
+
+    @JvmName("StringList")
+    fun list(values: List<String>): Params<String> = Params(String.serializer(), String::class, values)
+    @JvmName("IntList")
+    fun list(values: List<Int>): Params<Int> = Params(Int.serializer(), Int::class, values)
+    @JvmName("LongList")
+    fun list(values: List<Long>): Params<Long> = Params(Long.serializer(), Long::class, values)
+    @JvmName("ShortList")
+    fun list(values: List<Short>): Params<Short> = Params(Short.serializer(), Short::class, values)
+    @JvmName("ByteList")
+    fun list(values: List<Byte>): Params<Byte> = Params(Byte.serializer(), Byte::class, values)
+    @JvmName("FloatList")
+    fun list(values: List<Float>): Params<Float> = Params(Float.serializer(), Float::class, values)
+    @JvmName("DoubleList")
+    fun list(values: List<Double>): Params<Double> = Params(Double.serializer(), Double::class, values)
+    @JvmName("BooleanList")
+    fun list(values: List<Boolean>): Params<Boolean> = Params(Boolean.serializer(), Boolean::class, values)
+    @JvmName("ByteArrayList")
+    fun list(values: List<ByteArray>): Params<ByteArray> = Params(serializer<ByteArray>(), ByteArray::class, values)
+
+    @JvmName("LocalDateList") @OptIn(SerApi::class) fun list(values: List<LocalDate>): Params<LocalDate> = Params(ContextualSerializer(LocalDate::class), LocalDate::class, values)
+    @JvmName("LocalTimeList") @OptIn(SerApi::class) fun list(values: List<LocalTime>): Params<LocalTime> = Params(ContextualSerializer(LocalTime::class), LocalTime::class, values)
+    @JvmName("LocalDateTime") @OptIn(SerApi::class) fun list(values: List<LocalDateTime>): Params<LocalDateTime> = Params(ContextualSerializer(LocalDateTime::class), LocalDateTime::class, values)
+    @JvmName("Instant") @OptIn(SerApi::class) fun list(values: List<Instant>): Params<Instant> = Params(ContextualSerializer(Instant::class), Instant::class, values)
   }
 }

@@ -3,17 +3,11 @@ package io.exoquery.sql.examples
 import io.exoquery.sql.Sql
 import io.exoquery.sql.jdbc.TerpalDriver
 import io.exoquery.sql.runOn
-import io.exoquery.sql.Param
 import io.exoquery.sql.Params
 import io.zonky.test.db.postgres.embedded.EmbeddedPostgres
-import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.descriptors.PrimitiveKind
-import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
 
-object ParamsAndAnyParam {
+object UsingParams {
 
   @Serializable
   data class Customer(val id: Int, val firstName: String, val lastName: String, val age: Int)
@@ -31,9 +25,6 @@ object ParamsAndAnyParam {
     println(sql.sql)
     println(sql.params)
 
-    // TODO test combos of 1,2 and 3 names
-
-
     val customers = ctx.run(sql)
     println(customers)
 
@@ -41,5 +32,5 @@ object ParamsAndAnyParam {
 }
 
 suspend fun main() {
-  ParamsAndAnyParam.main()
+  UsingParams.main()
 }

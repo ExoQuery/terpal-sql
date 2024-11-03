@@ -1,24 +1,46 @@
+@file:OptIn(TerpalSqlInternal::class)
+
 package io.exoquery.sql
 
+import kotlin.jvm.JvmInline
+
+/**
+ * A more restrictive version variation of the [IR.Splice] that only allows for a flat list of [IR.Leaf]s.
+ * I.e. no nested splices or Params instances.
+ */
+@TerpalSqlInternal
+@JvmInline
+value class FlatSplice(val list: List<IR.Leaf>) {
+  fun toSplice() =
+    IR.Splice(
+      list.filterIsInstance<IR.Part>(),
+      list.filterIsInstance<IR.Var>()
+    )
+}
+
+@TerpalSqlInternal
 sealed interface IR {
-  data class Part(val value: String): IR {
+  sealed interface Var: IR
+  sealed interface Leaf: IR
+
+  data class Part(val value: String): IR, Leaf {
     companion object {
       val Empty = Part("")
     }
   }
 
-  sealed interface Var: IR
-  data class Param(val value: io.exoquery.sql.Param<*>): Var
+  data class Param(val value: io.exoquery.sql.Param<*>): Var, Leaf
   data class Params(val value: io.exoquery.sql.Params<*>): Var
   data class Splice(val parts: List<Part>, val params: List<Var>): Var {
-    fun flatten(): Splice {
+    fun flatten() = flattenToLeaves().toSplice()
+
+    fun flattenToLeaves(): FlatSplice {
       // rewrite this. First put everything into a single array, then walk through that and splice
       // the adjacent parts together, then write it all back into two different arrays
-      val accum = mutableListOf<IR>()
+      val accum = mutableListOf<IR.Leaf>()
 
       val partsIter = parts.iterator()
       val paramsIter = params.iterator()
-
 
       while(partsIter.hasNext()) {
         accum.add(partsIter.next())
@@ -30,13 +52,16 @@ sealed interface IR {
             }
 
             is Params -> {
-              val individualParams: List<IR> =
-                nextParam.value.flatten().map { Param(it) }.intersperse(Part(", "))
-
-              // TODO DOUBLE CHECK that the parts on the edges are interplaced properly
-              accum += IR.Part("(")
-              accum.addAll(individualParams)
-              accum += IR.Part(")")
+              if (nextParam.value.values.isNotEmpty()) {
+                val individualParams = nextParam.value.toParamList().map { Param(it) }.intersperse(Part(", "))
+                accum += IR.Part("(")
+                accum.addAll(individualParams)
+                accum += IR.Part(")")
+              } else {
+                // since `IN ()` is invalid SQL, we need to add a placeholder value
+                // the actual empty list should be ignored (i.e. not added to the accumulation)
+                accum += IR.Part("(null)")
+              }
             }
 
             // recursively flatten the inner splice, then grab out it's contents
@@ -46,19 +71,15 @@ sealed interface IR {
             is Splice -> {
               // TODO DOUBLE CHECK what happnes if nextParam is also a splice i.e. a splice within a splice
               //             NEED TO TEST THE RECURSIVE CASE
-              val flatInterlaced =
-                nextParam.flatten()
-                  .let { it.parts.interlace(it.params) }
-
-              accum.addAll(flatInterlaced)
+              val flatInterlaced = nextParam.flattenToLeaves()
+              accum.addAll(flatInterlaced.list)
             }
           }
         }
       }
 
-      val (partsAccum, paramsAccum) = accum.joinParts()
-
-      return IR.Splice(partsAccum, paramsAccum)
+      val newLeaves = accum.joinParts()
+      return FlatSplice(newLeaves)
     }
   }
 }
@@ -68,24 +89,23 @@ fun <T> List<T>.intersperse(separator: T): List<T> {
   return listOf(first()) + this.drop(1).flatMap { listOf(separator, it) }
 }
 
-fun <T> List<T>.interlace(other: List<T>): List<T> {
-  val result = mutableListOf<T>()
-  val thisIter = this.iterator()
-  val otherIter = other.iterator()
+//fun <T> List<T>.interlace(other: List<T>): List<T> {
+//  val result = mutableListOf<T>()
+//  val thisIter = this.iterator()
+//  val otherIter = other.iterator()
+//
+//  while (thisIter.hasNext() || otherIter.hasNext()) {
+//    if (thisIter.hasNext()) result.add(thisIter.next())
+//    if (otherIter.hasNext()) result.add(otherIter.next())
+//  }
+//
+//  return result
+//}
 
-  while (thisIter.hasNext() || otherIter.hasNext()) {
-    if (thisIter.hasNext()) result.add(thisIter.next())
-    if (otherIter.hasNext()) result.add(otherIter.next())
-  }
-
-  return result
-}
-
-fun List<IR>.joinParts(): Pair<List<IR.Part>, List<IR.Param>> {
+fun List<IR.Leaf>.joinParts(): List<IR.Leaf> {
   val mut = this.toMutableList()
   var lastPart: IR.Part? = null
-  val partsAccum = mutableListOf<IR.Part>()
-  val paramsAccum = mutableListOf<IR.Param>()
+  val accum = mutableListOf<IR.Leaf>()
 
   fun addOrSetLastPart(part: IR.Part) {
     if (lastPart == null) {
@@ -97,7 +117,7 @@ fun List<IR>.joinParts(): Pair<List<IR.Part>, List<IR.Param>> {
   }
   fun clearLastPart() {
     if (lastPart != null)
-      partsAccum.add(lastPart!!)
+      accum.add(lastPart!!)
     lastPart = null
   }
 
@@ -108,16 +128,13 @@ fun List<IR>.joinParts(): Pair<List<IR.Part>, List<IR.Param>> {
       }
       is IR.Param -> {
         clearLastPart()
-        paramsAccum += next
+        accum += next
       }
-
-      is IR.Splice -> throw IllegalStateException("Splice should not be in the list of parts, they should have been flattened before.")
-      is IR.Params -> throw IllegalStateException("Params should not be in the list of parts, they should have been expanded before.")
     }
   }
 
   // if at the end of it we still have a part that we haven't added to the accum add it now
   clearLastPart()
 
-  return partsAccum to paramsAccum
+  return accum
 }

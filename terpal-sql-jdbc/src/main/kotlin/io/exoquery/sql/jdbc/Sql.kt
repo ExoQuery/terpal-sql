@@ -1,3 +1,5 @@
+@file:OptIn(TerpalSqlInternal::class)
+
 package io.exoquery.sql.jdbc
 
 import io.exoquery.sql.*
