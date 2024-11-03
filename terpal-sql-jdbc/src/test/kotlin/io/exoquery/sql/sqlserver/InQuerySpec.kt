@@ -22,9 +22,9 @@ class InQuerySpec : FreeSpec({
       """
       DELETE FROM Person;
       DELETE FROM Address;
-      INSERT INTO Person (id, firstName, lastName, age) VALUES (1, 'Joe', 'Bloggs', 111);
-      INSERT INTO Person (id, firstName, lastName, age) VALUES (2, 'Jim', 'Roogs', 222);
-      INSERT INTO Person (id, firstName, lastName, age) VALUES (3, 'Jill', 'Doogs', 222);
+      INSERT INTO Person (firstName, lastName, age) VALUES ('Joe', 'Bloggs', 111);
+      INSERT INTO Person (firstName, lastName, age) VALUES ('Jim', 'Roogs', 222);
+      INSERT INTO Person (firstName, lastName, age) VALUES ('Jill', 'Doogs', 222);
       INSERT INTO Address (ownerId, street, zip) VALUES (1, '123 Main St', '12345');
       """
     )
