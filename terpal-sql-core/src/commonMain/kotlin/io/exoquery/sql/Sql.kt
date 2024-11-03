@@ -75,6 +75,7 @@ abstract class SqlBase: InterpolatorWithWrapper<SqlFragment, Statement> {
     val paramsList = params().map {
       when (it) {
         is Param<*> -> IR.Param(it)
+        is Params<*> -> IR.Params(it)
         // if it's a statement need to splice everything we've seen in that statement here
         // including the params that we saw in order
         is Statement -> it.ir
