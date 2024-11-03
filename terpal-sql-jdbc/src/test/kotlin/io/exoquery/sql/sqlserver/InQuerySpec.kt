@@ -20,8 +20,8 @@ class InQuerySpec : FreeSpec({
   beforeSpec {
     ds.run(
       """
-      DELETE FROM Person;
-      DELETE FROM Address;
+      TRUNCATE TABLE Person; DBCC CHECKIDENT ('Person', RESEED, 1);
+      TRUNCATE TABLE Address; DBCC CHECKIDENT ('Address', RESEED, 1);
       INSERT INTO Person (firstName, lastName, age) VALUES ('Joe', 'Bloggs', 111);
       INSERT INTO Person (firstName, lastName, age) VALUES ('Jim', 'Roogs', 222);
       INSERT INTO Person (firstName, lastName, age) VALUES ('Jill', 'Doogs', 222);
