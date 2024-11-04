@@ -432,6 +432,7 @@ from the database row i.e. as though the database schema had a third `title` col
 
 ### Automatic Wrapping
 
+You can use the `io.exoquery.sql.Param` object to splice a variable in a `Sql(...)` clause.
 ```kotlin
 val id = 123
 val manualWrapped = Sql("SELECT * FROM Person WHERE id = ${Param(id)}").queryOf<Person>().runOn(ctx)
@@ -541,6 +542,37 @@ val people: List<Person> = Sql("SELECT * FROM people").queryOf<Person>().runOn(c
 println(people)
 //> Person(id=1, name=Name(firstName=Joe, lastName=Bloggs), age=30)
 ```
+
+### IN (...) Clauses
+
+Terpal supports lifting lists of arbitrary objects for `IN (...)` clauses. The
+same encoding mechanisms that are used for regular parameters are used for lists.
+
+User the `io.exoquery.sql.Params.invoke(...)` family of functions to lift
+lists of objects (similar to the way `Param.invoke(...)` is used for single objects).
+```kotlin
+val peopleQuery = Sql("SELECT * FROM people WHERE firstName IN ${Params("Joe", "Jim")}").queryOf<Person>()
+// peopleQuery.sql = "SELECT * FROM people WHERE firstName IN (?, ?)"
+
+println(peopleQuery.runOn(ctx))
+//> List(Person(id=1, firstName=Joe, lastName=Bloggs), Person(id=2, firstName=Jim, lastName=Roogs))
+```
+Make sure to *not* add parenthesies around the `Params(...)` clause. This is done automatically.
+
+If you want to use an instance of `List<T>` in an `IN (...)` clause you can use the `Params.list`
+convenience function.
+```kotlin
+val ids = listOf(1, 2, 3)
+val people = Sql("SELECT * FROM people WHERE id IN ${Params.list(ids)}").queryOf<Person>().runOn(ctx)
+```
+
+> Note that since `column IN ()` is invalid SQL syntax, invoking `Params.list(emptyList)`
+> will result in `column IN (null)` being created.
+> ```kotlin
+> val emptyList = listOf<Int>()
+> val peopleQuery = Sql("SELECT * FROM people WHERE id IN ${Params.list(emptyList)}").queryOf<Person>()
+> // peopleQuery.sql = "SELECT * FROM people WHERE id IN (null)"
+> ```
 
 ### JSON Valued Columns
 > NOTE: This is currently only supported in Postgres
