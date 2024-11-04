@@ -548,8 +548,8 @@ println(people)
 Terpal supports lifting lists of arbitrary objects for `IN (...)` clauses. The
 same encoding mechanisms that are used for regular parameters are used for lists.
 
-User the `io.exoquery.sql.Params.invoke(...)` family of functions to lift
-lists of objects (similar to the way `Param.invoke(...)` is used for single objects).
+Use the `io.exoquery.sql.Params.invoke(...)` family of functions to lift
+lists of elements (similar to the way `Param.invoke(...)` is used for single elements).
 ```kotlin
 val peopleQuery = Sql("SELECT * FROM people WHERE firstName IN ${Params("Joe", "Jim")}").queryOf<Person>()
 // peopleQuery.sql = "SELECT * FROM people WHERE firstName IN (?, ?)"
@@ -557,7 +557,7 @@ val peopleQuery = Sql("SELECT * FROM people WHERE firstName IN ${Params("Joe", "
 println(peopleQuery.runOn(ctx))
 //> List(Person(id=1, firstName=Joe, lastName=Bloggs), Person(id=2, firstName=Jim, lastName=Roogs))
 ```
-Make sure to *not* add parenthesies around the `Params(...)` clause. This is done automatically.
+Make sure to *not* add parentheses around the `Params(...)` clause. This is done automatically.
 
 If you want to use an instance of `List<T>` in an `IN (...)` clause you can use the `Params.list`
 convenience function.
