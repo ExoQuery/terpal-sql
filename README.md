@@ -818,11 +818,12 @@ val ctx = TerpalDriver.Postgres(
   JdbcEncodingConfig.Default(setOf(MyStringListEncoder), setOf(MyStringListDecoder))
 )
 
-// You can then use the custom datatype during insertion (using the encoders)
+// Then configuration is complete!
+// You can now use the custom list datatype MyStringList during insertion (this uses the encoders)
 val joeNicknames = MyStringList(listOf("Joey", "Jay"))
 Sql("INSERT INTO person (firstName, lastName, age) VALUES ('Joe', 'Bloggs', ${Param.contextual(joeNicknames)})").action().runOn(ctx)
 
-// As well as during selection (using the decoders)
+// As well as during selection (this uses the decoders)
 val friends = Sql("SELECT * FROM friend WHERE").queryOf<Friend>()
 
 // ...or both at the same time:
