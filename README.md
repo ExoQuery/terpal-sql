@@ -812,7 +812,7 @@ val MyStringListDecoder: JdbcDecoderAny<MyStringList> =
     MyStringList((ctx.row.getArray(i).array as Array<String>).toList())
   }
 
-// Pass it into the context
+// Pass them into the context
 val ctx = TerpalDriver.Postgres(
   postgres.postgresDatabase,
   JdbcEncodingConfig.Default(setOf(MyStringListEncoder), setOf(MyStringListDecoder))
