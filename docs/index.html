@@ -117,6 +117,9 @@
                 content = content.substring(startIndex, endIndex)
               }
 
+              // find all the places with "a href=#/terpal-sql-jdbc" and append "https://github.com/ExoQuery/terpal-sql/blob/main/" to it:
+              content = content.replace(/\[(.+)\]\((terpal-sql-jdbc\/.+\.kt)\)/g, '[$1](https://github.com/ExoQuery/terpal-sql/blob/main/$2)')
+
               return content;
             });
           }
