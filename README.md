@@ -751,6 +751,57 @@ println(Json.encodeToString(ListSerializer(Customer.serializer()), customers))
 See the [Playing Well using Row-Surrogate Encoder](terpal-sql-jdbc/src/test/kotlin/io/exoquery/sql/examples/PlayingWell_RowSurrogate.kt)
 section for more details.
 
+### Using Array Columns
+
+Currently Terpal-SQL does not support direct encoding/decoding of generic
+collections. In order to use array columns create a value-class with a specific
+collection type and use a combination of `@Contextual`, custom encoders, and
+`Param.contextual` in order to achieve the desired behavior.
+
+The following example illustrates how to do this for Postgres array columns.
+```kotlin
+// Given the table schema looks like this:
+// CREATE TABLE friend (firstName TEXT, lastName TEXT, nickNames TEXT[])
+
+// First create custom datatypes:
+@JvmInline
+value class MyStringList(val value: List<String>)
+@Serializable
+data class Friend(val id: Int, val firstName: String, val lastName: String, @Contextual val nickNames: MyStringList)
+
+// Then create the encoder/decoder
+val MyStringListEncoder: JdbcEncoderAny<MyStringList> =
+  JdbcEncoderAny(Types.VARCHAR, MyStringList::class) { ctx, v, i ->
+    val arr = ctx.session.createArrayOf(JDBCType.VARCHAR.toString(), v.value.toTypedArray())
+    ctx.stmt.setArray(i, arr)
+  }
+val MyStringListDecoder: JdbcDecoderAny<MyStringList> =
+  JdbcDecoderAny(MyStringList::class) { ctx, i ->
+    MyStringList((ctx.row.getArray(i).array as Array<String>).toList())
+  }
+
+// Pass it into the context
+val ctx = TerpalDriver.Postgres(
+  postgres.postgresDatabase,
+  JdbcEncodingConfig.Default(setOf(MyStringListEncoder), setOf(MyStringListDecoder))
+)
+
+// You can then use the custom datatype during insertion (using the encoders)
+val joeNicknames = MyStringList(listOf("Joey", "Jay"))
+Sql("INSERT INTO person (firstName, lastName, age) VALUES ('Joe', 'Bloggs', ${Param.contextual(joeNicknames)})").action().runOn(ctx)
+
+// As well as during selection (using the decoders)
+val friends = Sql("SELECT * FROM friend WHERE").queryOf<Friend>()
+
+// ...or both at the same time:
+val joeOrJill = MyStringList(listOf("Joe", "Jill"))
+val friends = Sql("SELECT * FROM friend WHERE firstName = ANY(${Param.contextual(joeOrJill)})").queryOf<Friend>()
+
+println(friends)
+//> [Friend(firstName=Joe, lastName=Bloggs, nickNames=MyStringList(value=[Joey, Jay])), Friend(firstName=Jill, lastName=Doggs, nickNames=MyStringList(value=[Jilly, Jillaroo]))]
+```
+For a working example of the above instructions see [UsingPostgresArray](terpal-sql-jdbc/src/test/kotlin/io/exoquery/sql/examples/UsingPostgresArray.kt).
+
 ## IntelliJ Language Injection Support
 
 Terpal-SQL is optimized for IntelliJ [Language Injection](https://www.jetbrains.com/help/idea/using-language-injections.html) support. As such, IntelliJ will understand that
