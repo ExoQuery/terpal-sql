@@ -566,8 +566,8 @@ val ids = listOf(1, 2, 3)
 val people = Sql("SELECT * FROM people WHERE id IN ${Params.list(ids)}").queryOf<Person>().runOn(ctx)
 ```
 
-> Note that since `column IN ()` is invalid SQL syntax, invoking `Params.list(emptyList)`
-> will result in `column IN (null)` being created.
+> Note that since `column IN ()` is invalid SQL syntax, therefore invoking `Params.list(emptyList)`
+> will result in `column IN (null)` being synthesized instead.
 > ```kotlin
 > val emptyList = listOf<Int>()
 > val peopleQuery = Sql("SELECT * FROM people WHERE id IN ${Params.list(emptyList)}").queryOf<Person>()
