@@ -4,8 +4,8 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinCompile
 plugins {
   id("conventions")
   kotlin("multiplatform")
-  id("io.exoquery.terpal-plugin") version "1.9.22-1.0.0.PL"
-  kotlin("plugin.serialization") version "1.9.22"
+  id("io.exoquery.terpal-plugin") version "2.1.0-2.0.0.PL"
+  kotlin("plugin.serialization") version "2.1.0"
 }
 
 val thisVersion = version
@@ -57,8 +57,8 @@ tasks.withType<Test>().configureEach {
 }
 
 kotlin {
+  jvmToolchain(17)
   jvm {
-    jvmToolchain(17)
   }
 
   java {

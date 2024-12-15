@@ -30,6 +30,9 @@ fun Sql(@Language("SQL") query: String): Statement = io.exoquery.terpal.Messages
 need specify a serializer for the type or (if it is contextual) ensure that it has a encoder in the `additionalEncoders` of the context."""
 )
 object SqlBatch: SqlJdbcBatchBase() {
+  override fun inlined(value: String?): Param<*> =
+    throw IllegalArgumentException("The `inline` function is not yet supported in terpal-sql.")
+
   override fun wrap(value: String?): Param<String> = Param(value)
   override fun wrap(value: Int?): Param<Int> = Param(value)
   override fun wrap(value: Long?): Param<Long> = Param(value)
@@ -67,6 +70,9 @@ object SqlBatch: SqlJdbcBatchBase() {
 
 // The Jdbc Specific Sql implemenation which will use the Jdbc wrapping functions to auto-wrap things
 abstract class SqlJdbcBase(): SqlBase() {
+  override fun inlined(value: String?): SqlFragment =
+    throw IllegalArgumentException("The `inline` function is not yet supported in terpal-sql.")
+
   override fun wrap(value: String?): SqlFragment = Param(value)
   override fun wrap(value: Int?): SqlFragment = Param(value)
   override fun wrap(value: Long?): SqlFragment = Param(value)
@@ -102,8 +108,7 @@ abstract class SqlJdbcBase(): SqlBase() {
 }
 
 abstract class SqlJdbcBatchBase(): SqlBatchBase() {
-  // TODO Should check this at compile-time
-  override fun <V> wrap(value: V, cls: KClass<*>): Param<*> =
+  fun <V> wrap(value: V, cls: KClass<*>): Param<*> =
     when (cls) {
       String::class -> Param(value as String)
       Int::class -> Param(value as Int)

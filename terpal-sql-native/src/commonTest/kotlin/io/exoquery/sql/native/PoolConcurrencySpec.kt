@@ -94,7 +94,7 @@ class PoolConcurrencySpec {
   }
 
   // Need to have underscores or odd errors happen in android. Not sure why.
-  // ERROR: /home/alexi/git/terpal-sql/terpal-sql-core-testing/build/libs/terpal-sql-core-testing-jvm-1.9.22-0.3.0.jar: D8: com.android.tools.r8.internal.vc: Space characters in SimpleName 'io/exoquery/sql/PoolConcurrencyOps$Pool should wait once all connections are exhausted$1$1' are not allowed prior to DEX version 040
+  // ERROR: /home/alexi/git/terpal-sql/terpal-sql-core-testing/build/libs/terpal-sql-core-testing-jvm-2.1.0-0.3.0.jar: D8: com.android.tools.r8.internal.vc: Space characters in SimpleName 'io/exoquery/sql/PoolConcurrencyOps$Pool should wait once all connections are exhausted$1$1' are not allowed prior to DEX version 040
   @Test
   fun `Pool_should_wait_once_all_connections_are_exhausted`() {
     fun currTime() = run {

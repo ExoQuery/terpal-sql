@@ -2,15 +2,14 @@ import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import org.jetbrains.kotlin.ir.backend.js.compile
 import org.jetbrains.kotlin.konan.target.HostManager
 
 plugins {
   id("conventions")
   kotlin("multiplatform")
   id("com.android.library")
-  id("io.exoquery.terpal-plugin") version "1.9.22-1.0.0.PL"
-  kotlin("plugin.serialization") version "1.9.22"
+  id("io.exoquery.terpal-plugin") version "2.1.0-2.0.0.PL"
+  kotlin("plugin.serialization") version "2.1.0"
   // Already on the classpath
   //id("org.jetbrains.kotlin.android") version "1.9.23"
 }
@@ -75,7 +74,7 @@ kotlin {
           api("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
           api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
           //api("org.jetbrains.kotlinx:kotlinx-datetime:0.6.0")
-          api("io.exoquery:terpal-runtime:1.9.22-1.0.0.PL")
+          api("io.exoquery:terpal-runtime:2.1.0-2.0.0.PL")
 
           //implementation("androidx.sqlite:sqlite:2.4.0")
           //implementation("androidx.sqlite:sqlite-ktx:2.4.0")

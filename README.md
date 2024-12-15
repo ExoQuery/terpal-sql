@@ -75,13 +75,13 @@ When using JDBC, add the following to your `build.gradle.kts` file:
 
 ```kotlin
 plugins {
-    kotlin("jvm") version "1.9.22" // Currently the plugin is only available for Kotlin-JVM
-    id("io.exoquery.terpal-plugin") version "1.9.22-1.0.0.PL"
-    kotlin("plugin.serialization") version "1.9.22"
+    kotlin("jvm") version "2.1.0" // Currently the plugin is only available for Kotlin-JVM
+    id("io.exoquery.terpal-plugin") version "2.1.0-2.0.0.PL"
+    kotlin("plugin.serialization") version "2.1.0"
 }
 
 dependencies {
-    api("io.exoquery:terpal-sql-jdbc:1.0.0.PL-1.0.0")
+    api("io.exoquery:terpal-sql-jdbc:2.0.0.PL-1.2.0")
     api("org.jetbrains.kotlinx:kotlinx-serialization-core:1.6.2")
     api("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
     // Your databse driver for example postgres:
@@ -116,13 +116,13 @@ For Android development, add the following to your `build.gradle.kts` file:
 
 ```kotlin
 plugins {
-    kotlin("android") version "1.9.22"
-    id("io.exoquery.terpal-plugin") version "1.9.22-1.0.0.PL"
-    kotlin("plugin.serialization") version "1.9.22"
+    kotlin("android") version "2.1.0"
+    id("io.exoquery.terpal-plugin") version "2.1.0-2.0.0.PL"
+    kotlin("plugin.serialization") version "2.1.0"
 }
 
 dependencies {
-    api("io.exoquery:terpal-sql-android:1.0.0.PL-1.0.0")
+    api("io.exoquery:terpal-sql-android:2.0.0.PL-1.2.0")
     api("org.jetbrains.kotlinx:kotlinx-serialization-core:1.6.2")
     api("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
     implementation("androidx.sqlite:sqlite-framework:2.4.0")
@@ -140,7 +140,7 @@ dependencies {
 > To fix it do this:
 > ```kotlin
 > commonMain.dependencies {
->   implementation("io.exoquery:terpal-sql-core:1.0.0.PL-1.0.0") {
+>   implementation("io.exoquery:terpal-sql-core:2.0.0.PL-1.2.0") {
 >     exclude("com.sschr15.annotations","jb-annotations-kmp")
 >   }
 > }
@@ -211,9 +211,9 @@ val person: List<Person> = Sql("SELECT * FROM Person").queryOf<Person>().runOn(c
 For iOS, OSX, Linux and Windows development, with Kotlin Multiplatform, add the following to your `build.gradle.kts` file:
 ```kotlin
 plugins {
-    kotlin("multiplatform") version "1.9.22"
-    id("io.exoquery.terpal-plugin") version "1.9.22-1.0.0.PL"
-    kotlin("plugin.serialization") version "1.9.22"
+    kotlin("multiplatform") version "2.1.0"
+    id("io.exoquery.terpal-plugin") version "2.1.0-2.0.0.PL"
+    kotlin("plugin.serialization") version "2.1.0"
 }
 
 kotlin {
@@ -223,8 +223,8 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.6.2")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
                 // Note that terpal-sql-native supports iOS, OSX, Linux and Windows
-                api("io.exoquery:terpal-runtime:1.9.22-1.0.0.PL")
-                implementation("io.exoquery:terpal-sql-native:1.0.0.PL-1.0.0")
+                api("io.exoquery:terpal-runtime:2.1.0-2.0.0.PL")
+                implementation("io.exoquery:terpal-sql-native:2.0.0.PL-1.2.0")
             }
         }
     }
