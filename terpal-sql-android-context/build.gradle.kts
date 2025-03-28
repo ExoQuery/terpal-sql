@@ -8,14 +8,12 @@ plugins {
   id("conventions")
   kotlin("multiplatform")
   id("com.android.library")
-  id("io.exoquery.terpal-plugin") version "2.1.0-2.0.0.PL"
   kotlin("plugin.serialization") version "2.1.0"
   // Already on the classpath
   //id("org.jetbrains.kotlin.android") version "1.9.23"
 }
 
 configurations.forEach {
-  //create("cleanedAnnotations")
   it.exclude(group = "com.sschr15.annotations", module = "jb-annotations-kmp")
 }
 
@@ -27,20 +25,6 @@ android {
     minSdk = 23
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
-//  sourceSets {
-//    getByName("main") {
-//      manifest.srcFile("src/androidMain/AndroidManifest.xml")
-//      java.srcDirs("src/androidMain/kotlin")
-//      res.srcDirs("src/androidMain/resources")
-//    }
-//    getByName("test") {
-//      java.srcDirs("src/androidTest/kotlin")
-//      res.srcDirs("src/androidTest/resources")
-//    }
-//  }
-//  testOptions {
-//    unitTests.isIncludeAndroidResources = true
-//  }
 
   testOptions  {
     unitTests.isIncludeAndroidResources = true
@@ -74,11 +58,6 @@ kotlin {
           api("org.jetbrains.kotlinx:kotlinx-serialization-core:1.6.2")
           api("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
           api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
-          //api("org.jetbrains.kotlinx:kotlinx-datetime:0.6.0")
-          api("io.exoquery:terpal-runtime:2.1.0-2.0.0.PL")
-
-          //implementation("androidx.sqlite:sqlite:2.4.0")
-          //implementation("androidx.sqlite:sqlite-ktx:2.4.0")
           implementation("androidx.sqlite:sqlite-framework:2.4.0")
         }
       }
@@ -112,16 +91,6 @@ kotlin {
           implementation("androidx.test.espresso:espresso-core:3.4.0")
         }
       }
-
-
-      //androidNativeTest.dependencies {
-      //  dependencies {
-      //    implementation(kotlin("test"))
-      //    implementation(kotlin("test-common"))
-      //    implementation(kotlin("test-annotations-common"))
-      //    //implementation("io.kotest:kotest-framework-engine:5.9.1")
-      //  }
-      //}
     }
   }
 }
