@@ -1,0 +1,38 @@
+# Add directories or file patterns to ignore during indexing (e.g. foo/ or *.csv)
+# Build outputs
+/build/
+/**/build/
+
+# Gradle caches and logs
+.gradle/
+/.gradle-cache/
+/**/.gradle/
+
+# IntelliJ project files
+.idea/
+/*.iml
+*.ipr
+*.iws
+
+# Local configuration
+local.properties
+
+# Dependency locks and metadata
+**/*.lock
+**/gradle/libs.versions.toml
+
+# Binary and temp files
+*.class
+*.jar
+*.war
+*.ear
+*.log
+*.tmp
+
+# Test results
+/test-results/
+/test-output/
+
+# OS-specific files
+.DS_Store
+Thumbs.db
