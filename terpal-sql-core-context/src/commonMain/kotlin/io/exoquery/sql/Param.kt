@@ -10,10 +10,11 @@ import kotlinx.datetime.*
 import kotlin.jvm.JvmName
 import kotlin.reflect.KClass
 
+
 // Note that T can't extend Any because then T will not be allowed to be null when it is being decoded
 // that is why we have KClass<*> and not KClass<T>
 
-data class Param<T>(val serializer: SerializationStrategy<T>, val cls: KClass<*>, val value: T?): SqlFragment {
+data class Param<T>(val serializer: SerializationStrategy<T>, val cls: KClass<*>, val value: T?) {
   companion object {
     /**
      * Crete a contextual parameter. This relies database context having a specific encoder for the specified type.
