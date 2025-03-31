@@ -115,7 +115,8 @@ object TerpalDriver {
             accessStmtReturning(act.sql, conn, act.returningColumns) { stmt ->
               prepare(stmt, conn, act.params)
               stmt.execute()
-              emitResultSet(conn, stmt.generatedKeys, { conn, rs -> act.resultMaker.makeExtractor<Long>(QueryDebugInfo(act.sql)).invoke(conn, rs) as T })
+              // Mutliple columns could be returned and the user might want a specific combined type in which they are stored
+              emitResultSet(conn, stmt.generatedKeys, { conn, rs -> act.resultMaker.makeExtractor<T>(QueryDebugInfo(act.sql)).invoke(conn, rs) })
             }
           }
           is ActionReturningRow -> {
