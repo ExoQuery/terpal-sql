@@ -9,7 +9,7 @@ pluginManagement {
   }
 }
 
-include("controller")
+include("controller-core")
 include("controller-jdbc")
 include("controller-native")
 include("controller-android")

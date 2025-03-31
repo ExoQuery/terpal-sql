@@ -4,8 +4,10 @@ import app.cash.sqldelight.db.AfterVersion
 import app.cash.sqldelight.db.QueryResult
 import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.db.SqlSchema
-import io.exoquery.sql.sqlite.CallAfterVersion
-import io.exoquery.sql.sqlite.TerpalSchema
+import io.exoquery.controller.TerpalDriver
+import io.exoquery.controller.runOn
+import io.exoquery.controller.sqlite.CallAfterVersion
+import io.exoquery.controller.sqlite.TerpalSchema
 
 object EmptySchema: SqlSchema<QueryResult.Value<Unit>> {
   override val version: Long = 1
@@ -233,7 +235,7 @@ object BasicSchemaTerpal: TerpalSchema<Unit> {
     driver: TerpalDriver,
     oldVersion: Long,
     newVersion: Long,
-    vararg callbacks: io.exoquery.sql.sqlite.CallAfterVersion) {
+    vararg callbacks: io.exoquery.controller.sqlite.CallAfterVersion) {
   }
 }
 

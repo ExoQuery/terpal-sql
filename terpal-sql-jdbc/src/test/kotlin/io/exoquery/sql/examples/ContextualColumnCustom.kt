@@ -1,10 +1,11 @@
 package io.exoquery.sql.examples
 
+import io.exoquery.controller.jdbc.JdbcEncodingConfig
 import io.exoquery.sql.Param
 import io.exoquery.sql.Sql
-import io.exoquery.sql.jdbc.*
-import io.exoquery.sql.jdbc.JdbcTimeEncodingLegacy.JZonedDateTimeEncoder
-import io.exoquery.sql.jdbc.JdbcTimeEncodingLegacy.JZonedDateTimeDecoder
+import io.exoquery.controller.jdbc.JdbcTimeEncodingLegacy.JZonedDateTimeEncoder
+import io.exoquery.controller.jdbc.JdbcTimeEncodingLegacy.JZonedDateTimeDecoder
+import io.exoquery.controller.jdbc.TerpalDriver
 import io.zonky.test.db.postgres.embedded.EmbeddedPostgres
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.KSerializer

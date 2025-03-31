@@ -3,8 +3,8 @@ package io.exoquery.sql.h2
 import io.exoquery.sql.*
 import io.exoquery.sql.Ex3_BatchReturnIds.products
 import io.exoquery.sql.jdbc.SqlBatch
-import io.exoquery.sql.jdbc.TerpalDriver
-import io.exoquery.sql.runOn
+import io.exoquery.controller.jdbc.TerpalDriver
+import io.exoquery.controller.runOn
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe
 

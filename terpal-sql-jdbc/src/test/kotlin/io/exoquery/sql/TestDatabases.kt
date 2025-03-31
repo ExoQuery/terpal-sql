@@ -1,7 +1,6 @@
 package io.exoquery.sql
 
-import com.zaxxer.hikari.HikariDataSource
-import io.exoquery.sql.jdbc.HikariHelper
+import io.exoquery.controller.jdbc.HikariHelper
 import io.zonky.test.db.postgres.embedded.EmbeddedPostgres
 import javax.sql.DataSource
 

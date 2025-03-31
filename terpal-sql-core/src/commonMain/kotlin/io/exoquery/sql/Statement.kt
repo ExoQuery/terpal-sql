@@ -1,5 +1,12 @@
 package io.exoquery.sql
 
+import io.exoquery.controller.Action
+import io.exoquery.controller.ActionReturning
+import io.exoquery.controller.ActionReturningId
+import io.exoquery.controller.ActionReturningRow
+import io.exoquery.controller.Query
+import io.exoquery.controller.StatementParam
+import io.exoquery.controller.TerpalSqlInternal
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.serializer
 
@@ -69,7 +76,7 @@ data class Statement(val ir: IR.Splice): SqlFragment {
    * they will try to return all of the generated columns. That is what the idColumn parameter is for.
    * Otherwise you can ignore it.
    */
-  inline fun actionReturningId(idColumn: String? = null): ActionReturningId {
+  inline fun actionReturningId(idColumn: String? = null): ActionReturningId<Long> {
     val (sql, params) = constructQuery(ir)
     val resultMaker = serializer<Long>()
     return ActionReturningId(sql, params.map { it.toStatementParam() }, resultMaker, idColumn)

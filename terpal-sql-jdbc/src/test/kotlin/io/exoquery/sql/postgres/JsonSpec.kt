@@ -1,9 +1,11 @@
 package io.exoquery.sql.postgres
 
+import io.exoquery.controller.JsonValue
+import io.exoquery.controller.SqlJsonValue
 import io.exoquery.sql.*
 import io.exoquery.sql.Sql
-import io.exoquery.sql.jdbc.TerpalDriver
-import io.exoquery.sql.runOn
+import io.exoquery.controller.jdbc.TerpalDriver
+import io.exoquery.controller.runOn
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.serialization.Serializable

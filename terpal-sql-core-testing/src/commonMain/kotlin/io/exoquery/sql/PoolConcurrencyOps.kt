@@ -1,8 +1,8 @@
 package io.exoquery.sql
 
-import io.exoquery.sql.sqlite.SimplePool
-import io.exoquery.sql.sqlite.Waiter
-import io.exoquery.sql.sqlite.getNumProcessorsOnPlatform
+import io.exoquery.controller.sqlite.SimplePool
+import io.exoquery.controller.sqlite.getNumProcessorsOnPlatform
+import io.exoquery.controller.sqlite.Waiter
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.*
 import kotlinx.datetime.Clock

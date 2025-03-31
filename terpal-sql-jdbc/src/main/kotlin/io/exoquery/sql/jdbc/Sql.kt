@@ -2,6 +2,7 @@
 
 package io.exoquery.sql.jdbc
 
+import io.exoquery.controller.TerpalSqlInternal
 import io.exoquery.sql.*
 import io.exoquery.terpal.InterpolatorFunction
 import io.exoquery.terpal.InterpolatorWithWrapper

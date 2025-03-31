@@ -5,7 +5,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import app.cash.sqldelight.driver.android.AndroidSqliteDriver
 import io.exoquery.sql.WalConcurrencyOps
 import io.exoquery.sql.WalTestSchema
-import io.exoquery.sql.android.TerpalAndroidDriver
+import io.exoquery.controller.android.TerpalAndroidDriver
 import org.junit.runner.RunWith
 import org.junit.Test
 import kotlin.test.BeforeTest

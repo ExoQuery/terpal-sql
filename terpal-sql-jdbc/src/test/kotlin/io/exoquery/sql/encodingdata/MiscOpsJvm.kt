@@ -1,7 +1,7 @@
 package io.exoquery.sql.encodingdata
 
-import io.exoquery.sql.jdbc.JdbcBasicEncoding.Companion.StringEncoder
-import io.exoquery.sql.jdbc.JdbcEncodingConfig
+import io.exoquery.controller.jdbc.JdbcBasicEncoding.Companion.StringEncoder
+import io.exoquery.controller.jdbc.JdbcEncodingConfig
 import io.kotest.matchers.bigdecimal.shouldBeEqualIgnoringScale
 import java.math.BigDecimal
 import kotlin.test.assertEquals

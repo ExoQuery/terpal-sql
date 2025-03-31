@@ -9,6 +9,8 @@ plugins {
   kotlin("multiplatform")
   id("com.android.library")
   kotlin("plugin.serialization") version "2.1.0"
+  // Already on the classpath
+  //id("org.jetbrains.kotlin.android") version "1.9.23"
 }
 
 configurations.forEach {
@@ -50,7 +52,7 @@ kotlin {
 
       androidMain.dependencies {
         dependencies {
-          api(project(":controller"))
+          api(project(":controller-core"))
           
           api("org.jetbrains.kotlinx:kotlinx-serialization-core:1.6.2")
           api("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
@@ -94,4 +96,9 @@ kotlin {
 
 dependencies {
   commonMainApi("org.jetbrains.kotlinx:kotlinx-datetime:0.6.0")
-} 
+}
+
+repositories {
+  mavenCentral()
+  mavenLocal()
+}

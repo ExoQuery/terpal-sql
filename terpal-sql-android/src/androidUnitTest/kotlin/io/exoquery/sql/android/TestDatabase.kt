@@ -3,6 +3,7 @@ package io.exoquery.sql.android
 import androidx.sqlite.db.SupportSQLiteDatabase
 import androidx.sqlite.db.SupportSQLiteOpenHelper
 import androidx.test.core.app.ApplicationProvider
+import io.exoquery.controller.android.TerpalAndroidDriver
 import io.exoquery.sql.BasicSchemaTerpal
 import io.exoquery.sql.WalSchemaTerpal
 import kotlinx.coroutines.runBlocking

@@ -1,6 +1,7 @@
 package io.exoquery.sql.native
 
 import co.touchlab.sqliter.DatabaseFileContext.deleteDatabase
+import io.exoquery.controller.native.TerpalNativeDriver
 import io.exoquery.sql.*
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Ignore

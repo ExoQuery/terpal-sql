@@ -2,6 +2,12 @@
 
 package io.exoquery.sql
 
+import io.exoquery.controller.BatchAction
+import io.exoquery.controller.BatchActionReturning
+import io.exoquery.controller.BatchActionReturningId
+import io.exoquery.controller.BatchActionReturningRow
+import io.exoquery.controller.JsonValue
+import io.exoquery.controller.TerpalSqlInternal
 import io.exoquery.terpal.*
 import io.exoquery.terpal.Messages
 import kotlinx.serialization.serializer

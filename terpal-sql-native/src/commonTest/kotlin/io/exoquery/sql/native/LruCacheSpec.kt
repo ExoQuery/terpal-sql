@@ -2,7 +2,7 @@ package io.exoquery.sql.native
 
 import app.cash.sqldelight.internal.currentThreadId
 import io.exoquery.sql.encodingdata.shouldBe
-import io.exoquery.sql.sqlite.LruCache
+import io.exoquery.controller.sqlite.LruCache
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking

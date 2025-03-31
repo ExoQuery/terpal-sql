@@ -2,7 +2,7 @@ package io.exoquery.sql.h2
 
 import io.exoquery.sql.Params
 import io.exoquery.sql.TestDatabases
-import io.exoquery.sql.jdbc.TerpalDriver
+import io.exoquery.controller.jdbc.TerpalDriver
 import io.exoquery.sql.Sql
 import io.exoquery.sql.run
 import io.kotest.core.spec.style.FreeSpec

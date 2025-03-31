@@ -1,5 +1,7 @@
 package io.exoquery.sql.encodingdata
 
+import io.exoquery.controller.Action
+import io.exoquery.controller.BatchAction
 import io.exoquery.sql.*
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable

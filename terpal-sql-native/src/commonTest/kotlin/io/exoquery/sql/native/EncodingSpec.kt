@@ -3,7 +3,7 @@ package io.exoquery.sql.native
 import io.exoquery.sql.Sql
 import io.exoquery.sql.encodingdata.*
 import io.exoquery.sql.native.TestDatabase.ctx
-import io.exoquery.sql.runOn
+import io.exoquery.controller.runOn
 import kotlinx.coroutines.runBlocking
 import kotlin.test.BeforeTest
 import kotlin.test.Ignore

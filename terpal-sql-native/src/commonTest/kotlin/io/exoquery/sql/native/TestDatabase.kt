@@ -5,6 +5,7 @@ import co.touchlab.sqliter.DatabaseConfiguration
 import co.touchlab.sqliter.DatabaseFileContext.deleteDatabase
 import co.touchlab.sqliter.createDatabaseManager
 import co.touchlab.sqliter.withConnection
+import io.exoquery.controller.native.TerpalNativeDriver
 import io.exoquery.sql.BasicSchema
 import io.exoquery.sql.WalTestSchema
 import io.exoquery.sql.executeSimple

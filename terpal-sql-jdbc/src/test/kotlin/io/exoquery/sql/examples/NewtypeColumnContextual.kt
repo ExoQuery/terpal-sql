@@ -1,9 +1,10 @@
 package io.exoquery.sql.examples
 
+import io.exoquery.controller.jdbc.JdbcEncodingConfig
+import io.exoquery.controller.jdbc.TerpalDriver
 import io.exoquery.sql.Param
 import io.exoquery.sql.Sql
-import io.exoquery.sql.jdbc.*
-import io.exoquery.sql.runOn
+import io.exoquery.controller.runOn
 import io.zonky.test.db.postgres.embedded.EmbeddedPostgres
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.KSerializer

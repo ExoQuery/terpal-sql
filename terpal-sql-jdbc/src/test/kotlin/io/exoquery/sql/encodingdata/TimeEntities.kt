@@ -1,6 +1,6 @@
 package io.exoquery.sql.encodingdata
 
-import io.exoquery.sql.Action
+import io.exoquery.controller.Action
 import io.exoquery.sql.Sql
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable

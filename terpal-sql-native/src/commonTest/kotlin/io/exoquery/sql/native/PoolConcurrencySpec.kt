@@ -5,10 +5,10 @@ import co.touchlab.sqliter.DatabaseFileContext.deleteDatabase
 import co.touchlab.sqliter.native.increment
 import io.exoquery.sql.BasicSchema
 import io.exoquery.sql.Sql
-import io.exoquery.sql.delight.runOnDriver
-import io.exoquery.sql.sqlite.SimplePool
-import io.exoquery.sql.sqlite.Waiter
-import io.exoquery.sql.sqlite.getNumProcessorsOnPlatform
+import io.exoquery.controller.delight.runOnDriver
+import io.exoquery.controller.sqlite.SimplePool
+import io.exoquery.controller.sqlite.getNumProcessorsOnPlatform
+import io.exoquery.controller.sqlite.Waiter
 import io.exoquery.sql.waitRandom
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.*

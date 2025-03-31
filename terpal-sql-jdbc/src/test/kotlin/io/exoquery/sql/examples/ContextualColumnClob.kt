@@ -1,8 +1,11 @@
 package io.exoquery.sql.examples
 
+import io.exoquery.controller.jdbc.JdbcDecoderAny
+import io.exoquery.controller.jdbc.JdbcEncoderAny
+import io.exoquery.controller.jdbc.JdbcEncodingConfig
+import io.exoquery.controller.jdbc.TerpalDriver
 import io.exoquery.sql.Param
 import io.exoquery.sql.Sql
-import io.exoquery.sql.jdbc.*
 import io.zonky.test.db.postgres.embedded.EmbeddedPostgres
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
@@ -29,7 +32,12 @@ object ContextualColumnClob {
     val ctx = TerpalDriver.Postgres(
       postgres.postgresDatabase,
       JdbcEncodingConfig(
-        setOf(JdbcEncoderAny(Types.BLOB, ByteContent::class) { ctx, v: ByteContent, i -> ctx.stmt.setBinaryStream(i, v.bytes) }),
+        setOf(JdbcEncoderAny(Types.BLOB, ByteContent::class) { ctx, v: ByteContent, i ->
+          ctx.stmt.setBinaryStream(
+            i,
+            v.bytes
+          )
+        }),
         setOf(JdbcDecoderAny(ByteContent::class) { ctx, i -> ByteContent(ctx.row.getBinaryStream(i)) })
       )
     )

@@ -1,9 +1,9 @@
 package io.exoquery.sql.examples
 
 import io.exoquery.sql.Sql
-import io.exoquery.sql.jdbc.TerpalDriver
-import io.exoquery.sql.jdbc.fromConfig
-import io.exoquery.sql.runOn
+import io.exoquery.controller.jdbc.TerpalDriver
+import io.exoquery.controller.jdbc.fromConfig
+import io.exoquery.controller.runOn
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
 

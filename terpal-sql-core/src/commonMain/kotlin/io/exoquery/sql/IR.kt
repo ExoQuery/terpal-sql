@@ -2,6 +2,7 @@
 
 package io.exoquery.sql
 
+import io.exoquery.controller.TerpalSqlInternal
 import kotlin.jvm.JvmInline
 
 /**

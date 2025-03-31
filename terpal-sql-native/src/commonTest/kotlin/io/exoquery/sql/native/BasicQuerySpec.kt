@@ -1,9 +1,9 @@
 package io.exoquery.sql.native
 
+import io.exoquery.controller.runOn
 import io.exoquery.sql.Sql
 import io.exoquery.sql.encodingdata.shouldBe
 import io.exoquery.sql.native.TestDatabase.ctx
-import io.exoquery.sql.runOn
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
 import kotlin.test.BeforeTest

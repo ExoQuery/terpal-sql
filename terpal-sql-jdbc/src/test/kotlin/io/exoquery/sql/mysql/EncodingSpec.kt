@@ -3,8 +3,8 @@ package io.exoquery.sql.mysql
 import io.exoquery.sql.*
 import io.exoquery.sql.encodingdata.*
 import io.exoquery.sql.Sql
-import io.exoquery.sql.jdbc.TerpalDriver
-import io.exoquery.sql.runOn
+import io.exoquery.controller.jdbc.TerpalDriver
+import io.exoquery.controller.runOn
 import io.kotest.core.spec.style.FreeSpec
 import java.time.ZoneId
 
