@@ -56,7 +56,7 @@ data class Param<T>(val serializer: SerializationStrategy<T>, val cls: KClass<*>
   }
 }
 
-data class Params<T> @PublishedApi internal constructor (val serializer: SerializationStrategy<T>, val cls: KClass<*>, val values: List<T>) {
+data class Params<T> @PublishedApi internal constructor (val serializer: SerializationStrategy<T>, val cls: KClass<*>, val values: List<T>): SqlFragment {
   fun toParamList(): List<Param<T>> = values?.map { Param(serializer, cls, it) } ?: emptyList()
 
   companion object {
