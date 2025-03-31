@@ -9,10 +9,10 @@ pluginManagement {
   }
 }
 
-include("terpal-sql-core-context")
-include("terpal-sql-jdbc-context")
-include("terpal-sql-native-context")
-include("terpal-sql-android-context")
+include("controller")
+include("controller-jdbc")
+include("controller-native")
+include("controller-android")
 
 include("terpal-sql-core")
 include("terpal-sql-core-testing")

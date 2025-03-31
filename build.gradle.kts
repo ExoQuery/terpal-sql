@@ -75,9 +75,9 @@ subprojects {
       artifact(javadocJar)
 
       pom {
-        name.set("decomat")
-        description.set("DecoMat - Deconstructive Pattern Matching for Kotlin")
-        url.set("https://github.com/exoquery/decomat")
+        name.set("terpal-sql")
+        description.set("Terpal SQL - A Kotlin Multiplatform SQL Library")
+        url.set("https://github.com/exoquery/terpal-sql")
 
         licenses {
           license {
@@ -97,9 +97,7 @@ subprojects {
         }
 
         scm {
-          url.set("https://github.com/exoquery/decomat/tree/main")
-          connection.set("scm:git:git://github.com/ExoQuery/DecoMat.git")
-          developerConnection.set("scm:git:ssh://github.com:ExoQuery/DecoMat.git")
+          url.set("https://github.com/exoquery/terpal-sql/tree/main")
         }
       }
     }
