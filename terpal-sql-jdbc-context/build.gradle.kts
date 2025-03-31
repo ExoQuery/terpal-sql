@@ -72,8 +72,7 @@ kotlin {
 
       dependencies {
         // Looks like it knows to do a project-dependency even if there is a version attached (i.e. I guess it ignores the version?)
-        api(project(":terpal-sql-core"))
-        api(project(":terpal-sql-jdbc-context"))
+        api(project(":terpal-sql-core-context"))
 
         api("org.jetbrains.kotlinx:kotlinx-serialization-core:1.6.2")
         api("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")

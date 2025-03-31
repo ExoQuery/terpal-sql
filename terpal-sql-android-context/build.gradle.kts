@@ -52,8 +52,7 @@ kotlin {
 
       androidMain.dependencies {
         dependencies {
-          api(project(":terpal-sql-core"))
-          api(project(":terpal-sql-android-context"))
+          api(project(":terpal-sql-core-context"))
           
           api("org.jetbrains.kotlinx:kotlinx-serialization-core:1.6.2")
           api("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")

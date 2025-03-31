@@ -91,6 +91,7 @@ kotlin {
       resources.srcDir("src/test/resources")
 
       dependencies {
+        api(project(":terpal-sql-jdbc-context"))
         api(project(":terpal-sql-core-testing"))
 
         implementation("io.exoquery:pprint-kotlin:2.0.2")

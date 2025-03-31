@@ -54,12 +54,12 @@ interface WithEncoding<Session, Stmt, ResultRow> {
   // TODO Maybe WithConcreteEncoding in order to not foce these implementations
   // Do it this way so we can avoid value casting in the runScoped function
   @Suppress("UNCHECKED_CAST")
-  fun <T> Param<T>.write(index: Int, conn: Session, ps: Stmt): Unit {
+  fun <T> StatementParam<T>.write(index: Int, conn: Session, ps: Stmt): Unit {
     // TODO logging integration
     //println("----- Preparing parameter $index - $value - using $serializer")
     PreparedStatementElementEncoder(createEncodingContext(conn, ps), index + startingStatementIndex.value, encodingApi, allEncoders, encodingConfig.module, encodingConfig.json).encodeNullableSerializableValue(serializer, value)
   }
-  fun prepare(stmt: Stmt, conn: Session, params: List<Param<*>>) =
+  fun prepare(stmt: Stmt, conn: Session, params: List<StatementParam<*>>) =
     params.withIndex().forEach { (idx, param) ->
       param.write(idx, conn, stmt)
     }
