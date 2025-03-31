@@ -31,8 +31,3 @@ fun <T> SqlCursor.awaitAll(mapper: (SqlCursor) -> T): QueryResult<List<T>> {
     }
   }
 }
-
-//inline suspend fun <T> SqlCursor.flowAll(crossinline mapper: (SqlCursor) -> T): Unit {
-//  val cursor = this
-//
-//}

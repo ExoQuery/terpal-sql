@@ -38,9 +38,3 @@ class SqlDelightContext(
       { prepare(DelightStatementWrapper.fromDelightStatement(this), Unused, query.params) }
     )
 }
-
-fun <T> Query<T>.runOnDelight(ctx: SqlDelightContext, sqlDelightId: Int? = null) = ctx.runToResult(this, sqlDelightId)
-fun Action.runOnDelight(ctx: SqlDelightContext, sqlDelightId: Int? = null) = ctx.runToResult(this, sqlDelightId)
-
-fun <T> Query<T>.runOnDriver(ctx: NativeSqliteDriver, sqlDelightId: Int? = null) = SqlDelightContext(ctx).runToResult(this, sqlDelightId)
-fun Action.runOnDriver(ctx: NativeSqliteDriver, sqlDelightId: Int? = null) = SqlDelightContext(ctx).runToResult(this, sqlDelightId)
