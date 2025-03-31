@@ -196,7 +196,7 @@ class TerpalNativeDriver internal constructor(
 
   override val encodingApi = SqliteSqlEncoding
 
-  suspend fun runActionScoped(sql: String, params: List<Param<*>>): Long =
+  suspend fun runActionScoped(sql: String, params: List<StatementParam<*>>): Long =
     withConnection {
       //println("------------ Running Block")
       val conn = localConnection()

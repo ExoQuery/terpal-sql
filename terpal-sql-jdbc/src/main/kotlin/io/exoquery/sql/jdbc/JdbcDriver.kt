@@ -135,7 +135,7 @@ abstract class JdbcDriver internal constructor(
       }
     }
 
-  protected open suspend fun runActionScoped(sql: String, params: List<Param<*>>): Long =
+  protected open suspend fun runActionScoped(sql: String, params: List<StatementParam<*>>): Long =
     withConnection {
       val conn = localConnection()
        accessStmt(sql, conn) { stmt ->
