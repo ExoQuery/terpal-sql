@@ -225,7 +225,7 @@ class TerpalAndroidDriver internal constructor(
 
   protected fun wrap(stmt: SupportSQLiteStatement) = AndroidxStatementWrapper(stmt)
 
-  suspend fun runActionScoped(sql: String, params: List<Param<*>>): Long =
+  suspend fun runActionScoped(sql: String, params: List<StatementParam<*>>): Long =
     withConnection {
       val conn = localConnection()
       accessStmt(sql, conn) { stmt ->

@@ -222,12 +222,12 @@ object SqlBatch: SqlCommonBatchBase() {
   override fun wrap(value: Float?): Param<Float> = Param(value)
   override fun wrap(value: Double?): Param<Double> = Param(value)
   override fun wrap(value: Boolean?): Param<Boolean> = Param(value)
-  fun wrap(value: ByteArray?): SqlFragment = Param(value)
+  fun wrap(value: ByteArray?): Param<ByteArray> = Param(value)
 
-  fun wrap(value: LocalDate?): SqlFragment = Param(value)
-  fun wrap(value: LocalTime?): SqlFragment = Param(value)
-  fun wrap(value: LocalDateTime?): SqlFragment = Param(value)
-  fun wrap(value: Instant?): SqlFragment = Param(value)
+  fun wrap(value: LocalDate?): Param<LocalDate> = Param(value)
+  fun wrap(value: LocalTime?): Param<LocalTime> = Param(value)
+  fun wrap(value: LocalDateTime?): Param<LocalDateTime> = Param(value)
+  fun wrap(value: Instant?): Param<Instant> = Param(value)
 }
 
 // The Jdbc Specific Sql implemenation which will use the Jdbc wrapping functions to auto-wrap things
