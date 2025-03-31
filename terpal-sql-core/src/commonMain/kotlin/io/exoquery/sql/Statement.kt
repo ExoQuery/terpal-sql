@@ -3,6 +3,9 @@ package io.exoquery.sql
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.serializer
 
+fun <T> Param<T>.toStatementParam(): StatementParam<T> =
+  StatementParam(serializer, cls, value)
+
 @OptIn(TerpalSqlInternal::class)
 data class Statement(val ir: IR.Splice): SqlFragment {
   operator fun plus(other: Statement) = Statement(IR.Splice(listOf(IR.Part.Empty, IR.Part.Empty, IR.Part.Empty), listOf(this.ir, other.ir)))
@@ -35,23 +38,23 @@ data class Statement(val ir: IR.Splice): SqlFragment {
   inline fun <reified T> queryOf(): Query<T> {
     val (sql, params) = constructQuery(ir)
     val resultMaker = serializer<T>()
-    return Query(sql, params, resultMaker)
+    return Query(sql, params.map { it.toStatementParam() }, resultMaker)
   }
 
   fun <T> queryOf(serializer: KSerializer<T>): Query<T> {
     val (sql, params) = constructQuery(ir)
-    return Query(sql, params, serializer)
+    return Query(sql, params.map { it.toStatementParam() }, serializer)
   }
 
   fun action(): Action {
     val (sql, params) = constructQuery(ir)
-    return Action(sql, params)
+    return Action(sql, params.map { it.toStatementParam() })
   }
 
   inline fun <reified T> actionReturning(vararg returningColumns: String): ActionReturning<T> {
     val (sql, params) = constructQuery(ir)
     val resultMaker = serializer<T>()
-    return ActionReturningRow(sql, params, resultMaker, returningColumns.toList())
+    return ActionReturningRow(sql, params.map { it.toStatementParam() }, resultMaker, returningColumns.toList())
   }
 
   /**
@@ -69,6 +72,6 @@ data class Statement(val ir: IR.Splice): SqlFragment {
   inline fun actionReturningId(idColumn: String? = null): ActionReturningId {
     val (sql, params) = constructQuery(ir)
     val resultMaker = serializer<Long>()
-    return ActionReturningId(sql, params, resultMaker, idColumn)
+    return ActionReturningId(sql, params.map { it.toStatementParam() }, resultMaker, idColumn)
   }
 }

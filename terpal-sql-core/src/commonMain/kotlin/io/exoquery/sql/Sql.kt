@@ -9,14 +9,17 @@ import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
+import kotlinx.serialization.*
+import kotlinx.serialization.builtins.serializer
 import kotlin.reflect.KClass
 import org.intellij.lang.annotations.Language
+import kotlin.jvm.JvmName
 import kotlinx.serialization.ExperimentalSerializationApi as SerApi
 
 interface SqlFragment
 
 
-data class Param<T>(val param: Param<T>): SqlFragment {
+data class Param<T>(val serializer: SerializationStrategy<T>, val cls: KClass<*>, val value: T?): SqlFragment {
   companion object {
     /**
      * Crete a contextual parameter. This relies database context having a specific encoder for the specified type.
@@ -120,7 +123,7 @@ class SqlBatchCallWithValues<A: Any>(protected val batch: SqlBatchCall<A>, prote
   // We only need type-data when there is a value returned
   fun action(): BatchAction {
     val sql = batch.parts.joinToString("?")
-    val paramSeq = values.map { batch.params(it).map { it.param } }
+    val paramSeq = values.map { batch.params(it).map { it.toStatementParam() } }
     return BatchAction(sql, paramSeq)
   }
 
@@ -129,14 +132,14 @@ class SqlBatchCallWithValues<A: Any>(protected val batch: SqlBatchCall<A>, prote
 
   inline fun <reified T> actionReturning(vararg returningColumns: String): BatchActionReturning<T> {
     val sql = batchCall().parts.joinToString("?")
-    val paramSeq = batchCallValues().map { batchCall().params(it).map { it.param } }
+    val paramSeq = batchCallValues().map { batchCall().params(it).map { it.toStatementParam() } }
     val resultMaker = serializer<T>()
     return BatchActionReturningRow(sql, paramSeq, resultMaker, returningColumns.toList())
   }
 
   fun actionReturningId(): BatchActionReturning<Long> {
     val sql = batchCall().parts.joinToString("?")
-    val paramSeq = batchCallValues().map { batchCall().params(it).map { it.param } }
+    val paramSeq = batchCallValues().map { batchCall().params(it).map { it.toStatementParam() } }
     val resultMaker = serializer<Long>()
     return BatchActionReturningId(sql, paramSeq, resultMaker)
   }
@@ -177,7 +180,7 @@ abstract class SqlBase: InterpolatorWithWrapper<SqlFragment, Statement> {
     val partsList = parts().map { IR.Part(it) }
     val paramsList = params().map {
       when (it) {
-        is Param<*> -> IR.Param(it.param)
+        is Param<*> -> IR.Param(it)
         is Params<*> -> IR.Params(it)
         // if it's a statement need to splice everything we've seen in that statement here
         // including the params that we saw in order
@@ -219,7 +222,7 @@ object SqlBatch: SqlCommonBatchBase() {
   override fun wrap(value: Float?): Param<Float> = Param(value)
   override fun wrap(value: Double?): Param<Double> = Param(value)
   override fun wrap(value: Boolean?): Param<Boolean> = Param(value)
-  fun wrap(value: ByteArray?): SqlFragment = Param(Param(value))
+  fun wrap(value: ByteArray?): SqlFragment = Param(value)
 
   fun wrap(value: LocalDate?): SqlFragment = Param(value)
   fun wrap(value: LocalTime?): SqlFragment = Param(value)
