@@ -297,7 +297,7 @@ class TerpalNativeDriver internal constructor(
   override suspend fun <T> stream(query: BatchActionReturning<T>): Flow<T> =
     throw IllegalArgumentException("Batch Queries are not supported in NativeContext.")
 
-  internal fun runRaw(sql: String) = runBlocking {
+  fun runRaw(sql: String) = runBlocking {
     sql.split(";").forEach { if (it.trim().isNotEmpty()) runActionScoped(it, emptyList()) }
   }
 
