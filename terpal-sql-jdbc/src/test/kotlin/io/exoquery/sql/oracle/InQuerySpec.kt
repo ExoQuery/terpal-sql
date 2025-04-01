@@ -2,7 +2,7 @@ package io.exoquery.sql.oracle
 
 import io.exoquery.sql.Params
 import io.exoquery.sql.TestDatabases
-import io.exoquery.controller.jdbc.TerpalDriver
+import io.exoquery.controller.jdbc.DatabaseController
 import io.exoquery.sql.Sql
 import io.exoquery.sql.run
 import io.kotest.core.spec.style.FreeSpec
@@ -12,7 +12,7 @@ import kotlinx.serialization.Serializable
 class InQuerySpec : FreeSpec({
 
   val ds = TestDatabases.oracle
-  val ctx by lazy { TerpalDriver.Oracle(ds)  }
+  val ctx by lazy { DatabaseController.Oracle(ds)  }
 
   @Serializable
   data class Person(val id: Int, val firstName: String, val lastName: String, val age: Int)

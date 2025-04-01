@@ -1,7 +1,7 @@
 package io.exoquery.sql.mysql
 
 import io.exoquery.sql.TestDatabases
-import io.exoquery.controller.jdbc.TerpalDriver
+import io.exoquery.controller.jdbc.DatabaseController
 import io.exoquery.sql.Sql
 import io.exoquery.sql.run
 import io.kotest.core.spec.style.FreeSpec
@@ -11,7 +11,7 @@ import kotlinx.serialization.Serializable
 class BasicQuerySpec : FreeSpec({
 
   val ds = TestDatabases.postgres
-  val ctx by lazy { TerpalDriver.Postgres(ds)  }
+  val ctx by lazy { DatabaseController.Postgres(ds)  }
 
   beforeSpec {
     ds.run(

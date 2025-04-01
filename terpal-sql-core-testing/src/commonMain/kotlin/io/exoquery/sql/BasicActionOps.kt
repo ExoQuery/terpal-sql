@@ -1,6 +1,6 @@
 package io.exoquery.sql
 
-import io.exoquery.controller.DriverTransactional
+import io.exoquery.controller.ControllerTransactional
 import io.exoquery.controller.runActions
 import io.exoquery.controller.runOn
 import io.exoquery.sql.encodingdata.shouldBe
@@ -8,7 +8,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
 
 class BasicActionOps<Session, Stmt>(
-  val ctx: DriverTransactional<Session, Stmt>
+  val ctx: ControllerTransactional<Session, Stmt>
 ) {
   fun clearTables(): Unit = runBlocking {
     ctx.runActions(

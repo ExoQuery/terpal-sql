@@ -1,7 +1,7 @@
 package io.exoquery.sql.mysql
 
 import io.exoquery.sql.TestDatabases
-import io.exoquery.controller.jdbc.TerpalDriver
+import io.exoquery.controller.jdbc.DatabaseController
 import io.exoquery.sql.Sql
 import io.exoquery.controller.runOn
 import io.exoquery.sql.run
@@ -12,7 +12,7 @@ import kotlinx.serialization.Serializable
 class BasicActionSpec : FreeSpec({
 
   val ds = TestDatabases.mysql
-  val ctx by lazy { TerpalDriver.Mysql(ds)  }
+  val ctx by lazy { DatabaseController.Mysql(ds)  }
 
   beforeEach {
     ds.run(

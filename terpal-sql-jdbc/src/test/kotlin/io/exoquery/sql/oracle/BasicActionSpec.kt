@@ -1,10 +1,9 @@
 package io.exoquery.sql.oracle
 
 import io.exoquery.sql.TestDatabases
-import io.exoquery.controller.jdbc.TerpalDriver
+import io.exoquery.controller.jdbc.DatabaseController
 import io.exoquery.controller.runOn
 import io.exoquery.sql.Sql
-import io.exoquery.controller.runOn
 import io.exoquery.sql.run
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe
@@ -13,7 +12,7 @@ import kotlinx.serialization.Serializable
 class BasicActionSpec : FreeSpec({
 
   val ds = TestDatabases.oracle
-  val ctx by lazy { TerpalDriver.Oracle(ds)  }
+  val ctx by lazy { DatabaseController.Oracle(ds)  }
 
   beforeEach {
     ds.run(

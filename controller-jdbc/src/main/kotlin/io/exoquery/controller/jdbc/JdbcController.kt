@@ -62,7 +62,7 @@ data class JdbcEncodingConfig private constructor(
 }
 
 @Deprecated("Use JdbcDriver instead", ReplaceWith("JdbcDriver"))
-typealias JdbcContext = JdbcDriver
+typealias JdbcContext = JdbcController
 
 /**
  * This is a Terpal Driver, NOT a JDBC driver! It is the base class for all JDBC-based implementations of the
@@ -72,9 +72,9 @@ typealias JdbcContext = JdbcDriver
  * semantics involving UI session control. As a JVM developer I am willing to use this naming convention
  * but only by the skin of my teeth.
  */
-abstract class JdbcDriver internal constructor(
+abstract class JdbcController internal constructor(
   override open val database: DataSource,
-): DriverCannonical<Connection, PreparedStatement, ResultSet>,
+): ControllerCanonical<Connection, PreparedStatement, ResultSet>,
   WithEncoding<Connection, PreparedStatement, ResultSet>,
   HasTransactionalityJdbc
 {

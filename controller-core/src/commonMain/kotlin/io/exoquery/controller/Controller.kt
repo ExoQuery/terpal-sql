@@ -149,10 +149,10 @@ interface RequiresTransactionality<Session, Stmt>: RequiresSession<Session, Stmt
 }
 
 @Deprecated("Use Driver instead", ReplaceWith("Driver"))
-typealias Context = TerpalDriver
+typealias Context = Controller
 
 @OptIn(TerpalSqlInternal::class)
-interface TerpalVerbs {
+interface ControllerVerbs {
   @OptIn(TerpalSqlInternal::class) suspend fun <T> stream(query: Query<T>): Flow<T>
   @OptIn(TerpalSqlInternal::class) suspend fun <T> stream(query: BatchActionReturning<T>): Flow<T>
   @OptIn(TerpalSqlInternal::class) suspend fun <T> stream(query: ActionReturning<T>): Flow<T>
@@ -171,20 +171,20 @@ interface TerpalVerbs {
  * about how the context functionality is composed. Typically implementations will want to start with ContextBase or ContextCannonical.
  */
 @OptIn(TerpalSqlInternal::class)
-interface TerpalDriver: TerpalVerbs {
+interface Controller: ControllerVerbs {
   suspend open fun <T> transaction(block: suspend ExternalTransactionScope.() -> T): T
 }
 
 @OptIn(TerpalSqlInternal::class)
-suspend fun TerpalDriver.runActions(actions: String): List<Long> =
+suspend fun Controller.runActions(actions: String): List<Long> =
   actions.split(";").map { it.trim() }.filter { it.isNotEmpty() }.map { run(Action(it, listOf())) }
 
 @OptIn(TerpalSqlInternal::class)
-interface DriverTransactional<Session, Stmt>: TerpalDriver, RequiresSession<Session, Stmt>, RequiresTransactionality<Session, Stmt> {
+interface ControllerTransactional<Session, Stmt>: Controller, RequiresSession<Session, Stmt>, RequiresTransactionality<Session, Stmt> {
   suspend override open fun <T> transaction(block: suspend ExternalTransactionScope.() -> T): T =
     withTransactionScope {
       val coroutineScope = this
-      block(ExternalTransactionScope(coroutineScope, this@DriverTransactional))
+      block(ExternalTransactionScope(coroutineScope, this@ControllerTransactional))
     }
 
   fun showStats(): String = ""
@@ -196,9 +196,9 @@ interface DriverTransactional<Session, Stmt>: TerpalDriver, RequiresSession<Sess
  * If this is not the case use ContextBase.
  */
 @OptIn(TerpalSqlInternal::class)
-interface DriverCannonical<Session, Stmt, ResultRow>: DriverTransactional<Session, Stmt>, RequiresSession<Session, Stmt>, RequiresTransactionality<Session, Stmt>, WithEncoding<Session, Stmt, ResultRow>
+interface ControllerCanonical<Session, Stmt, ResultRow>: ControllerTransactional<Session, Stmt>, RequiresSession<Session, Stmt>, RequiresTransactionality<Session, Stmt>, WithEncoding<Session, Stmt, ResultRow>
 
-class ExternalTransactionScope(private val scope: CoroutineScope, private val ctx: TerpalDriver) {
+class ExternalTransactionScope(private val scope: CoroutineScope, private val ctx: Controller) {
   suspend fun <T> Query<T>.run(): List<T> = ctx.run(this)
   suspend fun Action.run(): Long = ctx.run(this)
   suspend fun BatchAction.run(): List<Long> = ctx.run(this)
@@ -206,11 +206,11 @@ class ExternalTransactionScope(private val scope: CoroutineScope, private val ct
   suspend fun <T> BatchActionReturning<T>.run(): List<T> = ctx.run(this)
 }
 
-suspend fun <T> Query<T>.runOn(ctx: TerpalDriver) = ctx.run(this)
-suspend fun <T> Query<T>.streamOn(ctx: TerpalDriver) = ctx.stream(this)
-suspend fun <T> Query<T>.runRawOn(ctx: TerpalDriver) = ctx.runRaw(this)
-suspend fun Action.runOn(ctx: TerpalDriver) = ctx.run(this)
-suspend fun <T> ActionReturning<T>.runOn(ctx: TerpalDriver) = ctx.run(this)
-suspend fun BatchAction.runOn(ctx: TerpalDriver) = ctx.run(this)
-suspend fun <T> BatchActionReturning<T>.runOn(ctx: TerpalDriver) = ctx.run(this)
-suspend fun <T> BatchActionReturning<T>.streamOn(ctx: TerpalDriver) = ctx.stream(this)
+suspend fun <T> Query<T>.runOn(ctx: Controller) = ctx.run(this)
+suspend fun <T> Query<T>.streamOn(ctx: Controller) = ctx.stream(this)
+suspend fun <T> Query<T>.runRawOn(ctx: Controller) = ctx.runRaw(this)
+suspend fun Action.runOn(ctx: Controller) = ctx.run(this)
+suspend fun <T> ActionReturning<T>.runOn(ctx: Controller) = ctx.run(this)
+suspend fun BatchAction.runOn(ctx: Controller) = ctx.run(this)
+suspend fun <T> BatchActionReturning<T>.runOn(ctx: Controller) = ctx.run(this)
+suspend fun <T> BatchActionReturning<T>.streamOn(ctx: Controller) = ctx.stream(this)

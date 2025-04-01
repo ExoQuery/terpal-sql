@@ -1,6 +1,6 @@
 package io.exoquery.controller.sqlite
 
-import io.exoquery.controller.TerpalDriver
+import io.exoquery.controller.Controller
 
 interface TerpalSchema<T> {
   val version: Long
@@ -8,14 +8,14 @@ interface TerpalSchema<T> {
   /**
    * Use [driver] to create the schema from scratch. Assumes no existing database state.
    */
-  suspend fun create(driver: TerpalDriver): T
+  suspend fun create(driver: Controller): T
 
   /**
    * Use [driver] to migrate from schema [oldVersion] to [newVersion].
    * Each of the [callbacks] are executed during the migration whenever the upgrade to the version specified by
    * [CallAfterVersion.afterVersion] has been completed.
    */
-  suspend fun migrate(driver: TerpalDriver, oldVersion: Long, newVersion: Long, vararg callbacks: CallAfterVersion): T
+  suspend fun migrate(driver: Controller, oldVersion: Long, newVersion: Long, vararg callbacks: CallAfterVersion): T
 }
 
 /**
@@ -24,13 +24,13 @@ interface TerpalSchema<T> {
  */
 class CallAfterVersion(
   val afterVersion: Long,
-  val block: suspend (TerpalDriver) -> Unit,
+  val block: suspend (Controller) -> Unit,
 )
 
 object EmptyTerpalSchema : TerpalSchema<Unit> {
   override val version: Long = 0
-  override suspend fun create(driver: TerpalDriver) {
+  override suspend fun create(driver: Controller) {
   }
-  override suspend fun migrate(driver: TerpalDriver, oldVersion: Long, newVersion: Long, vararg callbacks: CallAfterVersion) {
+  override suspend fun migrate(driver: Controller, oldVersion: Long, newVersion: Long, vararg callbacks: CallAfterVersion) {
   }
 }

@@ -1,7 +1,7 @@
 package io.exoquery.sql
 
 import io.exoquery.controller.Action
-import io.exoquery.controller.DriverTransactional
+import io.exoquery.controller.ControllerTransactional
 import io.exoquery.controller.Query
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.*
@@ -15,7 +15,7 @@ import kotlin.test.fail
 import kotlin.time.measureTimedValue
 
 class WallPerformanceTest<Session, Stmt>(
-  val driver: DriverTransactional<Session, Stmt>,
+  val driver: ControllerTransactional<Session, Stmt>,
   val maxRow: Int = 100000, val minIntervalSize: Int = 100,
   val maxIntervalSize: Int = 1000,
   val readWaitRange: Pair<Int, Int> = 10 to 100,

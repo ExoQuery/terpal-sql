@@ -1,6 +1,6 @@
 package io.exoquery.sql
 
-import io.exoquery.controller.DriverTransactional
+import io.exoquery.controller.ControllerTransactional
 import io.exoquery.controller.runActions
 import io.exoquery.controller.runOn
 import kotlinx.atomicfu.atomic
@@ -10,7 +10,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import kotlin.test.assertEquals
 
-class WalConcurrencyOps<Session, Stmt>(val ctx: DriverTransactional<Session, Stmt>) {
+class WalConcurrencyOps<Session, Stmt>(val ctx: ControllerTransactional<Session, Stmt>) {
 
   fun clearTables(): Unit = runBlocking {
     ctx.runActions(

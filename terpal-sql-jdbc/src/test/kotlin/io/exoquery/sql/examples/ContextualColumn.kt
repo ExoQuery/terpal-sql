@@ -1,7 +1,7 @@
 package io.exoquery.sql.examples
 
 import io.exoquery.sql.Sql
-import io.exoquery.controller.jdbc.TerpalDriver
+import io.exoquery.controller.jdbc.DatabaseController
 import io.exoquery.controller.runOn
 import io.zonky.test.db.postgres.embedded.EmbeddedPostgres
 import kotlinx.serialization.KSerializer
@@ -27,7 +27,7 @@ object ContextualColumn {
   suspend fun main() {
     val postgres = EmbeddedPostgres.start()
     postgres.run("CREATE TABLE customers (id SERIAL PRIMARY KEY, first_name TEXT, last_name TEXT)")
-    val ctx = TerpalDriver.Postgres(postgres.postgresDatabase)
+    val ctx = DatabaseController.Postgres(postgres.postgresDatabase)
 
     //Sql("INSERT INTO customers (first_name, last_name, created_at) VALUES (${id("Alice" + i)}, ${id("Smith" + 1)}, ${id(LocalDate.of(2021, 1, 1))})").action().runOn(ctx)
 

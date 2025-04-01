@@ -10,7 +10,6 @@ import io.exoquery.controller.delight.CursorWrapper
 import io.exoquery.controller.delight.DelightCursorWrapper
 import io.exoquery.controller.delight.DelightStatementWrapper
 import io.exoquery.controller.*
-import io.exoquery.controller.delight.*
 import io.exoquery.controller.sqlite.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
@@ -21,10 +20,10 @@ import kotlin.experimental.ExperimentalTypeInference
 data class Versions(val oldVersion: Int, val newVersion: Int)
 
 @OptIn(ExperimentalStdlibApi::class)
-class TerpalNativeDriver internal constructor(
+class NativeDatabaseController internal constructor(
   override val encodingConfig: EncodingConfig<Unused, SqliteStatementWrapper, SqliteCursorWrapper>,
   override val pool: SqliterPool,
-): DriverTransactional<Connection, Statement>, AutoCloseable,
+): ControllerTransactional<Connection, Statement>, AutoCloseable,
   WithEncoding<Unused, SqliteStatementWrapper, SqliteCursorWrapper>,
   WithReadOnlyVerbs,
   HasTransactionalityNative {
@@ -50,7 +49,7 @@ class TerpalNativeDriver internal constructor(
       poolingMode: PoolingMode = PoolingMode.Single,
       cacheCapacity: Int = DEFAULT_CACHE_CAPACITY,
       encodingConfig: NativeEncodingConfig = NativeEncodingConfig()
-    ): TerpalNativeDriver {
+    ): NativeDatabaseController {
       val db = createDatabaseManager(nativeConfig)
       val pool = SqliterPool(
         when (poolingMode) {
@@ -59,7 +58,7 @@ class TerpalNativeDriver internal constructor(
         },
         cacheCapacity
       )
-      return TerpalNativeDriver(encodingConfig, pool)
+      return NativeDatabaseController(encodingConfig, pool)
     }
 
     fun fromSchema(
@@ -69,7 +68,7 @@ class TerpalNativeDriver internal constructor(
       mode: PoolingMode = PoolingMode.Single,
       cacheCapacity: Int = DEFAULT_CACHE_CAPACITY,
       encodingConfig: NativeEncodingConfig = NativeEncodingConfig()
-    ): TerpalNativeDriver {
+    ): NativeDatabaseController {
       val nativeConfig =
         DatabaseConfiguration(
           name = dbName,
@@ -103,7 +102,7 @@ class TerpalNativeDriver internal constructor(
       mode: PoolingMode = PoolingMode.Single,
       cacheCapacity: Int = DEFAULT_CACHE_CAPACITY,
       encodingConfig: NativeEncodingConfig = NativeEncodingConfig()
-    ): TerpalNativeDriver {
+    ): NativeDatabaseController {
       val nativeConfig =
         DatabaseConfiguration(
           name = dbName,
@@ -125,9 +124,9 @@ class TerpalNativeDriver internal constructor(
       mode: PoolingMode = PoolingMode.Single,
       cacheCapacity: Int = DEFAULT_CACHE_CAPACITY,
       encodingConfig: NativeEncodingConfig = NativeEncodingConfig(),
-      createCallback: (TerpalNativeDriver) -> Unit = {},
-      updateCallback: (TerpalNativeDriver, Versions) -> Unit = { _, _ -> }
-    ): TerpalNativeDriver {
+      createCallback: (NativeDatabaseController) -> Unit = {},
+      updateCallback: (NativeDatabaseController, Versions) -> Unit = { _, _ -> }
+    ): NativeDatabaseController {
       val nativeConfig =
         DatabaseConfiguration(
           name = dbFileName,
@@ -144,8 +143,8 @@ class TerpalNativeDriver internal constructor(
      * Create a NativeContext from a single connection. Doesn't need to be suspended because there is no effect happening.
      * The connection is already open.
      */
-    fun fromSingleConnection(conn: DatabaseConnection, encodingConfig: NativeEncodingConfig = NativeEncodingConfig()): TerpalNativeDriver =
-      TerpalNativeDriver(encodingConfig, SqliterPool(SqliterPoolType.Wrapped(conn), DEFAULT_CACHE_CAPACITY))
+    fun fromSingleConnection(conn: DatabaseConnection, encodingConfig: NativeEncodingConfig = NativeEncodingConfig()): NativeDatabaseController =
+      NativeDatabaseController(encodingConfig, SqliterPool(SqliterPoolType.Wrapped(conn), DEFAULT_CACHE_CAPACITY))
   }
 
   // Is there an open writer?

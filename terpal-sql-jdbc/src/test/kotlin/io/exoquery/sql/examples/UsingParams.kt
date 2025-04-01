@@ -1,7 +1,7 @@
 package io.exoquery.sql.examples
 
 import io.exoquery.sql.Sql
-import io.exoquery.controller.jdbc.TerpalDriver
+import io.exoquery.controller.jdbc.DatabaseController
 import io.exoquery.controller.runOn
 import io.exoquery.sql.Params
 import io.zonky.test.db.postgres.embedded.EmbeddedPostgres
@@ -15,7 +15,7 @@ object UsingParams {
   suspend fun main() {
     val postgres = EmbeddedPostgres.start()
     postgres.run("CREATE TABLE person (id SERIAL PRIMARY KEY, firstName TEXT, lastName TEXT, age INT)")
-    val ctx = TerpalDriver.Postgres(postgres.postgresDatabase)
+    val ctx = DatabaseController.Postgres(postgres.postgresDatabase)
 
     Sql("INSERT INTO person (firstName, lastName, age) VALUES ('Joe', 'Bloggs', 123)").action().runOn(ctx)
     Sql("INSERT INTO person (firstName, lastName, age) VALUES ('Jim', 'Roggs', 456)").action().runOn(ctx)

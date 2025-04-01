@@ -1,7 +1,7 @@
 package io.exoquery.sql.examples
 
 import io.exoquery.controller.jdbc.JdbcEncodingConfig
-import io.exoquery.controller.jdbc.TerpalDriver
+import io.exoquery.controller.jdbc.DatabaseController
 import io.exoquery.sql.Param
 import io.exoquery.sql.Sql
 import io.exoquery.controller.runOn
@@ -41,7 +41,7 @@ object NewtypeColumnContextual_DifferentEncoders {
     val postgres = EmbeddedPostgres.start()
     postgres.run("CREATE TABLE customers (id SERIAL PRIMARY KEY, firstName TEXT, lastName TEXT, email TEXT)")
     val ctx =
-      TerpalDriver.Postgres(
+      DatabaseController.Postgres(
         postgres.postgresDatabase,
         JdbcEncodingConfig(
           module = SerializersModule { contextual(Email::class, EmailSerialzier) }

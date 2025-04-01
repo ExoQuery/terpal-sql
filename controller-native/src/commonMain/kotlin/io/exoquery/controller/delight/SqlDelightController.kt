@@ -9,7 +9,7 @@ import io.exoquery.controller.sqlite.SqliteSqlEncoding
 import io.exoquery.controller.sqlite.SqliteStatementWrapper
 import io.exoquery.controller.sqlite.Unused
 
-class SqlDelightContext(
+class SqlDelightController(
   val database: NativeSqliteDriver,
   override val encodingConfig: EncodingConfig<Unused, SqliteStatementWrapper, SqliteCursorWrapper> = NativeEncodingConfig()
 ): WithEncoding<Unused, SqliteStatementWrapper, SqliteCursorWrapper> {

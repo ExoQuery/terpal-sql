@@ -4,7 +4,7 @@ import app.cash.sqldelight.db.AfterVersion
 import app.cash.sqldelight.db.QueryResult
 import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.db.SqlSchema
-import io.exoquery.controller.TerpalDriver
+import io.exoquery.controller.Controller
 import io.exoquery.controller.runOn
 import io.exoquery.controller.sqlite.CallAfterVersion
 import io.exoquery.controller.sqlite.TerpalSchema
@@ -132,7 +132,7 @@ object BasicSchema: SqlSchema<QueryResult.Value<Unit>> {
 
 object BasicSchemaTerpal: TerpalSchema<Unit> {
   override val version: Long = 1
-  override suspend fun create(driver: TerpalDriver): Unit {
+  override suspend fun create(driver: Controller): Unit {
     Sql(
       """
       CREATE TABLE Person (
@@ -232,7 +232,7 @@ object BasicSchemaTerpal: TerpalSchema<Unit> {
   }
 
   override suspend fun migrate(
-    driver: TerpalDriver,
+    driver: Controller,
     oldVersion: Long,
     newVersion: Long,
     vararg callbacks: io.exoquery.controller.sqlite.CallAfterVersion) {
@@ -263,7 +263,7 @@ object WalTestSchema: SqlSchema<QueryResult.Value<Unit>> {
 
 object WalSchemaTerpal: TerpalSchema<Unit> {
   override val version: Long = 1
-  override suspend fun create(driver: TerpalDriver): Unit {
+  override suspend fun create(driver: Controller): Unit {
     Sql(
       """
       CREATE TABLE MiscTest (
@@ -274,5 +274,5 @@ object WalSchemaTerpal: TerpalSchema<Unit> {
     ).action().runOn(driver)
   }
 
-  override suspend fun migrate(driver: TerpalDriver, oldVersion: Long, newVersion: Long, vararg callbacks: CallAfterVersion) = Unit
+  override suspend fun migrate(driver: Controller, oldVersion: Long, newVersion: Long, vararg callbacks: CallAfterVersion) = Unit
 }

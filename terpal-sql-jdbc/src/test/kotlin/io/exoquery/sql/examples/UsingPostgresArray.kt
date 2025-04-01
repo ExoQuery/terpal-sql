@@ -2,12 +2,11 @@ package io.exoquery.sql.examples
 
 import io.exoquery.sql.Param
 import io.exoquery.sql.Sql
-import io.exoquery.controller.jdbc.TerpalDriver
+import io.exoquery.controller.jdbc.DatabaseController
 import io.exoquery.controller.runOn
 import io.exoquery.controller.jdbc.JdbcDecoderAny
 import io.exoquery.controller.jdbc.JdbcEncoderAny
 import io.exoquery.controller.jdbc.JdbcEncodingConfig
-import io.exoquery.controller.runOn
 import io.zonky.test.db.postgres.embedded.EmbeddedPostgres
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
@@ -35,7 +34,7 @@ object UsingPostgresArray {
   suspend fun main() {
     val postgres = EmbeddedPostgres.start()
     postgres.run("CREATE TABLE friend (firstName TEXT, lastName TEXT, nickNames TEXT[])")
-    val ctx = TerpalDriver.Postgres(
+    val ctx = DatabaseController.Postgres(
       postgres.postgresDatabase,
       JdbcEncodingConfig.Default(setOf(MyStringListEncoder), setOf(MyStringListDecoder))
     )

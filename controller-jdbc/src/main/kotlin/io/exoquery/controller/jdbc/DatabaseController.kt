@@ -11,20 +11,17 @@ import java.sql.ResultSet
 import java.sql.Types
 import javax.sql.DataSource
 
-@Deprecated("Use TerpalDriver instead", ReplaceWith("TerpalDriver"))
-typealias TerpalContext = TerpalDriver
-
 /**
  * This is the primary constructor object for Terpal JDBC drivers. It is a collection of Terpal drivers for various databases.
  */
-object TerpalDriver {
+object DatabaseController {
   /**
    * Use this for most modern postgres versions.
    */
   open class Postgres(
     override val database: DataSource,
     encodingConfig: JdbcEncodingConfig = JdbcEncodingConfig.Default
-  ): JdbcDriver(database) {
+  ): JdbcController(database) {
     override val encodingApi: JdbcSqlEncoding =
       object: JavaSqlEncoding<Connection, PreparedStatement, ResultSet>,
         BasicEncoding<Connection, PreparedStatement, ResultSet> by JdbcBasicEncoding,
@@ -52,7 +49,7 @@ object TerpalDriver {
   open class PostgresLegacy(
     override val database: DataSource,
     encodingConfig: JdbcEncodingConfig = JdbcEncodingConfig.Default
-  ): JdbcDriver(database) {
+  ): JdbcController(database) {
     override val encodingApi: JdbcSqlEncoding =
       object: JavaSqlEncoding<Connection, PreparedStatement, ResultSet>,
         BasicEncoding<Connection, PreparedStatement, ResultSet> by JdbcBasicEncoding,
@@ -71,7 +68,7 @@ object TerpalDriver {
   open class H2(
     override val database: DataSource,
     override val encodingConfig: JdbcEncodingConfig = JdbcEncodingConfig.Default
-  ): JdbcDriver(database) {
+  ): JdbcController(database) {
     override val encodingApi: JdbcSqlEncoding =
       object: JavaSqlEncoding<Connection, PreparedStatement, ResultSet>,
         BasicEncoding<Connection, PreparedStatement, ResultSet> by JdbcBasicEncoding,
@@ -84,7 +81,7 @@ object TerpalDriver {
   open class Mysql(
     override val database: DataSource,
     override val encodingConfig: JdbcEncodingConfig = JdbcEncodingConfig.Default
-    ): JdbcDriver(database) {
+    ): JdbcController(database) {
     override val encodingApi: JdbcSqlEncoding =
       object : JavaSqlEncoding<Connection, PreparedStatement, ResultSet>,
         BasicEncoding<Connection, PreparedStatement, ResultSet> by JdbcBasicEncoding,
@@ -103,7 +100,7 @@ object TerpalDriver {
   open class Sqlite(
     override val database: DataSource,
     override val encodingConfig: JdbcEncodingConfig = JdbcEncodingConfig.Default
-  ): JdbcDriver(database) {
+  ): JdbcController(database) {
     override val encodingApi: JdbcSqlEncoding =
       object : JavaSqlEncoding<Connection, PreparedStatement, ResultSet>,
         BasicEncoding<Connection, PreparedStatement, ResultSet> by JdbcBasicEncoding,
@@ -162,7 +159,7 @@ object TerpalDriver {
   open class Oracle(
     override val database: DataSource,
     override val encodingConfig: JdbcEncodingConfig = JdbcEncodingConfig.Default
-  ): JdbcDriver(database) {
+  ): JdbcController(database) {
     override val encodingApi: JdbcSqlEncoding =
       object : JavaSqlEncoding<Connection, PreparedStatement, ResultSet>,
         BasicEncoding<Connection, PreparedStatement, ResultSet> by JdbcEncodingOracle,
@@ -196,7 +193,7 @@ object TerpalDriver {
   open class SqlServer(
     override val database: DataSource,
     override val encodingConfig: JdbcEncodingConfig = JdbcEncodingConfig.Default
-  ): JdbcDriver(database) {
+  ): JdbcController(database) {
     override val encodingApi: JdbcSqlEncoding =
       object : JavaSqlEncoding<Connection, PreparedStatement, ResultSet>,
         BasicEncoding<Connection, PreparedStatement, ResultSet> by JdbcBasicEncoding,
