@@ -24,7 +24,7 @@ fun SerialDescriptor.isJsonFieldAnnotated(fieldIndex: Int) =
   this.getElementAnnotations(fieldIndex).find { it is io.exoquery.controller.SqlJsonValue } != null
 
 fun SerialDescriptor.isJsonValue() =
-  this.serialName == "io.exoquery.sql.JsonValue"
+  this.serialName == "io.exoquery.controller.JsonValue"
 
 fun <A, B> Iterable<IndexedValue<Pair<A, B>>>.flattenEach() =
   this.map {
