@@ -1,16 +1,22 @@
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 
-
 repositories {
     //mavenLocal() // Don't include this, it causes all sorts of build horror
     mavenCentral()
     mavenLocal()
 }
 
+val controllerVersion = "2.0.0"
+val pluginVersion = "2.0.0.PL"
+
+extra["controllerVersion"] = controllerVersion
+extra["pluginVersion"] = pluginVersion
+
 group = "io.exoquery"
-// Everything inherits the version from here
-version = "2.0.0.PL-1.2.0"
+// terpal-* inherits the version from here. The others override it
+version = "${pluginVersion}-${controllerVersion}"
+
 
 check("$version".isNotBlank() && version != "unspecified")
     { "invalid version $version" }

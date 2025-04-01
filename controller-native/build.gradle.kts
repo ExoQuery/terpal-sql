@@ -12,6 +12,7 @@ plugins {
   id("nativebuild")
 }
 
+version = extra["controllerVersion"].toString()
 
 // Need to disable native targets here as opposed to in `nativebuild` because gradle seems to override
 // what is there with defaults coming from `kotlin("multiplatform")` i.e. re-enabling all of the linking phases.

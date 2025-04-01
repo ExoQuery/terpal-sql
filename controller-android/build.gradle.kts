@@ -13,6 +13,8 @@ plugins {
   //id("org.jetbrains.kotlin.android") version "1.9.23"
 }
 
+version = extra["controllerVersion"].toString()
+
 configurations.forEach {
   it.exclude(group = "com.sschr15.annotations", module = "jb-annotations-kmp")
 }
@@ -53,7 +55,7 @@ kotlin {
       androidMain.dependencies {
         dependencies {
           api(project(":controller-core"))
-          
+
           api("org.jetbrains.kotlinx:kotlinx-serialization-core:1.6.2")
           api("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
           api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")

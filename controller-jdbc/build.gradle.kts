@@ -7,7 +7,7 @@ plugins {
   kotlin("plugin.serialization") version "2.1.0"
 }
 
-val thisVersion = version
+version = extra["controllerVersion"].toString()
 
 // Exclude the jb-annotations-kmp in favor of the official jebrains one (in dependencies below)
 configurations.forEach {

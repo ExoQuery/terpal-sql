@@ -9,6 +9,8 @@ plugins {
   id("nativebuild")
 }
 
+version = extra["controllerVersion"].toString()
+
 kotlin {
   jvmToolchain(17)
   jvm {

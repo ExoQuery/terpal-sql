@@ -31,6 +31,10 @@ jobs:
             # On ubuntu publish everything you can i.e. the linuxX64 and jvm binaries
             # (Need to do >- or for some reason it preserves a newline after all the entries)
             publish_command: >-
+              :controller-core:publishAllPublicationsToOss
+              :controller-jdbc:publishAllPublicationsToOss
+              :controller-native:publishAllPublicationsToOss
+              :controller-android:publishAllPublicationsToOss
               :terpal-sql-core:publishAllPublicationsToOss
               :terpal-sql-jdbc:publishAllPublicationsToOss
               :terpal-sql-native:publishAllPublicationsToOss
@@ -39,6 +43,26 @@ jobs:
           - os: macOS-latest
             # (Need to do >- or for some reason it preserves a newline after all the entries)
             publish_command: >-
+              :controller-core:publishMacosX64PublicationToOss
+              :controller-core:publishMacosArm64PublicationToOss
+              :controller-core:publishIosX64PublicationToOss
+              :controller-core:publishIosArm64PublicationToOssRepository
+              :controller-core:publishIosSimulatorArm64PublicationToOss
+              :controller-core:publishTvosX64PublicationToOss
+              :controller-core:publishTvosArm64PublicationToOss
+              :controller-core:publishWatchosX64PublicationToOss
+              :controller-core:publishWatchosArm32PublicationToOss
+              :controller-core:publishWatchosArm64PublicationToOss
+              :controller-native:publishMacosX64PublicationToOss
+              :controller-native:publishMacosArm64PublicationToOss
+              :controller-native:publishIosX64PublicationToOss
+              :controller-native:publishIosArm64PublicationToOssRepository
+              :controller-native:publishIosSimulatorArm64PublicationToOss
+              :controller-native:publishTvosX64PublicationToOss
+              :controller-native:publishTvosArm64PublicationToOss
+              :controller-native:publishWatchosX64PublicationToOss
+              :controller-native:publishWatchosArm32PublicationToOss
+              :controller-native:publishWatchosArm64PublicationToOss
               :terpal-sql-core:publishMacosX64PublicationToOss
               :terpal-sql-core:publishMacosArm64PublicationToOss
               :terpal-sql-core:publishIosX64PublicationToOss
@@ -62,6 +86,8 @@ jobs:
             platform: mac
           - os: windows-latest
             publish_command:  >-
+              :controller-core:publishMingwX64PublicationToOss
+              :controller-native:publishMingwX64PublicationToOss
               :terpal-sql-core:publishMingwX64PublicationToOss
               :terpal-sql-native:publishMingwX64PublicationToOss
             platform: windows
