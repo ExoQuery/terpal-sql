@@ -19,3 +19,5 @@ perf_test-wal
 
 build-logic/bin
 bin/
+
+nohup.out
