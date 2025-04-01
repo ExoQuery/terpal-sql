@@ -20,7 +20,7 @@ import kotlin.experimental.ExperimentalTypeInference
 data class Versions(val oldVersion: Int, val newVersion: Int)
 
 @OptIn(ExperimentalStdlibApi::class)
-class NativeDatabaseController internal constructor(
+class DatabaseController internal constructor(
   override val encodingConfig: EncodingConfig<Unused, SqliteStatementWrapper, SqliteCursorWrapper>,
   override val pool: SqliterPool,
 ): ControllerTransactional<Connection, Statement>, AutoCloseable,
@@ -49,7 +49,7 @@ class NativeDatabaseController internal constructor(
       poolingMode: PoolingMode = PoolingMode.Single,
       cacheCapacity: Int = DEFAULT_CACHE_CAPACITY,
       encodingConfig: NativeEncodingConfig = NativeEncodingConfig()
-    ): NativeDatabaseController {
+    ): DatabaseController {
       val db = createDatabaseManager(nativeConfig)
       val pool = SqliterPool(
         when (poolingMode) {
@@ -58,7 +58,7 @@ class NativeDatabaseController internal constructor(
         },
         cacheCapacity
       )
-      return NativeDatabaseController(encodingConfig, pool)
+      return DatabaseController(encodingConfig, pool)
     }
 
     fun fromSchema(
@@ -68,7 +68,7 @@ class NativeDatabaseController internal constructor(
       mode: PoolingMode = PoolingMode.Single,
       cacheCapacity: Int = DEFAULT_CACHE_CAPACITY,
       encodingConfig: NativeEncodingConfig = NativeEncodingConfig()
-    ): NativeDatabaseController {
+    ): DatabaseController {
       val nativeConfig =
         DatabaseConfiguration(
           name = dbName,
@@ -102,7 +102,7 @@ class NativeDatabaseController internal constructor(
       mode: PoolingMode = PoolingMode.Single,
       cacheCapacity: Int = DEFAULT_CACHE_CAPACITY,
       encodingConfig: NativeEncodingConfig = NativeEncodingConfig()
-    ): NativeDatabaseController {
+    ): DatabaseController {
       val nativeConfig =
         DatabaseConfiguration(
           name = dbName,
@@ -124,9 +124,9 @@ class NativeDatabaseController internal constructor(
       mode: PoolingMode = PoolingMode.Single,
       cacheCapacity: Int = DEFAULT_CACHE_CAPACITY,
       encodingConfig: NativeEncodingConfig = NativeEncodingConfig(),
-      createCallback: (NativeDatabaseController) -> Unit = {},
-      updateCallback: (NativeDatabaseController, Versions) -> Unit = { _, _ -> }
-    ): NativeDatabaseController {
+      createCallback: (DatabaseController) -> Unit = {},
+      updateCallback: (DatabaseController, Versions) -> Unit = { _, _ -> }
+    ): DatabaseController {
       val nativeConfig =
         DatabaseConfiguration(
           name = dbFileName,
@@ -143,8 +143,8 @@ class NativeDatabaseController internal constructor(
      * Create a NativeContext from a single connection. Doesn't need to be suspended because there is no effect happening.
      * The connection is already open.
      */
-    fun fromSingleConnection(conn: DatabaseConnection, encodingConfig: NativeEncodingConfig = NativeEncodingConfig()): NativeDatabaseController =
-      NativeDatabaseController(encodingConfig, SqliterPool(SqliterPoolType.Wrapped(conn), DEFAULT_CACHE_CAPACITY))
+    fun fromSingleConnection(conn: DatabaseConnection, encodingConfig: NativeEncodingConfig = NativeEncodingConfig()): DatabaseController =
+      DatabaseController(encodingConfig, SqliterPool(SqliterPoolType.Wrapped(conn), DEFAULT_CACHE_CAPACITY))
   }
 
   // Is there an open writer?

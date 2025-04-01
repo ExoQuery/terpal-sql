@@ -24,7 +24,7 @@ sealed interface WalMode {
   object Disabled: WalMode
 }
 
-class AndroidDatabaseController internal constructor(
+class DatabaseController internal constructor(
   override val encodingConfig: AndroidEncodingConfig,
   override val pool: AndroidPool,
   override val walMode: WalMode,
@@ -97,10 +97,10 @@ class AndroidDatabaseController internal constructor(
       encodingConfig: AndroidEncodingConfig = AndroidEncodingConfig.Empty(),
       useNoBackupDirectory: Boolean = false,
       windowSizeBytes: Long? = null
-    ): AndroidDatabaseController {
+    ): DatabaseController {
       val makeHelper = { makeOpenHelper(FrameworkSQLiteOpenHelperFactory(), context, databaseName, schema.asSyncCallback(), useNoBackupDirectory, poolingMode) }
       val (pool, walMode) = determinePoolingSetting(poolingMode, makeHelper, cacheCapacity)
-      return AndroidDatabaseController(encodingConfig, pool, walMode, windowSizeBytes)
+      return DatabaseController(encodingConfig, pool, walMode, windowSizeBytes)
     }
 
     fun fromApplicationContext(
@@ -113,10 +113,10 @@ class AndroidDatabaseController internal constructor(
       encodingConfig: AndroidEncodingConfig = AndroidEncodingConfig.Empty(),
       useNoBackupDirectory: Boolean = false,
       windowSizeBytes: Long? = null
-      ): AndroidDatabaseController {
+      ): DatabaseController {
       val makeHelper = { makeOpenHelper(factory, context, databaseName, callback, useNoBackupDirectory, poolingMode) }
       val (pool, walMode) = determinePoolingSetting(poolingMode, makeHelper, cacheCapacity)
-      return AndroidDatabaseController(encodingConfig, pool, walMode, windowSizeBytes)
+      return DatabaseController(encodingConfig, pool, walMode, windowSizeBytes)
     }
 
     fun fromSingleOpenHelper(
@@ -124,9 +124,9 @@ class AndroidDatabaseController internal constructor(
       cacheCapacity: Int = DEFAULT_CACHE_CAPACITY,
       encodingConfig: AndroidEncodingConfig = AndroidEncodingConfig.Empty(),
       windowSizeBytes: Long? = null
-    ): AndroidDatabaseController {
+    ): DatabaseController {
       val pool = AndroidPool.WrappedUnsafe(openHelper.writableDatabase, cacheCapacity)
-      return AndroidDatabaseController(encodingConfig, pool, WalMode.Default, windowSizeBytes)
+      return DatabaseController(encodingConfig, pool, WalMode.Default, windowSizeBytes)
     }
 
     fun fromSingleSession(
@@ -135,14 +135,14 @@ class AndroidDatabaseController internal constructor(
       cacheCapacity: Int = DEFAULT_CACHE_CAPACITY,
       encodingConfig: AndroidEncodingConfig = AndroidEncodingConfig.Empty(),
       windowSizeBytes: Long? = null
-    ): AndroidDatabaseController {
+    ): DatabaseController {
       val pool =
         if (synchronizedAccess)
           AndroidPool.Wrapped(connection, cacheCapacity)
         else
           AndroidPool.WrappedUnsafe(connection, cacheCapacity)
 
-      return AndroidDatabaseController(encodingConfig, pool, WalMode.Default, windowSizeBytes)
+      return DatabaseController(encodingConfig, pool, WalMode.Default, windowSizeBytes)
     }
   }
 
