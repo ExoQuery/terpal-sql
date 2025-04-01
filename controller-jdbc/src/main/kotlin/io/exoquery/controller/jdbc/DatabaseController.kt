@@ -107,12 +107,12 @@ object DatabaseController {
         JavaTimeEncoding<Connection, PreparedStatement, ResultSet> by JdbcTimeEncodingLegacy,
         JavaUuidEncoding<Connection, PreparedStatement, ResultSet> by JdbcUuidStringEncoding {}
 
-    protected override open suspend fun <T> runActionReturningScoped(act: ActionReturning<T>): Flow<T> =
-      flowWithConnection {
+    protected override open suspend fun <T> runActionReturningScoped(act: ActionReturning<T>, options: ExecutionOptions): Flow<T> =
+      flowWithConnection(options) {
         val conn = localConnection()
         when (act) {
           is ActionReturningId -> {
-            accessStmtReturning(act.sql, conn, act.returningColumns) { stmt ->
+            accessStmtReturning(act.sql, conn, options, act.returningColumns) { stmt ->
               prepare(stmt, conn, act.params)
               stmt.execute()
               // Mutliple columns could be returned and the user might want a specific combined type in which they are stored
@@ -123,7 +123,7 @@ object DatabaseController {
             }
           }
           is ActionReturningRow -> {
-            accessStmtReturning(act.sql, conn, act.returningColumns) { stmt ->
+            accessStmtReturning(act.sql, conn, options, act.returningColumns) { stmt ->
               prepare(stmt, conn, act.params)
               emitResultSet(conn, stmt.executeQuery(), act.resultMaker.makeExtractor<T>(QueryDebugInfo(act.sql)))
             }
@@ -131,13 +131,13 @@ object DatabaseController {
         }
       }
 
-    protected override open suspend fun <T> runBatchActionReturningScoped(act: BatchActionReturning<T>): Flow<T> =
-      flowWithConnection {
+    protected override open suspend fun <T> runBatchActionReturningScoped(act: BatchActionReturning<T>, options: ExecutionOptions): Flow<T> =
+      flowWithConnection(options) {
         val conn = localConnection()
         act.params.forEach { batch ->
           when (act) {
             is BatchActionReturningId ->
-              accessStmtReturning(act.sql, conn, emptyList()) { stmt ->
+              accessStmtReturning(act.sql, conn, options, emptyList()) { stmt ->
                 prepare(stmt, conn, batch)
                 emitResultSet(
                   conn,
@@ -145,7 +145,7 @@ object DatabaseController {
                   { conn, rs -> act.resultMaker.makeExtractor<T>(QueryDebugInfo(act.sql)).invoke(conn, rs) as T })
               }
             is BatchActionReturningRow ->
-              accessStmtReturning(act.sql, conn, act.returningColumns) { stmt ->
+              accessStmtReturning(act.sql, conn, options, act.returningColumns) { stmt ->
                 prepare(stmt, conn, batch)
                 emitResultSet(conn, stmt.executeQuery(), act.resultMaker.makeExtractor<T>(QueryDebugInfo(act.sql)))
               }
@@ -200,13 +200,13 @@ object DatabaseController {
         JavaTimeEncoding<Connection, PreparedStatement, ResultSet> by JdbcTimeEncoding(),
         JavaUuidEncoding<Connection, PreparedStatement, ResultSet> by JdbcUuidStringEncoding {}
 
-    override suspend fun <T> runActionReturningScoped(act: ActionReturning<T>): Flow<T> =
-      flowWithConnection {
+    override suspend fun <T> runActionReturningScoped(act: ActionReturning<T>, options: ExecutionOptions): Flow<T> =
+      flowWithConnection(options) {
         val conn = localConnection()
         when (act) {
           is ActionReturningId -> {
             // TODO error looks like it should be impossible!
-            accessStmtReturning(act.sql, conn, act.returningColumns) { stmt ->
+            accessStmtReturning(act.sql, conn, options, act.returningColumns) { stmt ->
               prepare(stmt, conn, act.params)
               // This is another oddity in SQL Server where the statement needs to be executed before .getGeneratedKeys() can be called.
               // If it is not used, when stmt.getGeneratedKeys() is called it will throw the following exception:
@@ -219,7 +219,7 @@ object DatabaseController {
             }
           }
           is ActionReturningRow -> {
-            accessStmtReturning(act.sql, conn, act.returningColumns) { stmt ->
+            accessStmtReturning(act.sql, conn, options, act.returningColumns) { stmt ->
               prepare(stmt, conn, act.params)
               // See comment about SQL Server not supporting getGeneratedKeys below
               emitResultSet(conn, stmt.executeQuery(), act.resultMaker.makeExtractor(QueryDebugInfo(act.sql)))
@@ -228,10 +228,10 @@ object DatabaseController {
         }
       }
 
-    override suspend fun <T> runBatchActionReturningScoped(act: BatchActionReturning<T>): Flow<T> =
-      flowWithConnection {
+    override suspend fun <T> runBatchActionReturningScoped(act: BatchActionReturning<T>, options: ExecutionOptions): Flow<T> =
+      flowWithConnection(options) {
         val conn = localConnection()
-        accessStmtReturning(act.sql, conn, listOf()) { stmt ->
+        accessStmtReturning(act.sql, conn, options, listOf()) { stmt ->
           act.params.forEach { batch ->
             prepare(stmt, conn, batch)
             // The SQL Server driver has no ability to either do getGeneratedKeys or executeQuery

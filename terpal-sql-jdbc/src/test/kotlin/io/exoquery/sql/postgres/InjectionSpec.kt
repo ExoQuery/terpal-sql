@@ -25,7 +25,7 @@ class InjectionSpec: FreeSpec({
   data class Person(val id: Int, val firstName: String, val lastName: String, val age: Int)
 
   "escapes column meant to be an injection attack" {
-    ctx.run(insert(EncodingTestEntity.regular))
+    insert(EncodingTestEntity.regular).runOn(ctx)
     val name = "'Joe'; DROP TABLE Person;"
     Sql("SELECT * FROM Person WHERE firstName = ${name}").queryOf<Person>().runOn(ctx) shouldBe listOf()
 

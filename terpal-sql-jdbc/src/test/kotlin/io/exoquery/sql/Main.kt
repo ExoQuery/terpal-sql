@@ -2,6 +2,7 @@ package io.exoquery.sql
 
 import io.exoquery.sql.jdbc.SqlBatch
 import io.exoquery.controller.jdbc.DatabaseController
+import io.exoquery.controller.runOn
 import io.zonky.test.db.postgres.embedded.EmbeddedPostgres
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
@@ -67,7 +68,7 @@ suspend fun main() {
         Person(22, Name("Jim", "Roogs"), 222, LocalDate.ofEpochDay(0))
       ).actionReturning<Person>()
 
-    val ret = ctx.run(batch)
+    val ret = batch.runOn(ctx)
     println("-------------- Inserted: ${ret}")
 
     val param = Param("Joe") //
@@ -76,7 +77,7 @@ suspend fun main() {
 
 
 
-    val result = ctx.run(query)
+    val result = query.runOn(ctx)
     //val result = ctx.run(query)
 
     println(result)

@@ -52,7 +52,7 @@ object UsingPostgresArray {
     println(sql.sql)
     println(sql.params)
 
-    val customers = ctx.run(sql)
+    val customers = sql.runOn(ctx)
     println(customers)
 
   }

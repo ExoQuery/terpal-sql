@@ -198,8 +198,8 @@ class DatabaseController internal constructor(
 
   override val encodingApi = SqliteSqlEncoding
 
-  suspend fun runActionScoped(sql: String, params: List<StatementParam<*>>): Long =
-    withConnection {
+  suspend fun runActionScoped(sql: String, params: List<StatementParam<*>>, options: ExecutionOptions): Long =
+    withConnection(options) {
       //println("------------ Running Block")
       val conn = localConnection()
       //println("------------ Got connection: $conn")
@@ -223,15 +223,15 @@ class DatabaseController internal constructor(
       }
     }
 
-  open suspend fun <T> runActionReturningScoped(act: ActionReturning<T>): Flow<T> =
-    flowWithConnection {
+  open suspend fun <T> runActionReturningScoped(act: ActionReturning<T>, options: ExecutionOptions): Flow<T> =
+    flowWithConnection(options) {
       if (!act.sql.trim().lowercase().startsWith("insert"))
         throw IllegalArgumentException("In SQLite a ActionReturning can only be an INSERT statement and it can only return a LONG generated key.")
 
       val conn = localConnection()
       when (act) {
         is ActionReturningId -> {
-          accessStmtReturning(act.sql, conn, emptyList()) { stmt ->
+          accessStmtReturning(act.sql, conn, options, emptyList()) { stmt ->
             prepare(DelightStatementWrapper(stmt), Unused, act.params)
             tryCatchQuery(act.sql) {
               val id = stmt.executeInsert()
@@ -240,7 +240,7 @@ class DatabaseController internal constructor(
           }
         }
         is ActionReturningRow -> {
-          accessStmtReturning(act.sql, conn, act.returningColumns) { stmt ->
+          accessStmtReturning(act.sql, conn, options, act.returningColumns) { stmt ->
             prepare(DelightStatementWrapper(stmt), Unused, act.params)
             tryCatchQuery(act.sql) {
               stmt.query().let { rs ->
@@ -253,8 +253,8 @@ class DatabaseController internal constructor(
       }
     }
 
-  override suspend fun <T> stream(query: Query<T>): Flow<T> =
-    flowWithConnectionReadOnly {
+  override suspend fun <T> stream(query: Query<T>, options: ExecutionOptions): Flow<T> =
+    flowWithConnectionReadOnly(options) {
       val conn = localConnection()
       accessStmt(query.sql, conn) { stmt ->
         prepare(DelightStatementWrapper(stmt), Unused, query.params)
@@ -267,8 +267,8 @@ class DatabaseController internal constructor(
       }
     }
 
-  override suspend fun <T> runRaw(query: Query<T>) =
-    withReadOnlyConnection {
+  override suspend fun <T> runRaw(query: Query<T>, options: ExecutionOptions) =
+    withReadOnlyConnection(options) {
       val conn = localConnection()
       accessStmt(query.sql, conn) { stmt ->
         prepare(DelightStatementWrapper(stmt), Unused, query.params)
@@ -285,22 +285,22 @@ class DatabaseController internal constructor(
       }
     }
 
-  open override suspend fun <T> run(query: Query<T>): List<T> = stream(query).toList()
-  open override suspend fun run(query: Action): Long = runActionScoped(query.sql, query.params)
-  open override suspend fun <T> run(query: ActionReturning<T>): T = runActionReturningScoped(query).first()
-  open override suspend fun <T> stream(query: ActionReturning<T>): Flow<T> = runActionReturningScoped(query)
+  open override suspend fun <T> run(query: Query<T>, options: ExecutionOptions): List<T> = stream(query, options).toList()
+  open override suspend fun run(query: Action, options: ExecutionOptions): Long = runActionScoped(query.sql, query.params, options)
+  open override suspend fun <T> run(query: ActionReturning<T>, options: ExecutionOptions): T = runActionReturningScoped(query, options).first()
+  open override suspend fun <T> stream(query: ActionReturning<T>, options: ExecutionOptions): Flow<T> = runActionReturningScoped(query, options)
 
-  override suspend fun run(query: BatchAction): List<Long> =
+  override suspend fun run(query: BatchAction, options: ExecutionOptions): List<Long> =
     throw IllegalArgumentException("Batch Actions are not supported in NativeContext.")
 
-  override suspend fun <T> run(query: BatchActionReturning<T>): List<T> =
+  override suspend fun <T> run(query: BatchActionReturning<T>, options: ExecutionOptions): List<T> =
     throw IllegalArgumentException("Batch Queries are not supported in NativeContext.")
 
-  override suspend fun <T> stream(query: BatchActionReturning<T>): Flow<T> =
+  override suspend fun <T> stream(query: BatchActionReturning<T>, options: ExecutionOptions): Flow<T> =
     throw IllegalArgumentException("Batch Queries are not supported in NativeContext.")
 
-  fun runRaw(sql: String) = runBlocking {
-    sql.split(";").forEach { if (it.trim().isNotEmpty()) runActionScoped(it, emptyList()) }
+  fun runRaw(sql: String, options: ExecutionOptions = ExecutionOptions()) = runBlocking {
+    sql.split(";").forEach { if (it.trim().isNotEmpty()) runActionScoped(it, emptyList(), options) }
   }
 
   override fun close() {
@@ -327,7 +327,7 @@ interface WithReadOnlyVerbs: RequiresSession<Connection, Statement> {
     return session != null && !isClosedSession(session)
   }
 
-  suspend fun <T> withReadOnlyConnection(block: suspend CoroutineScope.() -> T): T {
+  suspend fun <T> withReadOnlyConnection(options: ExecutionOptions, block: suspend CoroutineScope.() -> T): T {
     return if (coroutineContext.hasOpenReadOrWriteConnection()) {
       withContext(coroutineContext + Dispatchers.IO) { block() }
     } else {
@@ -341,7 +341,7 @@ interface WithReadOnlyVerbs: RequiresSession<Connection, Statement> {
   // Use this with select queries in the case of Sqlite because they only require read connections.
   // The other flowWithConnection summons a writer connection so it is only necessary for actions that return.
   @OptIn(ExperimentalTypeInference::class)
-  suspend fun <T> flowWithConnectionReadOnly(@BuilderInference block: suspend FlowCollector<T>.() -> Unit): Flow<T> {
+  suspend fun <T> flowWithConnectionReadOnly(options: ExecutionOptions, @BuilderInference block: suspend FlowCollector<T>.() -> Unit): Flow<T> {
     val flowInvoke = flow(block)
     // If there is any connection (including a writer) use it, otherwise create a reader
     // if we have a writer-connection already in the context use that for reading.

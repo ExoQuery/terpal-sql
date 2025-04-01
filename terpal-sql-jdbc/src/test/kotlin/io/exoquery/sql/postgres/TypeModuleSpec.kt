@@ -58,7 +58,7 @@ class TypeModuleSpec: FreeSpec ({
     val lastName = "Smith"
     val email = Email("alice.smith@someplace.com")
     Sql("INSERT INTO customers (firstName, lastName, email) VALUES ($firstName, $lastName, ${Param.withSer(email, EmailSerialzier)})").action().runOn(ctx)
-    val customers = ctx.run(Sql("SELECT * FROM customers").queryOf<Customer>())
+    val customers = Sql("SELECT * FROM customers").queryOf<Customer>().runOn(ctx)
     customers.first() shouldBe Customer(1, "Alice", "Smith", Email("alice.smith@someplace.com"))
 
     val jsonModule = SerializersModule { contextual(Email::class, JsonEmailSerialzier) }

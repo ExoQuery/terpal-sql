@@ -2,6 +2,7 @@ package io.exoquery.controller.android
 
 import androidx.sqlite.db.SupportSQLiteStatement
 import io.exoquery.controller.CoroutineSession
+import io.exoquery.controller.ExecutionOptions
 import io.exoquery.controller.RequiresSession
 import io.exoquery.controller.RequiresTransactionality
 import io.exoquery.controller.jdbc.CoroutineTransaction
@@ -19,7 +20,7 @@ interface HasSessionAndroid: RequiresSession<Connection, SupportSQLiteStatement>
   // This is the WRITER session
   // Use this for the transactor pool (that's what the RequiresTransactionality interface is for)
   // for reader connections we borrow readers
-  override suspend fun newSession(): Connection =
+  override suspend fun newSession(options: ExecutionOptions): Connection =
     prepareSession(pool.borrowWriter())
 
   fun prepareSession(session: Connection): Connection
@@ -27,7 +28,13 @@ interface HasSessionAndroid: RequiresSession<Connection, SupportSQLiteStatement>
   override fun closeSession(session: Connection): Unit = session.close()
   override fun isClosedSession(session: Connection): Boolean = !session.isOpen()
 
-   override suspend fun <R> accessStmtReturning(sql: String, conn: Connection, returningColumns: List<String>, block: suspend (SupportSQLiteStatement) -> R): R {
+   override suspend fun <R> accessStmtReturning(
+     sql: String,
+     conn: Connection,
+     options: ExecutionOptions,
+     returningColumns: List<String>,
+     block: suspend (SupportSQLiteStatement) -> R
+   ): R {
     val stmt = conn.value.createStatement(sql)
     return try {
       block(stmt)

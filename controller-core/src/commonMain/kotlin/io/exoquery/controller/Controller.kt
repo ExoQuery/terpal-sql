@@ -82,22 +82,22 @@ interface RequiresSession<Session, Stmt> {
 
   // Methods that implementors need to provide
   val sessionKey: CoroutineContext.Key<CoroutineSession<Session>>
-  abstract suspend fun newSession(): Session
+  abstract suspend fun newSession(executionOptions: ExecutionOptions): Session
   abstract fun closeSession(session: Session): Unit
   abstract fun isClosedSession(session: Session): Boolean
   suspend fun <R> accessStmt(sql: String, conn: Session, block: suspend (Stmt) -> R): R
-  suspend fun <R> accessStmtReturning(sql: String, conn: Session, returningColumns: List<String>, block: suspend (Stmt) -> R): R
+  suspend fun <R> accessStmtReturning(sql: String, conn: Session, options: ExecutionOptions, returningColumns: List<String>, block: suspend (Stmt) -> R): R
 
   fun CoroutineContext.hasOpenConnection(): Boolean {
     val session = get(sessionKey)?.session
     return session != null && !isClosedSession(session)
   }
 
-  suspend fun <T> withConnection(block: suspend CoroutineScope.() -> T): T {
+  suspend fun <T> withConnection(executionOptions: ExecutionOptions, block: suspend CoroutineScope.() -> T): T {
     return if (coroutineContext.hasOpenConnection()) {
       withContext(coroutineContext + Dispatchers.IO) { block() }
     } else {
-      val session = newSession()
+      val session = newSession(executionOptions)
       try {
         withContext(CoroutineSession(session, sessionKey) + Dispatchers.IO) { block() }
       } finally { closeSession(session) }
@@ -109,12 +109,12 @@ interface RequiresSession<Session, Stmt> {
     coroutineContext.get(sessionKey)?.session ?: error("No connection detected in withConnection scope. This should be impossible.")
 
   @OptIn(ExperimentalTypeInference::class)
-  suspend fun <T> flowWithConnection(@BuilderInference block: suspend FlowCollector<T>.() -> Unit): Flow<T> {
+  suspend fun <T> flowWithConnection(executionOptions: ExecutionOptions, @BuilderInference block: suspend FlowCollector<T>.() -> Unit): Flow<T> {
     val flowInvoke = flow(block)
     return if (coroutineContext.hasOpenConnection()) {
       flowInvoke.flowOn(CoroutineSession(localConnection(), sessionKey) + Dispatchers.IO)
     } else {
-      val session = newSession()
+      val session = newSession(executionOptions)
       flowInvoke.flowOn(CoroutineSession(session, sessionKey) + Dispatchers.IO).onCompletion { _ ->
         // It is interesting to note that in some implemenations of JDBC (e.g. MySQL) a connection will be returned to the pool
         // when transaction commit() happens (given that the actual transaction that occured BEFORE it succeeds and the commit() IO command itself succeeds).
@@ -132,12 +132,12 @@ interface RequiresSession<Session, Stmt> {
 interface RequiresTransactionality<Session, Stmt>: RequiresSession<Session, Stmt> {
   abstract suspend fun <T> runTransactionally(block: suspend CoroutineScope.() -> T): T
 
-  suspend fun <T> withTransactionScope(block: suspend CoroutineScope.() -> T): T {
+  suspend fun <T> withTransactionScope(executionOptions: ExecutionOptions, block: suspend CoroutineScope.() -> T): T {
     val existingTransaction = coroutineContext[CoroutineTransaction]
 
     return when {
       existingTransaction == null ->
-        withConnection { runTransactionally { block() } }
+        withConnection(executionOptions) { runTransactionally { block() } }
 
       // This must mean it's a transaction { stuff... transaction { ... } } so let the outer transaction do the committing
       existingTransaction.incomplete ->
@@ -148,21 +148,18 @@ interface RequiresTransactionality<Session, Stmt>: RequiresSession<Session, Stmt
   }
 }
 
-@Deprecated("Use Driver instead", ReplaceWith("Driver"))
-typealias Context = Controller
-
 @OptIn(TerpalSqlInternal::class)
 interface ControllerVerbs {
-  @OptIn(TerpalSqlInternal::class) suspend fun <T> stream(query: Query<T>): Flow<T>
-  @OptIn(TerpalSqlInternal::class) suspend fun <T> stream(query: BatchActionReturning<T>): Flow<T>
-  @OptIn(TerpalSqlInternal::class) suspend fun <T> stream(query: ActionReturning<T>): Flow<T>
-  @OptIn(TerpalSqlInternal::class) suspend fun <T> run(query: Query<T>): List<T>
-  @OptIn(TerpalSqlInternal::class) suspend fun run(query: Action): Long
-  @OptIn(TerpalSqlInternal::class) suspend fun run(query: BatchAction): List<Long>
-  @OptIn(TerpalSqlInternal::class) suspend fun <T> run(query: ActionReturning<T>): T
-  @OptIn(TerpalSqlInternal::class) suspend fun <T> run(query: BatchActionReturning<T>): List<T>
-
-  @OptIn(TerpalSqlInternal::class) suspend fun <T> runRaw(query: Query<T>): List<Pair<String, String?>>
+  suspend fun <T> stream(query: Query<T>, options: ExecutionOptions): Flow<T>
+  suspend fun <T> stream(query: BatchActionReturning<T>, options: ExecutionOptions): Flow<T>
+  suspend fun <T> stream(query: ActionReturning<T>, options: ExecutionOptions): Flow<T>
+  suspend fun <T> run(query: Query<T>, options: ExecutionOptions): List<T>
+  suspend fun run(query: Action, options: ExecutionOptions): Long
+  suspend fun run(query: BatchAction, options: ExecutionOptions): List<Long>
+  suspend fun <T> run(query: ActionReturning<T>, options: ExecutionOptions): T
+  suspend fun <T> run(query: BatchActionReturning<T>, options: ExecutionOptions): List<T>
+  
+  suspend fun <T> runRaw(query: Query<T>, options: ExecutionOptions): List<Pair<String, String?>>
 }
 
 /**
@@ -172,17 +169,20 @@ interface ControllerVerbs {
  */
 @OptIn(TerpalSqlInternal::class)
 interface Controller: ControllerVerbs {
-  suspend open fun <T> transaction(block: suspend ExternalTransactionScope.() -> T): T
+  suspend open fun <T> transaction(executionOptions: ExecutionOptions, block: suspend ExternalTransactionScope.() -> T): T
+  suspend open fun <T> transaction(block: suspend ExternalTransactionScope.() -> T): T {
+    return transaction(ExecutionOptions()) { block() }
+  }
 }
 
 @OptIn(TerpalSqlInternal::class)
 suspend fun Controller.runActions(actions: String): List<Long> =
-  actions.split(";").map { it.trim() }.filter { it.isNotEmpty() }.map { run(Action(it, listOf())) }
+  actions.split(";").map { it.trim() }.filter { it.isNotEmpty() }.map { run(Action(it, listOf()), ExecutionOptions()) }
 
 @OptIn(TerpalSqlInternal::class)
 interface ControllerTransactional<Session, Stmt>: Controller, RequiresSession<Session, Stmt>, RequiresTransactionality<Session, Stmt> {
-  suspend override open fun <T> transaction(block: suspend ExternalTransactionScope.() -> T): T =
-    withTransactionScope {
+  suspend override open fun <T> transaction(executionOptions: ExecutionOptions, block: suspend ExternalTransactionScope.() -> T): T =
+    withTransactionScope(executionOptions) {
       val coroutineScope = this
       block(ExternalTransactionScope(coroutineScope, this@ControllerTransactional))
     }
@@ -199,18 +199,18 @@ interface ControllerTransactional<Session, Stmt>: Controller, RequiresSession<Se
 interface ControllerCanonical<Session, Stmt, ResultRow>: ControllerTransactional<Session, Stmt>, RequiresSession<Session, Stmt>, RequiresTransactionality<Session, Stmt>, WithEncoding<Session, Stmt, ResultRow>
 
 class ExternalTransactionScope(private val scope: CoroutineScope, private val ctx: Controller) {
-  suspend fun <T> Query<T>.run(): List<T> = ctx.run(this)
-  suspend fun Action.run(): Long = ctx.run(this)
-  suspend fun BatchAction.run(): List<Long> = ctx.run(this)
-  suspend fun <T> ActionReturning<T>.run(): T = ctx.run(this)
-  suspend fun <T> BatchActionReturning<T>.run(): List<T> = ctx.run(this)
+  suspend fun <T> Query<T>.run(options: ExecutionOptions = ExecutionOptions()): List<T> = ctx.run(this, options)
+  suspend fun Action.run(options: ExecutionOptions = ExecutionOptions()): Long = ctx.run(this, options)
+  suspend fun BatchAction.run(options: ExecutionOptions = ExecutionOptions()): List<Long> = ctx.run(this, options)
+  suspend fun <T> ActionReturning<T>.run(options: ExecutionOptions = ExecutionOptions()): T = ctx.run(this, options)
+  suspend fun <T> BatchActionReturning<T>.run(options: ExecutionOptions = ExecutionOptions()): List<T> = ctx.run(this, options)
 }
 
-suspend fun <T> Query<T>.runOn(ctx: Controller) = ctx.run(this)
-suspend fun <T> Query<T>.streamOn(ctx: Controller) = ctx.stream(this)
-suspend fun <T> Query<T>.runRawOn(ctx: Controller) = ctx.runRaw(this)
-suspend fun Action.runOn(ctx: Controller) = ctx.run(this)
-suspend fun <T> ActionReturning<T>.runOn(ctx: Controller) = ctx.run(this)
-suspend fun BatchAction.runOn(ctx: Controller) = ctx.run(this)
-suspend fun <T> BatchActionReturning<T>.runOn(ctx: Controller) = ctx.run(this)
-suspend fun <T> BatchActionReturning<T>.streamOn(ctx: Controller) = ctx.stream(this)
+suspend fun <T> Query<T>.runOn(ctx: Controller, options: ExecutionOptions = ExecutionOptions()) = ctx.run(this, options)
+suspend fun <T> Query<T>.streamOn(ctx: Controller, options: ExecutionOptions = ExecutionOptions()) = ctx.stream(this, options)
+suspend fun <T> Query<T>.runRawOn(ctx: Controller, options: ExecutionOptions = ExecutionOptions()) = ctx.runRaw(this, options)
+suspend fun Action.runOn(ctx: Controller, options: ExecutionOptions = ExecutionOptions()) = ctx.run(this, options)
+suspend fun <T> ActionReturning<T>.runOn(ctx: Controller, options: ExecutionOptions = ExecutionOptions()) = ctx.run(this, options)
+suspend fun BatchAction.runOn(ctx: Controller, options: ExecutionOptions = ExecutionOptions()) = ctx.run(this, options)
+suspend fun <T> BatchActionReturning<T>.runOn(ctx: Controller, options: ExecutionOptions = ExecutionOptions()) = ctx.run(this, options)
+suspend fun <T> BatchActionReturning<T>.streamOn(ctx: Controller, options: ExecutionOptions = ExecutionOptions()) = ctx.stream(this, options)

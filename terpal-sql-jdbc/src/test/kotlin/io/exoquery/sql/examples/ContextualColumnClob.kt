@@ -4,6 +4,7 @@ import io.exoquery.controller.jdbc.JdbcDecoderAny
 import io.exoquery.controller.jdbc.JdbcEncoderAny
 import io.exoquery.controller.jdbc.JdbcEncodingConfig
 import io.exoquery.controller.jdbc.DatabaseController
+import io.exoquery.controller.runOn
 import io.exoquery.sql.Param
 import io.exoquery.sql.Sql
 import io.zonky.test.db.postgres.embedded.EmbeddedPostgres
@@ -45,8 +46,8 @@ object ContextualColumnClob {
     val (RED, BLUE) = "\u001B[31m" to "\u001B[34m"
     val image = ByteContent.bytesFrom(ByteArrayInputStream("${RED}Hello, ${BLUE}World!".toByteArray()))
 
-    ctx.run(Sql("INSERT INTO images (content) VALUES (${Param.contextual(image)})").action())
-    val customers = ctx.run(Sql("SELECT * FROM images").queryOf<Image>())
+    Sql("INSERT INTO images (content) VALUES (${Param.contextual(image)})").action().runOn(ctx)
+    val customers = Sql("SELECT * FROM images").queryOf<Image>().runOn(ctx)
     customers.map { println("${it.id} - ${it.content.bytes.readAllBytes().toString(Charsets.UTF_8)}") }
 
     //val module = SerializersModule { contextual(ImageFileContent::class, JdbcAnySerializer) }

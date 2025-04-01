@@ -3,6 +3,7 @@ package io.exoquery.sql.h2
 import io.exoquery.sql.Params
 import io.exoquery.sql.TestDatabases
 import io.exoquery.controller.jdbc.DatabaseController
+import io.exoquery.controller.runOn
 import io.exoquery.sql.Sql
 import io.exoquery.sql.run
 import io.kotest.core.spec.style.FreeSpec
@@ -33,7 +34,7 @@ class InQuerySpec : FreeSpec({
   "Person IN (names) - simple" {
     val sql = Sql("SELECT id, firstName, lastName, age FROM Person WHERE firstName IN ${Params("Joe", "Jim")}").queryOf<Person>()
     sql.sql shouldBe "SELECT id, firstName, lastName, age FROM Person WHERE firstName IN (?, ?)"
-    ctx.run(sql) shouldBe listOf(
+    sql.runOn(ctx) shouldBe listOf(
       Person(1, "Joe", "Bloggs", 111),
       Person(2, "Jim", "Roogs", 222)
     )
@@ -42,7 +43,7 @@ class InQuerySpec : FreeSpec({
   "Person IN (names) - single" {
     val sql = Sql("SELECT id, firstName, lastName, age FROM Person WHERE firstName IN ${Params("Joe")}").queryOf<Person>()
     sql.sql shouldBe "SELECT id, firstName, lastName, age FROM Person WHERE firstName IN (?)"
-    ctx.run(sql) shouldBe listOf(
+    sql.runOn(ctx) shouldBe listOf(
       Person(1, "Joe", "Bloggs", 111)
     )
   }
@@ -50,11 +51,11 @@ class InQuerySpec : FreeSpec({
   "Person IN (names) - empty" {
     val sql = Sql("SELECT id, firstName, lastName, age FROM Person WHERE firstName IN ${Params.empty()}").queryOf<Person>()
     sql.sql shouldBe "SELECT id, firstName, lastName, age FROM Person WHERE firstName IN (null)"
-    ctx.run(sql) shouldBe listOf()
+    sql.runOn(ctx) shouldBe listOf()
   }
 
   "Person IN (names) - empty list" {
     val names: List<String> = emptyList()
-    ctx.run(Sql("SELECT id, firstName, lastName, age FROM Person WHERE firstName IN ${Params.list(names)}").queryOf<Person>()) shouldBe listOf()
+    Sql("SELECT id, firstName, lastName, age FROM Person WHERE firstName IN ${Params.list(names)}").queryOf<Person>().runOn(ctx) shouldBe listOf()
   }
 })

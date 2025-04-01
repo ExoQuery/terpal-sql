@@ -6,6 +6,7 @@ import io.exoquery.sql.Sql
 import io.exoquery.controller.jdbc.JdbcTimeEncodingLegacy.JZonedDateTimeEncoder
 import io.exoquery.controller.jdbc.JdbcTimeEncodingLegacy.JZonedDateTimeDecoder
 import io.exoquery.controller.jdbc.DatabaseController
+import io.exoquery.controller.runOn
 import io.zonky.test.db.postgres.embedded.EmbeddedPostgres
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.KSerializer
@@ -59,8 +60,8 @@ object ContextualColumnCustom {
         )
       )
 
-    ctx.run(Sql("INSERT INTO customers (first_name, last_name, created_at) VALUES (${id("Alice")}, ${id("Smith")}, ${Param.ctx(MyDateTime(2022, 1, 2, TimeZone.getTimeZone(ZoneOffset.UTC)))})").action())
-    val customers = ctx.run(Sql("SELECT * FROM customers").queryOf<Customer>())
+    Sql("INSERT INTO customers (first_name, last_name, created_at) VALUES (${id("Alice")}, ${id("Smith")}, ${Param.ctx(MyDateTime(2022, 1, 2, TimeZone.getTimeZone(ZoneOffset.UTC)))})").action().runOn(ctx)
+    val customers = Sql("SELECT * FROM customers").queryOf<Customer>().runOn(ctx)
     val module = SerializersModule { contextual(MyDateTime::class, MyDateTimeAsStringSerialzier) }
     val json = Json { serializersModule = module }
     println(json.encodeToString(ListSerializer(Customer.serializer()), customers))

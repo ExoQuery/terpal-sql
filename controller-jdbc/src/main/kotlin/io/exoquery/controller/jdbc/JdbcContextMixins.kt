@@ -3,6 +3,8 @@ package io.exoquery.controller.jdbc
 import io.exoquery.controller.*
 import io.exoquery.controller.jdbc.CoroutineTransaction
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.withContext
 import java.sql.Connection
 import java.sql.PreparedStatement
@@ -53,16 +55,33 @@ interface HasSessionJdbc: RequiresSession<Connection, PreparedStatement> {
   val database: DataSource
 
   override val sessionKey: CoroutineContext.Key<CoroutineSession<Connection>> get() = JdbcCoroutineContext
-  override suspend open fun newSession(): Connection = database.connection
+  override suspend open fun newSession(options: ExecutionOptions): Connection = run {
+    val conn = database.connection
+    val sessionTimeout = options.sessionTimeout
+    if (sessionTimeout != null) {
+      conn.setNetworkTimeout(Dispatchers.IO.asExecutor(), sessionTimeout)
+    }
+    conn
+  }
+
   override open fun closeSession(session: Connection): Unit = session.close()
   override open fun isClosedSession(session: Connection): Boolean = session.isClosed
 
-  override open suspend fun <R> accessStmtReturning(sql: String, conn: Connection, returningColumns: List<String>, block: suspend (PreparedStatement) -> R): R {
+  override open suspend fun <R> accessStmtReturning(sql: String, conn: Connection, options: ExecutionOptions, returningColumns: List<String>, block: suspend (PreparedStatement) -> R): R {
     val stmt =
       if (returningColumns.isNotEmpty())
         conn.prepareStatement(sql, returningColumns.toTypedArray())
       else
         conn.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS)
+
+    val fetchSize = options.fetchSize
+    val queryTimeout = options.queryTimeout
+    if (fetchSize != null) {
+      stmt.fetchSize = fetchSize
+    }
+    if (queryTimeout != null) {
+      stmt.queryTimeout = queryTimeout
+    }
 
     return stmt.use { block(it) } // note stmt.use(block) doesn't work here because the inline signature of the `use` function doesn't allow it. Can use it in the anonymous-function form though
   }

@@ -37,7 +37,7 @@ object ContextualColumn {
     //INSERT INTO tableName (id) SELECT * FROM generate_series(1, 1000);
 
     // 10ms
-    val customers = ctx.run(Sql("SELECT first_name, last_name FROM customers").queryOf<Customer>())
+    val customers = Sql("SELECT first_name, last_name FROM customers").queryOf<Customer>().runOn(ctx)
 
     println(customers.size)
   }

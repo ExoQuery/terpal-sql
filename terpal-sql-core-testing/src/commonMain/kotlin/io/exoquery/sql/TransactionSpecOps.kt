@@ -2,6 +2,7 @@ package io.exoquery.sql
 
 import io.exoquery.controller.ControllerTransactional
 import io.exoquery.controller.runActions
+import io.exoquery.controller.runOn
 import io.exoquery.sql.encodingdata.shouldBe
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
@@ -35,18 +36,18 @@ class TransactionSpecOps<Session, Stmt>(
     ctx.transaction {
       insert(joe).run()
     }
-    ctx.run(select()) shouldBe listOf(joe)
+    select().runOn(ctx) shouldBe listOf(joe)
   }
 
   fun failure() = runBlocking {
-    ctx.run(insert(joe))
+    insert(joe).runOn(ctx)
     shouldThrow<IllegalStateException> {
       ctx.transaction {
         insert(jack).run()
         throw IllegalStateException()
       }
     }
-    ctx.run(select()) shouldBe listOf(joe)
+    select().runOn(ctx) shouldBe listOf(joe)
   }
 
   fun nested() = runBlocking {
@@ -55,6 +56,6 @@ class TransactionSpecOps<Session, Stmt>(
         insert(joe).run()
       }
     }
-    ctx.run(select()) shouldBe listOf(joe)
+    select().runOn(ctx) shouldBe listOf(joe)
   }
 }

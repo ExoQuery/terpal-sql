@@ -25,11 +25,11 @@ interface HasSessionNative: RequiresSession<Connection, Statement> {
   // This is the WRITER session
   // Use this for the transactor pool (that's what the RequiresTransactionality interface is for)
   // for reader connections we borrow readers
-  override suspend fun newSession(): Connection = pool.borrowWriter()
+  override suspend fun newSession(options: ExecutionOptions): Connection = pool.borrowWriter()
   override fun closeSession(session: Connection): Unit = session.close()
   override fun isClosedSession(session: Connection): Boolean = !session.isOpen()
 
-  override suspend fun <R> accessStmtReturning(sql: String, conn: Connection, returningColumns: List<String>, block: suspend (Statement) -> R): R {
+  override suspend fun <R> accessStmtReturning(sql: String, conn: Connection, options: ExecutionOptions, returningColumns: List<String>, block: suspend (Statement) -> R): R {
     val stmt = conn.value.createStatement(sql)
     return try {
       block(stmt)

@@ -61,9 +61,6 @@ data class JdbcEncodingConfig private constructor(
   }
 }
 
-@Deprecated("Use JdbcDriver instead", ReplaceWith("JdbcDriver"))
-typealias JdbcContext = JdbcController
-
 /**
  * This is a Terpal Driver, NOT a JDBC driver! It is the base class for all JDBC-based implementations of the
  * Terpal Driver base class `io.exoquery.sql.Driver`. This naming follows the conventions of SQL Delight
@@ -98,18 +95,18 @@ abstract class JdbcController internal constructor(
     }
   }
 
-  protected open suspend fun <T> runActionReturningScoped(act: ActionReturning<T>): Flow<T> =
-    flowWithConnection {
+  protected open suspend fun <T> runActionReturningScoped(act: ActionReturning<T>, options: ExecutionOptions): Flow<T> =
+    flowWithConnection(options) {
       val conn = localConnection()
-      accessStmtReturning(act.sql, conn, act.returningColumns) { stmt ->
+      accessStmtReturning(act.sql, conn, options, act.returningColumns) { stmt ->
         prepare(stmt, conn, act.params)
         stmt.executeUpdate()
         emitResultSet(conn, stmt.generatedKeys, act.resultMaker.makeExtractor(QueryDebugInfo(act.sql)))
       }
     }
 
-  protected open suspend fun runBatchActionScoped(query: BatchAction): List<Long> =
-    withConnection {
+  protected open suspend fun runBatchActionScoped(query: BatchAction, options: ExecutionOptions): List<Long> =
+    withConnection(options) {
       val conn = localConnection()
       accessStmt(query.sql, conn) { stmt ->
         // Each set of params is a batch
@@ -121,10 +118,10 @@ abstract class JdbcController internal constructor(
       }
     }
 
-  protected open suspend fun <T> runBatchActionReturningScoped(act: BatchActionReturning<T>): Flow<T> =
-    flowWithConnection {
+  protected open suspend fun <T> runBatchActionReturningScoped(act: BatchActionReturning<T>, options: ExecutionOptions): Flow<T> =
+    flowWithConnection(options) {
       val conn = localConnection()
-      accessStmtReturning(act.sql, conn, act.returningColumns) { stmt ->
+      accessStmtReturning(act.sql, conn, options, act.returningColumns) { stmt ->
         // Each set of params is a batch
         act.params.forEach { batch ->
           prepare(stmt, conn, batch)
@@ -135,8 +132,8 @@ abstract class JdbcController internal constructor(
       }
     }
 
-  protected open suspend fun runActionScoped(sql: String, params: List<StatementParam<*>>): Long =
-    withConnection {
+  protected open suspend fun runActionScoped(sql: String, params: List<StatementParam<*>>, options: ExecutionOptions): Long =
+    withConnection(options) {
       val conn = localConnection()
        accessStmt(sql, conn) { stmt ->
         prepare(stmt, conn, params)
@@ -146,8 +143,8 @@ abstract class JdbcController internal constructor(
       }
     }
 
-  override suspend fun <T> runRaw(query: Query<T>) =
-    withConnection {
+  override suspend fun <T> runRaw(query: Query<T>, options: ExecutionOptions) =
+    withConnection(options) {
       val conn = localConnection()
       accessStmt(query.sql, conn) { stmt ->
         prepare(stmt, conn, query.params)
@@ -165,8 +162,8 @@ abstract class JdbcController internal constructor(
       }
     }
 
-  override open suspend fun <T> stream(query: Query<T>): Flow<T> =
-    flowWithConnection {
+  override open suspend fun <T> stream(query: Query<T>, options: ExecutionOptions): Flow<T> =
+    flowWithConnection(options) {
       val conn = localConnection()
       accessStmt(query.sql, conn) { stmt ->
         prepare(stmt, conn, query.params)
@@ -185,11 +182,11 @@ abstract class JdbcController internal constructor(
       throw SQLException("Error executing query: ${sql}", e)
     }
 
-  override open suspend fun <T> stream(query: BatchActionReturning<T>): Flow<T> = runBatchActionReturningScoped(query)
-  override open suspend fun <T> stream(query: ActionReturning<T>): Flow<T> = runActionReturningScoped(query)
-  override open suspend fun <T> run(query: Query<T>): List<T> = stream(query).toList()
-  override open suspend fun run(query: Action): Long = runActionScoped(query.sql, query.params)
-  override open suspend fun run(query: BatchAction): List<Long> = runBatchActionScoped(query)
-  override open suspend fun <T> run(query: ActionReturning<T>): T = stream(query).first()
-  override open suspend fun <T> run(query: BatchActionReturning<T>): List<T> = stream(query).toList()
+  override open suspend fun <T> stream(query: BatchActionReturning<T>, options: ExecutionOptions): Flow<T> = runBatchActionReturningScoped(query, options)
+  override open suspend fun <T> stream(query: ActionReturning<T>, options: ExecutionOptions): Flow<T> = runActionReturningScoped(query, options)
+  override open suspend fun <T> run(query: Query<T>, options: ExecutionOptions): List<T> = stream(query, options).toList()
+  override open suspend fun run(query: Action, options: ExecutionOptions): Long = runActionScoped(query.sql, query.params, options)
+  override open suspend fun run(query: BatchAction, options: ExecutionOptions): List<Long> = runBatchActionScoped(query, options)
+  override open suspend fun <T> run(query: ActionReturning<T>, options: ExecutionOptions): T = stream(query, options).first()
+  override open suspend fun <T> run(query: BatchActionReturning<T>, options: ExecutionOptions): List<T> = stream(query, options).toList()
 }

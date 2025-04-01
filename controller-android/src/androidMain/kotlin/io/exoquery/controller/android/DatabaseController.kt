@@ -152,7 +152,7 @@ class DatabaseController internal constructor(
     return session != null && session.isWriter && !isClosedSession(session)
   }
 
-  override suspend fun <T> withConnection(block: suspend CoroutineScope.() -> T): T {
+  override suspend fun <T> withConnection(options: ExecutionOptions, block: suspend CoroutineScope.() -> T): T {
     return if (coroutineContext.hasOpenConnection()) {
       // If there is an existing connection, run it on the whatever context it was set to run on. For example,
       // when the context starts up it might use the main-thread to setup the database and only later
@@ -160,7 +160,7 @@ class DatabaseController internal constructor(
       // a deadlock (i.e. since a writer connection is already opened on the main thread.)
       withContext(coroutineContext) { block() }
     } else {
-      val session = newSession()
+      val session = newSession(options)
       try {
         withContext(CoroutineSession(session, sessionKey) + Dispatchers.IO) { block() }
       } finally {
@@ -169,7 +169,7 @@ class DatabaseController internal constructor(
     }
   }
 
-  suspend fun <T> withConnectionLabel(label: String?, block: suspend CoroutineScope.() -> T): T {
+  suspend fun <T> withConnectionLabel(label: String?, options: ExecutionOptions, block: suspend CoroutineScope.() -> T): T {
     return if (coroutineContext.hasOpenConnection()) {
       // If there is an existing connection, run it on the whatever context it was set to run on. For example,
       // when the context starts up it might use the main-thread to setup the database and only later
@@ -177,7 +177,7 @@ class DatabaseController internal constructor(
       // a deadlock (i.e. since a writer connection is already opened on the main thread.)
       withContext(coroutineContext) { block() }
     } else {
-      val session = newSession()
+      val session = newSession(options)
       try {
         withContext(CoroutineSession(session, sessionKey) + Dispatchers.IO) { block() }
       } finally { closeSession(session) }
@@ -226,8 +226,8 @@ class DatabaseController internal constructor(
 
   protected fun wrap(stmt: SupportSQLiteStatement) = AndroidxStatementWrapper(stmt)
 
-  suspend fun runActionScoped(sql: String, params: List<StatementParam<*>>): Long =
-    withConnection {
+  suspend fun runActionScoped(sql: String, options: ExecutionOptions, params: List<StatementParam<*>>): Long =
+    withConnection(options) {
       val conn = localConnection()
       accessStmt(sql, conn) { stmt ->
         prepare(wrap(stmt), Unused, params)
@@ -245,8 +245,8 @@ class DatabaseController internal constructor(
       }
     }
 
-  open suspend fun <T> runActionReturningScoped(act: ActionReturning<T>): Flow<T> =
-    flowWithConnection {
+  open suspend fun <T> runActionReturningScoped(act: ActionReturning<T>, options: ExecutionOptions): Flow<T> =
+    flowWithConnection(options) {
       if (!act.sql.trim().lowercase().startsWith("insert"))
         throw IllegalArgumentException("In SQLite a ActionReturning can only be an INSERT statement.")
 
@@ -288,8 +288,8 @@ class DatabaseController internal constructor(
     return SimpleSQLiteQuery(this.sql, queryParams.array)
   }
 
-  override suspend fun <T> stream(query: Query<T>): Flow<T> =
-    flowWithConnectionReadOnly {
+  override suspend fun <T> stream(query: Query<T>, options: ExecutionOptions): Flow<T> =
+    flowWithConnectionReadOnly(options) {
       val conn = localConnection()
       val queryParams = AndroidxArrayWrapper(query.params.size)
       // No caching used here, get the session directly
@@ -303,8 +303,8 @@ class DatabaseController internal constructor(
       }
     }
 
-  suspend fun <T> streamRaw(query: Query<T>): Flow<T> =
-    flowWithConnectionReadOnly {
+  suspend fun <T> streamRaw(query: Query<T>, options: ExecutionOptions): Flow<T> =
+    flowWithConnectionReadOnly(options) {
       val conn = localConnection()
       val queryParams = AndroidxArrayWrapper(query.params.size)
       // No caching used here, get the session directly
@@ -317,8 +317,8 @@ class DatabaseController internal constructor(
       }
     }
 
-  override suspend fun <T> runRaw(query: Query<T>) =
-    withConnection {
+  override suspend fun <T> runRaw(query: Query<T>, options: ExecutionOptions) =
+    withConnection(options) {
       val conn = localConnection()
       val result = mutableListOf<Pair<String, String?>>()
       tryCatchQuery(query.sql) {
@@ -332,8 +332,8 @@ class DatabaseController internal constructor(
       result
     }
 
-  override open suspend fun <T> run(query: Query<T>): List<T> = run {
-    withReadOnlyConnection() {
+  override open suspend fun <T> run(query: Query<T>, options: ExecutionOptions): List<T> = run {
+    withReadOnlyConnection(options) {
       val conn = localConnection()
       val result = mutableListOf<T>()
       // No caching used here, get the session directly
@@ -351,21 +351,21 @@ class DatabaseController internal constructor(
     }
   }
 
-  open override suspend fun run(query: Action): Long = runActionScoped(query.sql, query.params)
-  open override suspend fun <T> run(query: ActionReturning<T>): T = runActionReturningScoped(query).first()
-  open override suspend fun <T> stream(query: ActionReturning<T>): Flow<T> = runActionReturningScoped(query)
+  open override suspend fun run(query: Action, options: ExecutionOptions): Long = runActionScoped(query.sql, options, query.params)
+  open override suspend fun <T> run(query: ActionReturning<T>, options: ExecutionOptions): T = runActionReturningScoped(query, options).first()
+  open override suspend fun <T> stream(query: ActionReturning<T>, options: ExecutionOptions): Flow<T> = runActionReturningScoped(query, options)
 
-  override suspend fun run(query: BatchAction): List<Long> =
+  override suspend fun run(query: BatchAction, options: ExecutionOptions): List<Long> =
     throw IllegalArgumentException("Batch Actions are not supported in NativeContext.")
 
-  override suspend fun <T> run(query: BatchActionReturning<T>): List<T> =
+  override suspend fun <T> run(query: BatchActionReturning<T>, options: ExecutionOptions): List<T> =
     throw IllegalArgumentException("Batch Queries are not supported in NativeContext.")
 
-  override suspend fun <T> stream(query: BatchActionReturning<T>): Flow<T> =
+  override suspend fun <T> stream(query: BatchActionReturning<T>, options: ExecutionOptions): Flow<T> =
     throw IllegalArgumentException("Batch Queries are not supported in NativeContext.")
 
-  fun runRaw(sql: String) = runBlocking {
-    sql.split(";").forEach { if (it.trim().isNotEmpty()) runActionScoped(it, emptyList()) }
+  fun runRaw(sql: String, options: ExecutionOptions = ExecutionOptions()) = runBlocking {
+    sql.split(";").forEach { if (it.trim().isNotEmpty()) runActionScoped(it, options, emptyList()) }
   }
 
   override fun close() =
@@ -385,7 +385,7 @@ interface WithReadOnlyVerbs: RequiresSession<Connection, SupportSQLiteStatement>
 
   fun prepareSession(session: Connection): Connection
 
-  suspend fun newReadOnlySession(label: String? = null): Connection =
+  suspend fun newReadOnlySession(options: ExecutionOptions, label: String? = null): Connection =
     prepareSession(pool.borrowReader())
 
   // Check if there is at least a reader on th context, if it has a writer that's fine too
@@ -394,7 +394,7 @@ interface WithReadOnlyVerbs: RequiresSession<Connection, SupportSQLiteStatement>
     return session != null && !isClosedSession(session)
   }
 
-  suspend fun <T> withReadOnlyConnection(block: suspend CoroutineScope.() -> T): T {
+  suspend fun <T> withReadOnlyConnection(options: ExecutionOptions, block: suspend CoroutineScope.() -> T): T {
     return if (coroutineContext.hasOpenReadOrWriteConnection()) {
       // If there is an existing connection, run it on the whatever context it was set to run on. For example,
       // when the context starts up it might use the main-thread to setup the database and only later
@@ -402,7 +402,7 @@ interface WithReadOnlyVerbs: RequiresSession<Connection, SupportSQLiteStatement>
       // a deadlock (i.e. since a writer connection is already opened on the main thread.)
       withContext(coroutineContext) { block() }
     } else {
-      val session = newReadOnlySession()
+      val session = newReadOnlySession(options)
       try {
         withContext(CoroutineSession(session, sessionKey) + Dispatchers.IO) { block() }
       } finally {
@@ -414,7 +414,7 @@ interface WithReadOnlyVerbs: RequiresSession<Connection, SupportSQLiteStatement>
   // Use this with select queries in the case of Sqlite because they only require read connections.
   // The other flowWithConnection summons a writer connection so it is only necessary for actions that return.
   @OptIn(ExperimentalTypeInference::class)
-  suspend fun <T> flowWithConnectionReadOnly(@BuilderInference block: suspend FlowCollector<T>.() -> Unit): Flow<T> {
+  suspend fun <T> flowWithConnectionReadOnly(options: ExecutionOptions, @BuilderInference block: suspend FlowCollector<T>.() -> Unit): Flow<T> {
     val flowInvoke = flow(block)
     // If there is any connection (including a writer) use it, otherwise create a reader
     // if we have a writer-connection already in the context use that for reading.
@@ -422,7 +422,7 @@ interface WithReadOnlyVerbs: RequiresSession<Connection, SupportSQLiteStatement>
       // Flows need to have their own context
       flowInvoke.flowOn(CoroutineSession(localConnection(), sessionKey))
     } else {
-      val session = newReadOnlySession()
+      val session = newReadOnlySession(options)
       flowInvoke.flowOn(CoroutineSession(session, sessionKey) + Dispatchers.IO).onCompletion { _ ->
         closeSession(session)
       }

@@ -2,6 +2,7 @@ package io.exoquery.sql.examples
 
 import io.exoquery.sql.Sql
 import io.exoquery.controller.jdbc.DatabaseController
+import io.exoquery.controller.runOn
 import io.zonky.test.db.postgres.embedded.EmbeddedPostgres
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.KSerializer
@@ -52,8 +53,8 @@ object PlayingWell_RowSurrogate {
     val postgres = EmbeddedPostgres.start()
     postgres.run("CREATE TABLE customers (id SERIAL PRIMARY KEY, first_name TEXT, last_name TEXT, created_at DATE)")
     val ctx = DatabaseController.Postgres(postgres.postgresDatabase)
-    ctx.run(Sql("INSERT INTO customers (first_name, last_name, created_at) VALUES (${id("Alice")}, ${id("Smith")}, ${id(LocalDate.of(2021, 1, 1))})").action())
-    val customers = ctx.run(Sql("SELECT * FROM customers").queryOf<Customer>(CustomerSurrogateSerializer))
+    Sql("INSERT INTO customers (first_name, last_name, created_at) VALUES (${id("Alice")}, ${id("Smith")}, ${id(LocalDate.of(2021, 1, 1))})").action().runOn(ctx)
+    val customers = Sql("SELECT * FROM customers").queryOf<Customer>(CustomerSurrogateSerializer).runOn(ctx)
     println(Json.encodeToString(ListSerializer(Customer.serializer()), customers))
   }
 }

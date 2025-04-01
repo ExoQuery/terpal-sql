@@ -3,6 +3,8 @@ package io.exoquery.sql
 import io.exoquery.controller.Action
 import io.exoquery.controller.ControllerTransactional
 import io.exoquery.controller.Query
+import io.exoquery.controller.runOn
+import io.exoquery.controller.streamOn
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.count
@@ -88,8 +90,8 @@ class WallPerformanceTest<Session, Stmt>(
           val (result, currFinished) = driver.transaction {
             var out: List<Perf> = listOf()
             for (i in interval.start..interval.end) {
-              driver.run(writerQuery(i))
-              out = driver.run(readerQuery(i, i)) //, "Writeback Reader (${writerNum}) ${i}"
+              writerQuery(i).runOn(driver)
+              out = readerQuery(i, i).runOn(driver) //, "Writeback Reader (${writerNum}) ${i}"
             }
             out to writersFinished.incrementAndGet()
           }
@@ -105,7 +107,7 @@ class WallPerformanceTest<Session, Stmt>(
         launch {
           activeReaders.incrementAndGet()
           val readerNum = readCount.incrementAndGet()
-          val result = driver.run(readerQuery(interval.start, interval.end))
+          val result = readerQuery(interval.start, interval.end).runOn(driver)
           activeReaders.decrementAndGet()
           println("----- Reader Finished #${readerNum} Query: ${interval.start}-${interval.end} - ${result.firstOrNull()} ------")
         }
@@ -157,7 +159,7 @@ class WallPerformanceTest<Session, Stmt>(
 
       println("---------------- Calculating Results ----------------")
 
-      val modifiedRows = driver.stream(readerQueryFinal).filter { it.age == 1 }.count()
+      val modifiedRows = readerQueryFinal.streamOn(driver).filter { it.age == 1 }.count()
       val stats = "(Writers:${intervalList.size}, Readers:${readersFinishedDuringWrites})"
       if (modifiedRows == maxRow) {
         val outputMsg = "----- All rows modified successfully in ${timeTaken} $stats ------"

@@ -52,7 +52,7 @@ object NewtypeColumnContextual_DifferentEncoders {
     val lastName = "Smith"
     val email = Email("alice.smith@someplace.com")
     Sql("INSERT INTO customers (firstName, lastName, email) VALUES ($firstName, $lastName, ${Param.withSer(email, EmailSerialzier)})").action().runOn(ctx)
-    val customers = ctx.run(Sql("SELECT * FROM customers").queryOf<Customer>())
+    val customers = Sql("SELECT * FROM customers").queryOf<Customer>().runOn(ctx)
     println(customers)
 
     val jsonModule = SerializersModule { contextual(Email::class, JsonEmailSerialzier) }

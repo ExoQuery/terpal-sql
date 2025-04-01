@@ -17,8 +17,8 @@ class EncodingSpec {
 
   @Test
   fun `encodes and decodes nullables - not nulls`() = runBlocking {
-    ctx.run(insert(EncodingTestEntity.regular))
-    val res = ctx.run(Sql("SELECT * FROM EncodingTestEntity").queryOf<EncodingTestEntity>())
+    insert(EncodingTestEntity.regular).runOn(ctx)
+    val res = Sql("SELECT * FROM EncodingTestEntity").queryOf<EncodingTestEntity>().runOn(ctx)
     verify(res.first(), EncodingTestEntity.regular)
   }
 
@@ -42,8 +42,8 @@ class EncodingSpec {
   @Test
   fun `"Encode Decode KMP Types"`() = runBlocking {
     Sql("DELETE FROM KmpTestEntity").action().runOn(ctx)
-    ctx.run(insert(KmpTestEntity.regular))
-    val actual = ctx.run(Sql("SELECT * FROM KmpTestEntity").queryOf<KmpTestEntity>()).first()
+    insert(KmpTestEntity.regular).runOn(ctx)
+    val actual = Sql("SELECT * FROM KmpTestEntity").queryOf<KmpTestEntity>().runOn(ctx).first()
     verify(actual, KmpTestEntity.regular)
   }
 }

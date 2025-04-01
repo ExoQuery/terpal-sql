@@ -17,8 +17,8 @@ class EncodingSpec: FreeSpec({
   }
 
   "encodes and decodes nullables - not nulls" {
-    ctx.run(insert(EncodingTestEntity.regular))
-    val res = ctx.run(Sql("SELECT * FROM EncodingTestEntity").queryOf<EncodingTestEntity>())
+    insert(EncodingTestEntity.regular).runOn(ctx)
+    val res = Sql("SELECT * FROM EncodingTestEntity").queryOf<EncodingTestEntity>().runOn(ctx)
     verify(res.first(), EncodingTestEntity.regular)
   }
 
@@ -35,46 +35,45 @@ class EncodingSpec: FreeSpec({
     verify(res.first(), EncodingTestEntity.empty)
   }
 
-  "Encode/Decode Additional Java Types - regular" {
+  "encodes and decodes Java types" {
     Sql("DELETE FROM JavaTestEntity").action().runOn(ctx)
-    ctx.run(insert(JavaTestEntity.regular))
-    val actual = ctx.run(Sql("SELECT * FROM JavaTestEntity").queryOf<JavaTestEntity>()).first()
+    insert(JavaTestEntity.regular).runOn(ctx)
+    val actual = Sql("SELECT * FROM JavaTestEntity").queryOf<JavaTestEntity>().runOn(ctx).first()
     verify(actual, JavaTestEntity.regular)
   }
 
-  "Encode/Decode Additional Java Types - empty" {
+  "encodes and decodes Java types - empty" {
     Sql("DELETE FROM JavaTestEntity").action().runOn(ctx)
-    ctx.run(insert(JavaTestEntity.empty))
-    val actual = ctx.run(Sql("SELECT * FROM JavaTestEntity").queryOf<JavaTestEntity>()).first()
+    insert(JavaTestEntity.empty).runOn(ctx)
+    val actual = Sql("SELECT * FROM JavaTestEntity").queryOf<JavaTestEntity>().runOn(ctx).first()
     verify(actual, JavaTestEntity.empty)
   }
 
-  "Encode/Decode KMP Types" {
+  "encodes and decodes KMP types" {
     Sql("DELETE FROM KmpTestEntity").action().runOn(ctx)
-    ctx.run(insert(KmpTestEntity.regular))
-    val actual = ctx.run(Sql("SELECT * FROM KmpTestEntity").queryOf<KmpTestEntity>()).first()
+    insert(KmpTestEntity.regular).runOn(ctx)
+    val actual = Sql("SELECT * FROM KmpTestEntity").queryOf<KmpTestEntity>().runOn(ctx).first()
     verify(actual, KmpTestEntity.regular)
   }
 
-  "Encode/Decode Other Time Types" {
+  "encodes and decodes time types" {
     Sql("DELETE FROM TimeEntity").action().runOn(ctx)
     val zid = ZoneId.systemDefault()
     val timeEntity = TimeEntity.make(zid)
-    ctx.run(insert(timeEntity))
-    val actual = ctx.run(Sql("SELECT * FROM TimeEntity").queryOf<TimeEntity>()).first()
+    insert(timeEntity).runOn(ctx)
+    val actual = Sql("SELECT * FROM TimeEntity").queryOf<TimeEntity>().runOn(ctx).first()
     assert(timeEntity == actual)
   }
 
-  "Encode/Decode Other Time Types ordering" {
+  "encodes and decodes time types - multiple" {
     Sql("DELETE FROM TimeEntity").action().runOn(ctx)
-
     val zid = ZoneId.systemDefault()
     val timeEntityA = TimeEntity.make(zid, TimeEntity.TimeEntityInput(2022, 1, 1, 1, 1, 1, 0))
     val timeEntityB = TimeEntity.make(zid, TimeEntity.TimeEntityInput(2022, 2, 2, 2, 2, 2, 0))
 
     // Importing extras messes around with the quto-quote, need to look into why
-    ctx.run(insert(timeEntityA))
-    ctx.run(insert(timeEntityB))
+    insert(timeEntityA).runOn(ctx)
+    insert(timeEntityB).runOn(ctx)
 
     assert(timeEntityB.sqlDate > timeEntityA.sqlDate)
     assert(timeEntityB.sqlTime > timeEntityA.sqlTime)
@@ -107,6 +106,5 @@ class EncodingSpec: FreeSpec({
 
     assert(actual == timeEntityB)
   }
-
 
 })
