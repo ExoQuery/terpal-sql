@@ -48,7 +48,7 @@ kotlin {
       binaries.configureEach {
         // we only need to link sqlite for the test binaries
         if (outputKind == NativeOutputKind.TEST) {
-          linkerOpts += listOf("-Lc:\\msys64\\mingw64\\lib", "-L$rootDir\\libs\\windows".toString(), "-lsqlite3")
+          linkerOpts += listOf("-v", "-Lc:\\msys64\\mingw64\\lib", "-L$rootDir\\libs\\windows".toString(), "-lsqlite3")
         }
       }
     }
