@@ -26,33 +26,33 @@ kotlin {
 
   val thisVersion = version
 
-  if (HostManager.hostIsLinux) {
-    linuxX64 {
-      compilations.configureEach {
-        if (name == "test") {
-          cinterops {
-            val sqlite by creating {
-              // use sqlite3 amalgamation on linux tests to prevent linking issues on new linux distros with dependency libraries which are too recent (for example glibc)
-              // see: https://github.com/touchlab/SQLiter/pull/38#issuecomment-867171789
-              println("------ Using sqlite3 amalgamation for linux tests: $rootDir/libs/linux/cinterop/sqlite3.def (exists: ${file("$rootDir/libs/linux/cinterop/sqlite3.def").exists()}) ------")
-              defFile = file("$rootDir/libs/linux/cinterop/sqlite3.def")
-            }
-          }
-        }
-      }
-    }
-  }
-
-  if (HostManager.hostIsMingw) {
-    mingwX64 {
-      binaries.configureEach {
-        // we only need to link sqlite for the test binaries
-        if (outputKind == NativeOutputKind.TEST) {
-          linkerOpts += listOf("-Lc:\\msys64\\mingw64\\lib", "-L$rootDir\\libs\\windows".toString(), "-lsqlite3")
-        }
-      }
-    }
-  }
+//  if (HostManager.hostIsLinux) {
+//    linuxX64 {
+//      compilations.configureEach {
+//        if (name == "test") {
+//          cinterops {
+//            val sqlite by creating {
+//              // use sqlite3 amalgamation on linux tests to prevent linking issues on new linux distros with dependency libraries which are too recent (for example glibc)
+//              // see: https://github.com/touchlab/SQLiter/pull/38#issuecomment-867171789
+//              println("------ Using sqlite3 amalgamation for linux tests: $rootDir/libs/linux/cinterop/sqlite3.def (exists: ${file("$rootDir/libs/linux/cinterop/sqlite3.def").exists()}) ------")
+//              defFile = file("$rootDir/libs/linux/cinterop/sqlite3.def")
+//            }
+//          }
+//        }
+//      }
+//    }
+//  }
+//
+//  if (HostManager.hostIsMingw) {
+//    mingwX64 {
+//      binaries.configureEach {
+//        // we only need to link sqlite for the test binaries
+//        if (outputKind == NativeOutputKind.TEST) {
+//          linkerOpts += listOf("-Lc:\\msys64\\mingw64\\lib", "-L$rootDir\\libs\\windows".toString(), "-lsqlite3")
+//        }
+//      }
+//    }
+//  }
 
   configure(targets.withType<KotlinNativeTarget>().filter {
     listOf(
