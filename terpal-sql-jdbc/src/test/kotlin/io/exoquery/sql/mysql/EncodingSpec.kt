@@ -3,14 +3,14 @@ package io.exoquery.sql.mysql
 import io.exoquery.sql.*
 import io.exoquery.sql.encodingdata.*
 import io.exoquery.sql.Sql
-import io.exoquery.controller.jdbc.DatabaseController
+import io.exoquery.controller.jdbc.JdbcControllers
 import io.exoquery.controller.runOn
 import io.kotest.core.spec.style.FreeSpec
 import java.time.ZoneId
 
 class EncodingSpec: FreeSpec({
   val ds = TestDatabases.mysql
-  val ctx by lazy { DatabaseController.Mysql(ds, encodingConfig) }
+  val ctx by lazy { JdbcControllers.Mysql(ds, encodingConfig) }
 
   beforeEach {
     ds.run("DELETE FROM EncodingTestEntity")

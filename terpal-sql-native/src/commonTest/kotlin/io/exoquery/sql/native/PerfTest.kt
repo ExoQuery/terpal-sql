@@ -1,7 +1,7 @@
 package io.exoquery.sql.native
 
 import co.touchlab.sqliter.DatabaseFileContext.deleteDatabase
-import io.exoquery.controller.native.DatabaseController
+import io.exoquery.controller.native.NativeDatabaseController
 import io.exoquery.sql.*
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Ignore
@@ -20,7 +20,7 @@ class PerfTest {
     val schema = PerfSchema(maxRow)
     deleteDatabase(name, basePath)
     runBlocking {
-      val driver = DatabaseController.fromSchema(schema, name, basePath, DatabaseController.PoolingMode.Multiple(10))
+      val driver = NativeDatabaseController.fromSchema(schema, name, basePath, NativeDatabaseController.PoolingMode.Multiple(10))
       driver.runRaw(schema.clearQuery)
       driver.runRaw(schema.loadQuery)
       WallPerformanceTest(driver, maxRow).walPerfTest()

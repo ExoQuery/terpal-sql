@@ -3,7 +3,7 @@ package io.exoquery.sql.examples
 import io.exoquery.controller.jdbc.JdbcDecoderAny
 import io.exoquery.controller.jdbc.JdbcEncoderAny
 import io.exoquery.controller.jdbc.JdbcEncodingConfig
-import io.exoquery.controller.jdbc.DatabaseController
+import io.exoquery.controller.jdbc.JdbcControllers
 import io.exoquery.controller.runOn
 import io.exoquery.sql.Param
 import io.exoquery.sql.Sql
@@ -30,7 +30,7 @@ object ContextualColumnClob {
     val postgres = EmbeddedPostgres.start()
     postgres.run("CREATE TABLE images (id SERIAL PRIMARY KEY, content BYTEA)")
 
-    val ctx = DatabaseController.Postgres(
+    val ctx = JdbcControllers.Postgres(
       postgres.postgresDatabase,
       JdbcEncodingConfig(
         setOf(JdbcEncoderAny(Types.BLOB, ByteContent::class) { ctx, v: ByteContent, i ->

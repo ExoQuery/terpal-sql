@@ -27,7 +27,7 @@ fun <T> TerpalSchema<T>.asSyncCallback(): SupportSQLiteOpenHelper.Callback {
       // Run the schema creation in a context. It is not enough to just create a session with this connection,
       // we need to actually do so that in the runActionScoped block it will know there is an existing connection
       // on the coroutine context and not attempt to create a new one.
-      val ctx = DatabaseController.fromSingleSession(db)
+      val ctx = AndroidDatabaseController.fromSingleSession(db)
       runBlocking(Dispatchers.Unconfined) {
         // Note that since this needs to be run on the caller thread (of the code that is calling db.writableDatabase,
         // adding `+ Dispatchers.IO` to this context will shift the context away from that and cause a deadlock.
@@ -38,7 +38,7 @@ fun <T> TerpalSchema<T>.asSyncCallback(): SupportSQLiteOpenHelper.Callback {
     }
 
     override fun onUpgrade(db: SupportSQLiteDatabase, oldVersion: Int, newVersion: Int) {
-      val ctx = DatabaseController.fromSingleSession(db)
+      val ctx = AndroidDatabaseController.fromSingleSession(db)
       runBlocking { schema.migrate(ctx, oldVersion.toLong(), newVersion.toLong()) }
     }
   }

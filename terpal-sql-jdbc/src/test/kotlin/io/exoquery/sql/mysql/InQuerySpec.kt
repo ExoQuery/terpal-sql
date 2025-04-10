@@ -2,7 +2,7 @@ package io.exoquery.sql.mysql
 
 import io.exoquery.sql.Params
 import io.exoquery.sql.TestDatabases
-import io.exoquery.controller.jdbc.DatabaseController
+import io.exoquery.controller.jdbc.JdbcControllers
 import io.exoquery.controller.runOn
 import io.exoquery.sql.Sql
 import io.exoquery.sql.run
@@ -13,7 +13,7 @@ import kotlinx.serialization.Serializable
 class InQuerySpec : FreeSpec({
 
   val ds = TestDatabases.mysql
-  val ctx by lazy { DatabaseController.Mysql(ds)  }
+  val ctx by lazy { JdbcControllers.Mysql(ds)  }
 
   @Serializable
   data class Person(val id: Int, val firstName: String, val lastName: String, val age: Int)

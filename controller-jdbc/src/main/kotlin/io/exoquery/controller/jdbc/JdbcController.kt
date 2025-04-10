@@ -9,6 +9,7 @@ import javax.sql.DataSource
 import kotlinx.datetime.TimeZone
 import java.sql.*
 
+
 /**
  * Most constructions will want to specify default values from AdditionalJdbcEncoding for additionalEncoders/decoders,
  * and they should have a simple construction JdbcEncodingConfig(...). Use `Empty` to make a config that does not
@@ -71,10 +72,12 @@ data class JdbcEncodingConfig private constructor(
  */
 abstract class JdbcController internal constructor(
   override open val database: DataSource,
-): ControllerCanonical<Connection, PreparedStatement, ResultSet>,
+): ControllerCanonical<Connection, PreparedStatement, ResultSet, JdbcExecutionOptions>,
   WithEncoding<Connection, PreparedStatement, ResultSet>,
   HasTransactionalityJdbc
 {
+  override fun DefaultOpts(): JdbcExecutionOptions = JdbcExecutionOptions.Default()
+
   // use a lazy val here so they don't need to be recalculated every time
   override val allEncoders: Set<SqlEncoder<Connection, PreparedStatement, out Any>> by lazy { encodingApi.computeEncoders() + encodingConfig.additionalEncoders }
   override val allDecoders: Set<SqlDecoder<Connection, ResultSet, out Any>> by lazy { encodingApi.computeDecoders() + encodingConfig.additionalDecoders }
@@ -95,17 +98,17 @@ abstract class JdbcController internal constructor(
     }
   }
 
-  protected open suspend fun <T> runActionReturningScoped(act: ActionReturning<T>, options: ExecutionOptions): Flow<T> =
+  protected open suspend fun <T> runActionReturningScoped(act: ActionReturning<T>, options: JdbcExecutionOptions): Flow<T> =
     flowWithConnection(options) {
       val conn = localConnection()
       accessStmtReturning(act.sql, conn, options, act.returningColumns) { stmt ->
         prepare(stmt, conn, act.params)
         stmt.executeUpdate()
-        emitResultSet(conn, stmt.generatedKeys, act.resultMaker.makeExtractor(QueryDebugInfo(act.sql)))
+        emitResultSet(conn, options.prepareResult(stmt.generatedKeys), act.resultMaker.makeExtractor(QueryDebugInfo(act.sql)))
       }
     }
 
-  protected open suspend fun runBatchActionScoped(query: BatchAction, options: ExecutionOptions): List<Long> =
+  protected open suspend fun runBatchActionScoped(query: BatchAction, options: JdbcExecutionOptions): List<Long> =
     withConnection(options) {
       val conn = localConnection()
       accessStmt(query.sql, conn) { stmt ->
@@ -118,7 +121,7 @@ abstract class JdbcController internal constructor(
       }
     }
 
-  protected open suspend fun <T> runBatchActionReturningScoped(act: BatchActionReturning<T>, options: ExecutionOptions): Flow<T> =
+  protected open suspend fun <T> runBatchActionReturningScoped(act: BatchActionReturning<T>, options: JdbcExecutionOptions): Flow<T> =
     flowWithConnection(options) {
       val conn = localConnection()
       accessStmtReturning(act.sql, conn, options, act.returningColumns) { stmt ->
@@ -128,11 +131,11 @@ abstract class JdbcController internal constructor(
           stmt.addBatch()
         }
         stmt.executeBatch()
-        emitResultSet(conn, stmt.generatedKeys, act.resultMaker.makeExtractor(QueryDebugInfo(act.sql)))
+        emitResultSet(conn, options.prepareResult(stmt.generatedKeys), act.resultMaker.makeExtractor(QueryDebugInfo(act.sql)))
       }
     }
 
-  protected open suspend fun runActionScoped(sql: String, params: List<StatementParam<*>>, options: ExecutionOptions): Long =
+  protected open suspend fun runActionScoped(sql: String, params: List<StatementParam<*>>, options: JdbcExecutionOptions): Long =
     withConnection(options) {
       val conn = localConnection()
        accessStmt(sql, conn) { stmt ->
@@ -143,14 +146,14 @@ abstract class JdbcController internal constructor(
       }
     }
 
-  override suspend fun <T> runRaw(query: Query<T>, options: ExecutionOptions) =
+  override suspend fun <T> runRaw(query: Query<T>, options: JdbcExecutionOptions) =
     withConnection(options) {
       val conn = localConnection()
       accessStmt(query.sql, conn) { stmt ->
         prepare(stmt, conn, query.params)
         val result = mutableListOf<Pair<String, String?>>()
         tryCatchQuery(query.sql) {
-          stmt.executeQuery().use { rs ->
+          options.prepareResult(stmt.executeQuery()).use { rs ->
             rs.next()
             val meta = rs.metaData
             for (i in 1..meta.columnCount) {
@@ -162,13 +165,13 @@ abstract class JdbcController internal constructor(
       }
     }
 
-  override open suspend fun <T> stream(query: Query<T>, options: ExecutionOptions): Flow<T> =
+  override open suspend fun <T> stream(query: Query<T>, options: JdbcExecutionOptions): Flow<T> =
     flowWithConnection(options) {
       val conn = localConnection()
       accessStmt(query.sql, conn) { stmt ->
         prepare(stmt, conn, query.params)
         tryCatchQuery(query.sql) {
-          stmt.executeQuery().use { rs ->
+          options.prepareResult(stmt.executeQuery()).use { rs ->
             emitResultSet(conn, rs, query.resultMaker.makeExtractor(QueryDebugInfo(query.sql)))
           }
         }
@@ -182,11 +185,11 @@ abstract class JdbcController internal constructor(
       throw SQLException("Error executing query: ${sql}", e)
     }
 
-  override open suspend fun <T> stream(query: BatchActionReturning<T>, options: ExecutionOptions): Flow<T> = runBatchActionReturningScoped(query, options)
-  override open suspend fun <T> stream(query: ActionReturning<T>, options: ExecutionOptions): Flow<T> = runActionReturningScoped(query, options)
-  override open suspend fun <T> run(query: Query<T>, options: ExecutionOptions): List<T> = stream(query, options).toList()
-  override open suspend fun run(query: Action, options: ExecutionOptions): Long = runActionScoped(query.sql, query.params, options)
-  override open suspend fun run(query: BatchAction, options: ExecutionOptions): List<Long> = runBatchActionScoped(query, options)
-  override open suspend fun <T> run(query: ActionReturning<T>, options: ExecutionOptions): T = stream(query, options).first()
-  override open suspend fun <T> run(query: BatchActionReturning<T>, options: ExecutionOptions): List<T> = stream(query, options).toList()
+  override open suspend fun <T> stream(query: BatchActionReturning<T>, options: JdbcExecutionOptions): Flow<T> = runBatchActionReturningScoped(query, options)
+  override open suspend fun <T> stream(query: ActionReturning<T>, options: JdbcExecutionOptions): Flow<T> = runActionReturningScoped(query, options)
+  override open suspend fun <T> run(query: Query<T>, options: JdbcExecutionOptions): List<T> = stream(query, options).toList()
+  override open suspend fun run(query: Action, options: JdbcExecutionOptions): Long = runActionScoped(query.sql, query.params, options)
+  override open suspend fun run(query: BatchAction, options: JdbcExecutionOptions): List<Long> = runBatchActionScoped(query, options)
+  override open suspend fun <T> run(query: ActionReturning<T>, options: JdbcExecutionOptions): T = stream(query, options).first()
+  override open suspend fun <T> run(query: BatchActionReturning<T>, options: JdbcExecutionOptions): List<T> = stream(query, options).toList()
 }

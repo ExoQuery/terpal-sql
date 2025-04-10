@@ -2,7 +2,6 @@ package io.exoquery.controller.android
 
 import androidx.sqlite.db.SupportSQLiteStatement
 import io.exoquery.controller.CoroutineSession
-import io.exoquery.controller.ExecutionOptions
 import io.exoquery.controller.RequiresSession
 import io.exoquery.controller.RequiresTransactionality
 import io.exoquery.controller.jdbc.CoroutineTransaction
@@ -13,14 +12,14 @@ import kotlin.coroutines.coroutineContext
 
 object AndroidCoroutineContext: CoroutineContext.Key<CoroutineSession<Connection>> {}
 
-interface HasSessionAndroid: RequiresSession<Connection, SupportSQLiteStatement> {
+interface HasSessionAndroid: RequiresSession<Connection, SupportSQLiteStatement, UnusedOpts> {
   val pool: AndroidPool
   override val sessionKey: CoroutineContext.Key<CoroutineSession<Connection>> get() = AndroidCoroutineContext
 
   // This is the WRITER session
   // Use this for the transactor pool (that's what the RequiresTransactionality interface is for)
   // for reader connections we borrow readers
-  override suspend fun newSession(options: ExecutionOptions): Connection =
+  override suspend fun newSession(options: UnusedOpts): Connection =
     prepareSession(pool.borrowWriter())
 
   fun prepareSession(session: Connection): Connection
@@ -31,7 +30,7 @@ interface HasSessionAndroid: RequiresSession<Connection, SupportSQLiteStatement>
    override suspend fun <R> accessStmtReturning(
      sql: String,
      conn: Connection,
-     options: ExecutionOptions,
+     options: UnusedOpts,
      returningColumns: List<String>,
      block: suspend (SupportSQLiteStatement) -> R
    ): R {
@@ -71,7 +70,7 @@ interface HasSessionAndroid: RequiresSession<Connection, SupportSQLiteStatement>
   }
 }
 
-interface HasTransactionalityAndroid: RequiresTransactionality<Connection, SupportSQLiteStatement>, HasSessionAndroid {
+interface HasTransactionalityAndroid: RequiresTransactionality<Connection, SupportSQLiteStatement, UnusedOpts>, HasSessionAndroid {
   val walMode: WalMode
 
   // In RequiresTransactionality this is run inside of withConnection. Now withConnection is implemented here specifically as

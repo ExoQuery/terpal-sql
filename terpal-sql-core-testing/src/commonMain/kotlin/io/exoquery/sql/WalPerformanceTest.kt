@@ -16,8 +16,8 @@ import kotlin.random.Random
 import kotlin.test.fail
 import kotlin.time.measureTimedValue
 
-class WallPerformanceTest<Session, Stmt>(
-  val driver: ControllerTransactional<Session, Stmt>,
+class WallPerformanceTest<Session, Stmt, ExecutionOpts>(
+  val driver: ControllerTransactional<Session, Stmt, ExecutionOpts>,
   val maxRow: Int = 100000, val minIntervalSize: Int = 100,
   val maxIntervalSize: Int = 1000,
   val readWaitRange: Pair<Int, Int> = 10 to 100,

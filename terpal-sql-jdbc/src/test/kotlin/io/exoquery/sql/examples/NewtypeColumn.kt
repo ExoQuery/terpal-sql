@@ -1,7 +1,7 @@
 package io.exoquery.sql.examples
 
 import io.exoquery.sql.Sql
-import io.exoquery.controller.jdbc.DatabaseController
+import io.exoquery.controller.jdbc.JdbcControllers
 import io.exoquery.controller.runOn
 import io.exoquery.sql.Param
 import io.zonky.test.db.postgres.embedded.EmbeddedPostgres
@@ -29,7 +29,7 @@ object NewtypeColumn {
   suspend fun main() {
     val postgres = EmbeddedPostgres.start()
     postgres.run("CREATE TABLE customers (id SERIAL PRIMARY KEY, firstName TEXT, lastName TEXT, email TEXT)")
-    val ctx = DatabaseController.Postgres(postgres.postgresDatabase)
+    val ctx = JdbcControllers.Postgres(postgres.postgresDatabase)
 
     val firstName = "Alice"
     val lastName = "Smith"

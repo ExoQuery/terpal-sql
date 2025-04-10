@@ -1,7 +1,6 @@
 package io.exoquery.controller.jdbc
 
 import io.exoquery.controller.*
-import io.exoquery.controller.jdbc.CoroutineTransaction
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asExecutor
@@ -18,7 +17,7 @@ typealias JdbcSqlEncoding = SqlEncoding<Connection, PreparedStatement, ResultSet
 
 object JdbcCoroutineContext: CoroutineContext.Key<CoroutineSession<Connection>> {}
 
-interface HasTransactionalityJdbc: RequiresTransactionality<Connection, PreparedStatement>, HasSessionJdbc {
+interface HasTransactionalityJdbc: RequiresTransactionality<Connection, PreparedStatement, JdbcExecutionOptions>, HasSessionJdbc {
   override val sessionKey: CoroutineContext.Key<CoroutineSession<Connection>> get() = JdbcCoroutineContext
 
   override open suspend fun <T> runTransactionally(block: suspend CoroutineScope.() -> T): T {
@@ -51,12 +50,12 @@ internal inline fun <T> Connection.runWithManualCommit(block: Connection.() -> T
 }
 
 
-interface HasSessionJdbc: RequiresSession<Connection, PreparedStatement> {
+interface HasSessionJdbc: RequiresSession<Connection, PreparedStatement, JdbcExecutionOptions> {
   val database: DataSource
 
   override val sessionKey: CoroutineContext.Key<CoroutineSession<Connection>> get() = JdbcCoroutineContext
-  override suspend open fun newSession(options: ExecutionOptions): Connection = run {
-    val conn = database.connection
+  override suspend open fun newSession(options: JdbcExecutionOptions): Connection = run {
+    val conn = options.prepareConnection(database.connection)
     val sessionTimeout = options.sessionTimeout
     if (sessionTimeout != null) {
       conn.setNetworkTimeout(Dispatchers.IO.asExecutor(), sessionTimeout)
@@ -67,12 +66,12 @@ interface HasSessionJdbc: RequiresSession<Connection, PreparedStatement> {
   override open fun closeSession(session: Connection): Unit = session.close()
   override open fun isClosedSession(session: Connection): Boolean = session.isClosed
 
-  override open suspend fun <R> accessStmtReturning(sql: String, conn: Connection, options: ExecutionOptions, returningColumns: List<String>, block: suspend (PreparedStatement) -> R): R {
+  override open suspend fun <R> accessStmtReturning(sql: String, conn: Connection, options: JdbcExecutionOptions, returningColumns: List<String>, block: suspend (PreparedStatement) -> R): R {
     val stmt =
       if (returningColumns.isNotEmpty())
-        conn.prepareStatement(sql, returningColumns.toTypedArray())
+        options.prepareStatement(conn.prepareStatement(sql, returningColumns.toTypedArray()))
       else
-        conn.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS)
+        options.prepareStatement(conn.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS))
 
     val fetchSize = options.fetchSize
     val queryTimeout = options.queryTimeout

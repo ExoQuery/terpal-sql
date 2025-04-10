@@ -14,7 +14,7 @@ import javax.sql.DataSource
 /**
  * This is the primary constructor object for Terpal JDBC drivers. It is a collection of Terpal drivers for various databases.
  */
-object DatabaseController {
+object JdbcControllers {
   /**
    * Use this for most modern postgres versions.
    */
@@ -107,7 +107,7 @@ object DatabaseController {
         JavaTimeEncoding<Connection, PreparedStatement, ResultSet> by JdbcTimeEncodingLegacy,
         JavaUuidEncoding<Connection, PreparedStatement, ResultSet> by JdbcUuidStringEncoding {}
 
-    protected override open suspend fun <T> runActionReturningScoped(act: ActionReturning<T>, options: ExecutionOptions): Flow<T> =
+    protected override open suspend fun <T> runActionReturningScoped(act: ActionReturning<T>, options: JdbcExecutionOptions): Flow<T> =
       flowWithConnection(options) {
         val conn = localConnection()
         when (act) {
@@ -131,7 +131,7 @@ object DatabaseController {
         }
       }
 
-    protected override open suspend fun <T> runBatchActionReturningScoped(act: BatchActionReturning<T>, options: ExecutionOptions): Flow<T> =
+    protected override open suspend fun <T> runBatchActionReturningScoped(act: BatchActionReturning<T>, options: JdbcExecutionOptions): Flow<T> =
       flowWithConnection(options) {
         val conn = localConnection()
         act.params.forEach { batch ->
@@ -200,7 +200,7 @@ object DatabaseController {
         JavaTimeEncoding<Connection, PreparedStatement, ResultSet> by JdbcTimeEncoding(),
         JavaUuidEncoding<Connection, PreparedStatement, ResultSet> by JdbcUuidStringEncoding {}
 
-    override suspend fun <T> runActionReturningScoped(act: ActionReturning<T>, options: ExecutionOptions): Flow<T> =
+    override suspend fun <T> runActionReturningScoped(act: ActionReturning<T>, options: JdbcExecutionOptions): Flow<T> =
       flowWithConnection(options) {
         val conn = localConnection()
         when (act) {
@@ -228,7 +228,7 @@ object DatabaseController {
         }
       }
 
-    override suspend fun <T> runBatchActionReturningScoped(act: BatchActionReturning<T>, options: ExecutionOptions): Flow<T> =
+    override suspend fun <T> runBatchActionReturningScoped(act: BatchActionReturning<T>, options: JdbcExecutionOptions): Flow<T> =
       flowWithConnection(options) {
         val conn = localConnection()
         accessStmtReturning(act.sql, conn, options, listOf()) { stmt ->

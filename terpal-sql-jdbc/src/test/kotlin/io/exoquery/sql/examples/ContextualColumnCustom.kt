@@ -5,7 +5,7 @@ import io.exoquery.sql.Param
 import io.exoquery.sql.Sql
 import io.exoquery.controller.jdbc.JdbcTimeEncodingLegacy.JZonedDateTimeEncoder
 import io.exoquery.controller.jdbc.JdbcTimeEncodingLegacy.JZonedDateTimeDecoder
-import io.exoquery.controller.jdbc.DatabaseController
+import io.exoquery.controller.jdbc.JdbcControllers
 import io.exoquery.controller.runOn
 import io.zonky.test.db.postgres.embedded.EmbeddedPostgres
 import kotlinx.serialization.Contextual
@@ -52,7 +52,7 @@ object ContextualColumnCustom {
     postgres.run("CREATE TABLE customers (id SERIAL PRIMARY KEY, first_name TEXT, last_name TEXT, created_at TIMESTAMP WITH TIME ZONE)")
 
     val ctx =
-      DatabaseController.Postgres(
+      JdbcControllers.Postgres(
         postgres.postgresDatabase,
         JdbcEncodingConfig.Default(
           setOf(JZonedDateTimeEncoder.contramap { md: MyDateTime -> ZonedDateTime.of(md.year, md.month, md.day, 0, 0, 0, 0, md.timeZone.toZoneId()) }),

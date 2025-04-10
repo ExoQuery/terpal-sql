@@ -19,17 +19,21 @@ import kotlin.experimental.ExperimentalTypeInference
 
 data class Versions(val oldVersion: Int, val newVersion: Int)
 
+object UnusedOpts {}
+
 @OptIn(ExperimentalStdlibApi::class)
-class DatabaseController internal constructor(
+class NativeDatabaseController internal constructor(
   override val encodingConfig: EncodingConfig<Unused, SqliteStatementWrapper, SqliteCursorWrapper>,
   override val pool: SqliterPool,
-): ControllerTransactional<Connection, Statement>, AutoCloseable,
+): ControllerTransactional<Connection, Statement, UnusedOpts>, AutoCloseable,
   WithEncoding<Unused, SqliteStatementWrapper, SqliteCursorWrapper>,
   WithReadOnlyVerbs,
   HasTransactionalityNative {
 
   override val startingStatementIndex = StartingIndex.One
   override val startingResultRowIndex = StartingIndex.Zero
+
+  override fun DefaultOpts(): UnusedOpts = UnusedOpts
 
   sealed interface PoolingMode {
     object Single: PoolingMode
@@ -49,7 +53,7 @@ class DatabaseController internal constructor(
       poolingMode: PoolingMode = PoolingMode.Single,
       cacheCapacity: Int = DEFAULT_CACHE_CAPACITY,
       encodingConfig: NativeEncodingConfig = NativeEncodingConfig()
-    ): DatabaseController {
+    ): NativeDatabaseController {
       val db = createDatabaseManager(nativeConfig)
       val pool = SqliterPool(
         when (poolingMode) {
@@ -58,7 +62,7 @@ class DatabaseController internal constructor(
         },
         cacheCapacity
       )
-      return DatabaseController(encodingConfig, pool)
+      return NativeDatabaseController(encodingConfig, pool)
     }
 
     fun fromSchema(
@@ -68,7 +72,7 @@ class DatabaseController internal constructor(
       mode: PoolingMode = PoolingMode.Single,
       cacheCapacity: Int = DEFAULT_CACHE_CAPACITY,
       encodingConfig: NativeEncodingConfig = NativeEncodingConfig()
-    ): DatabaseController {
+    ): NativeDatabaseController {
       val nativeConfig =
         DatabaseConfiguration(
           name = dbName,
@@ -102,7 +106,7 @@ class DatabaseController internal constructor(
       mode: PoolingMode = PoolingMode.Single,
       cacheCapacity: Int = DEFAULT_CACHE_CAPACITY,
       encodingConfig: NativeEncodingConfig = NativeEncodingConfig()
-    ): DatabaseController {
+    ): NativeDatabaseController {
       val nativeConfig =
         DatabaseConfiguration(
           name = dbName,
@@ -124,9 +128,9 @@ class DatabaseController internal constructor(
       mode: PoolingMode = PoolingMode.Single,
       cacheCapacity: Int = DEFAULT_CACHE_CAPACITY,
       encodingConfig: NativeEncodingConfig = NativeEncodingConfig(),
-      createCallback: (DatabaseController) -> Unit = {},
-      updateCallback: (DatabaseController, Versions) -> Unit = { _, _ -> }
-    ): DatabaseController {
+      createCallback: (NativeDatabaseController) -> Unit = {},
+      updateCallback: (NativeDatabaseController, Versions) -> Unit = { _, _ -> }
+    ): NativeDatabaseController {
       val nativeConfig =
         DatabaseConfiguration(
           name = dbFileName,
@@ -143,8 +147,8 @@ class DatabaseController internal constructor(
      * Create a NativeContext from a single connection. Doesn't need to be suspended because there is no effect happening.
      * The connection is already open.
      */
-    fun fromSingleConnection(conn: DatabaseConnection, encodingConfig: NativeEncodingConfig = NativeEncodingConfig()): DatabaseController =
-      DatabaseController(encodingConfig, SqliterPool(SqliterPoolType.Wrapped(conn), DEFAULT_CACHE_CAPACITY))
+    fun fromSingleConnection(conn: DatabaseConnection, encodingConfig: NativeEncodingConfig = NativeEncodingConfig()): NativeDatabaseController =
+      NativeDatabaseController(encodingConfig, SqliterPool(SqliterPoolType.Wrapped(conn), DEFAULT_CACHE_CAPACITY))
   }
 
   // Is there an open writer?
@@ -198,7 +202,7 @@ class DatabaseController internal constructor(
 
   override val encodingApi = SqliteSqlEncoding
 
-  suspend fun runActionScoped(sql: String, params: List<StatementParam<*>>, options: ExecutionOptions): Long =
+  suspend fun runActionScoped(sql: String, params: List<StatementParam<*>>, options: UnusedOpts): Long =
     withConnection(options) {
       //println("------------ Running Block")
       val conn = localConnection()
@@ -223,11 +227,8 @@ class DatabaseController internal constructor(
       }
     }
 
-  open suspend fun <T> runActionReturningScoped(act: ActionReturning<T>, options: ExecutionOptions): Flow<T> =
+  open suspend fun <T> runActionReturningScoped(act: ActionReturning<T>, options: UnusedOpts): Flow<T> =
     flowWithConnection(options) {
-      if (!act.sql.trim().lowercase().startsWith("insert"))
-        throw IllegalArgumentException("In SQLite a ActionReturning can only be an INSERT statement and it can only return a LONG generated key.")
-
       val conn = localConnection()
       when (act) {
         is ActionReturningId -> {
@@ -253,7 +254,7 @@ class DatabaseController internal constructor(
       }
     }
 
-  override suspend fun <T> stream(query: Query<T>, options: ExecutionOptions): Flow<T> =
+  override suspend fun <T> stream(query: Query<T>, options: UnusedOpts): Flow<T> =
     flowWithConnectionReadOnly(options) {
       val conn = localConnection()
       accessStmt(query.sql, conn) { stmt ->
@@ -267,7 +268,7 @@ class DatabaseController internal constructor(
       }
     }
 
-  override suspend fun <T> runRaw(query: Query<T>, options: ExecutionOptions) =
+  override suspend fun <T> runRaw(query: Query<T>, options: UnusedOpts) =
     withReadOnlyConnection(options) {
       val conn = localConnection()
       accessStmt(query.sql, conn) { stmt ->
@@ -285,21 +286,21 @@ class DatabaseController internal constructor(
       }
     }
 
-  open override suspend fun <T> run(query: Query<T>, options: ExecutionOptions): List<T> = stream(query, options).toList()
-  open override suspend fun run(query: Action, options: ExecutionOptions): Long = runActionScoped(query.sql, query.params, options)
-  open override suspend fun <T> run(query: ActionReturning<T>, options: ExecutionOptions): T = runActionReturningScoped(query, options).first()
-  open override suspend fun <T> stream(query: ActionReturning<T>, options: ExecutionOptions): Flow<T> = runActionReturningScoped(query, options)
+  open override suspend fun <T> run(query: Query<T>, options: UnusedOpts): List<T> = stream(query, options).toList()
+  open override suspend fun run(query: Action, options: UnusedOpts): Long = runActionScoped(query.sql, query.params, options)
+  open override suspend fun <T> run(query: ActionReturning<T>, options: UnusedOpts): T = runActionReturningScoped(query, options).first()
+  open override suspend fun <T> stream(query: ActionReturning<T>, options: UnusedOpts): Flow<T> = runActionReturningScoped(query, options)
 
-  override suspend fun run(query: BatchAction, options: ExecutionOptions): List<Long> =
+  override suspend fun run(query: BatchAction, options: UnusedOpts): List<Long> =
     throw IllegalArgumentException("Batch Actions are not supported in NativeContext.")
 
-  override suspend fun <T> run(query: BatchActionReturning<T>, options: ExecutionOptions): List<T> =
+  override suspend fun <T> run(query: BatchActionReturning<T>, options: UnusedOpts): List<T> =
     throw IllegalArgumentException("Batch Queries are not supported in NativeContext.")
 
-  override suspend fun <T> stream(query: BatchActionReturning<T>, options: ExecutionOptions): Flow<T> =
+  override suspend fun <T> stream(query: BatchActionReturning<T>, options: UnusedOpts): Flow<T> =
     throw IllegalArgumentException("Batch Queries are not supported in NativeContext.")
 
-  fun runRaw(sql: String, options: ExecutionOptions = ExecutionOptions()) = runBlocking {
+  fun runRaw(sql: String, options: UnusedOpts = UnusedOpts) = runBlocking {
     sql.split(";").forEach { if (it.trim().isNotEmpty()) runActionScoped(it, emptyList(), options) }
   }
 
@@ -316,7 +317,7 @@ class DatabaseController internal constructor(
  * this does not seem to be necessary because it is enfoced on the driver level
  * so we can keep the connection-per-thread (i.e. per coroutine) paradigm there.
  */
-interface WithReadOnlyVerbs: RequiresSession<Connection, Statement> {
+interface WithReadOnlyVerbs: RequiresSession<Connection, Statement, UnusedOpts> {
   val pool: SqliterPool
 
   suspend fun newReadOnlySession(): Connection = pool.borrowReader()
@@ -327,7 +328,7 @@ interface WithReadOnlyVerbs: RequiresSession<Connection, Statement> {
     return session != null && !isClosedSession(session)
   }
 
-  suspend fun <T> withReadOnlyConnection(options: ExecutionOptions, block: suspend CoroutineScope.() -> T): T {
+  suspend fun <T> withReadOnlyConnection(options: UnusedOpts, block: suspend CoroutineScope.() -> T): T {
     return if (coroutineContext.hasOpenReadOrWriteConnection()) {
       withContext(coroutineContext + Dispatchers.IO) { block() }
     } else {
@@ -341,7 +342,7 @@ interface WithReadOnlyVerbs: RequiresSession<Connection, Statement> {
   // Use this with select queries in the case of Sqlite because they only require read connections.
   // The other flowWithConnection summons a writer connection so it is only necessary for actions that return.
   @OptIn(ExperimentalTypeInference::class)
-  suspend fun <T> flowWithConnectionReadOnly(options: ExecutionOptions, @BuilderInference block: suspend FlowCollector<T>.() -> Unit): Flow<T> {
+  suspend fun <T> flowWithConnectionReadOnly(options: UnusedOpts, @BuilderInference block: suspend FlowCollector<T>.() -> Unit): Flow<T> {
     val flowInvoke = flow(block)
     // If there is any connection (including a writer) use it, otherwise create a reader
     // if we have a writer-connection already in the context use that for reading.

@@ -7,8 +7,8 @@ import io.exoquery.sql.encodingdata.shouldBe
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
 
-class BasicActionOps<Session, Stmt>(
-  val ctx: ControllerTransactional<Session, Stmt>
+class BasicActionOps<Session, Stmt, ExecutionOpts>(
+  val ctx: ControllerTransactional<Session, Stmt, ExecutionOpts>
 ) {
   fun clearTables(): Unit = runBlocking {
     ctx.runActions(

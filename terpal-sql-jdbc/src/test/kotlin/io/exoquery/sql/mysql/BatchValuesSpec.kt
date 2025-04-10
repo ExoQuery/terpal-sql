@@ -3,14 +3,14 @@ package io.exoquery.sql.mysql
 import io.exoquery.sql.*
 import io.exoquery.sql.Ex3_BatchReturnIds.products
 import io.exoquery.sql.jdbc.SqlBatch
-import io.exoquery.controller.jdbc.DatabaseController
+import io.exoquery.controller.jdbc.JdbcControllers
 import io.exoquery.controller.runOn
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe
 
 class BatchValuesSpec: FreeSpec ({
   val ds = TestDatabases.mysql
-  val ctx by lazy { DatabaseController.Mysql(ds)  }
+  val ctx by lazy { JdbcControllers.Mysql(ds)  }
 
   beforeEach {
     ds.run("""

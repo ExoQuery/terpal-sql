@@ -4,7 +4,7 @@ import io.exoquery.controller.JsonValue
 import io.exoquery.controller.SqlJsonValue
 import io.exoquery.sql.*
 import io.exoquery.sql.Sql
-import io.exoquery.controller.jdbc.DatabaseController
+import io.exoquery.controller.jdbc.JdbcControllers
 import io.exoquery.controller.runOn
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe
@@ -25,7 +25,7 @@ object JsonSpecData {
 class JsonSpec: FreeSpec({
   val ds = TestDatabases.postgres
   val ctx by lazy {
-    DatabaseController.Postgres(ds)
+    JdbcControllers.Postgres(ds)
   }
 
   beforeEach {

@@ -2,7 +2,7 @@ package io.exoquery.sql.examples
 
 import io.exoquery.sql.Param
 import io.exoquery.sql.Sql
-import io.exoquery.controller.jdbc.DatabaseController
+import io.exoquery.controller.jdbc.JdbcControllers
 import io.exoquery.controller.runOn
 import io.exoquery.controller.jdbc.JdbcDecoderAny
 import io.exoquery.controller.jdbc.JdbcEncoderAny
@@ -34,7 +34,7 @@ object UsingPostgresArray {
   suspend fun main() {
     val postgres = EmbeddedPostgres.start()
     postgres.run("CREATE TABLE friend (firstName TEXT, lastName TEXT, nickNames TEXT[])")
-    val ctx = DatabaseController.Postgres(
+    val ctx = JdbcControllers.Postgres(
       postgres.postgresDatabase,
       JdbcEncodingConfig.Default(setOf(MyStringListEncoder), setOf(MyStringListDecoder))
     )

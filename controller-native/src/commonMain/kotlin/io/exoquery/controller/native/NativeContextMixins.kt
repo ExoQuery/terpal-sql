@@ -18,18 +18,18 @@ typealias Connection = DoublePoolSession<StatementCachingSession<DatabaseConnect
 
 object NativeCoroutineContext: CoroutineContext.Key<CoroutineSession<Connection>> {}
 
-interface HasSessionNative: RequiresSession<Connection, Statement> {
+interface HasSessionNative: RequiresSession<Connection, Statement, UnusedOpts> {
   val pool: SqliterPool
   override val sessionKey: CoroutineContext.Key<CoroutineSession<Connection>> get() = NativeCoroutineContext
 
   // This is the WRITER session
   // Use this for the transactor pool (that's what the RequiresTransactionality interface is for)
   // for reader connections we borrow readers
-  override suspend fun newSession(options: ExecutionOptions): Connection = pool.borrowWriter()
+  override suspend fun newSession(options: UnusedOpts): Connection = pool.borrowWriter()
   override fun closeSession(session: Connection): Unit = session.close()
   override fun isClosedSession(session: Connection): Boolean = !session.isOpen()
 
-  override suspend fun <R> accessStmtReturning(sql: String, conn: Connection, options: ExecutionOptions, returningColumns: List<String>, block: suspend (Statement) -> R): R {
+  override suspend fun <R> accessStmtReturning(sql: String, conn: Connection, options: UnusedOpts, returningColumns: List<String>, block: suspend (Statement) -> R): R {
     val stmt = conn.value.createStatement(sql)
     return try {
       block(stmt)
@@ -66,7 +66,7 @@ interface HasSessionNative: RequiresSession<Connection, Statement> {
   }
 }
 
-interface HasTransactionalityNative: RequiresTransactionality<Connection, Statement>, HasSessionNative {
+interface HasTransactionalityNative: RequiresTransactionality<Connection, Statement, UnusedOpts>, HasSessionNative {
   // In RequiresTransactionality this is run inside of withConnection. Now withConnection is implemented here specifically as
   // having a WRITEABLE connection which means that in sqlite this will be in a pool of only 1. There are other
   // methods that only have a reader connection but they are not used here.

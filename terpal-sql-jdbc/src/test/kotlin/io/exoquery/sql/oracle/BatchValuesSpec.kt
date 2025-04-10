@@ -2,14 +2,14 @@ package io.exoquery.sql.oracle
 
 import io.exoquery.sql.*
 import io.exoquery.sql.jdbc.SqlBatch
-import io.exoquery.controller.jdbc.DatabaseController
+import io.exoquery.controller.jdbc.JdbcControllers
 import io.exoquery.controller.runOn
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe
 
 class BatchValuesSpec: FreeSpec ({
   val ds = TestDatabases.oracle
-  val ctx by lazy { DatabaseController.Oracle(ds)  }
+  val ctx by lazy { JdbcControllers.Oracle(ds)  }
 
   beforeEach {
     ds.run("""

@@ -5,7 +5,7 @@ import co.touchlab.sqliter.DatabaseConfiguration
 import co.touchlab.sqliter.DatabaseFileContext.deleteDatabase
 import co.touchlab.sqliter.createDatabaseManager
 import co.touchlab.sqliter.withConnection
-import io.exoquery.controller.native.DatabaseController
+import io.exoquery.controller.native.NativeDatabaseController
 import io.exoquery.sql.BasicSchema
 import io.exoquery.sql.WalTestSchema
 import io.exoquery.sql.executeSimple
@@ -18,7 +18,7 @@ object WalTestDatabase {
   val ctx by lazy {
     runBlocking {
       deleteDatabase(name)
-      DatabaseController.fromSchema(WalTestSchema, name, basePath, mode = DatabaseController.PoolingMode.Multiple(3))
+      NativeDatabaseController.fromSchema(WalTestSchema, name, basePath, mode = NativeDatabaseController.PoolingMode.Multiple(3))
     }
   }
 }
@@ -30,7 +30,7 @@ object TestDatabase {
   val ctx by lazy {
     runBlocking {
       deleteDatabase(name, basePath)
-      DatabaseController.fromSchema(BasicSchema, name, basePath)
+      NativeDatabaseController.fromSchema(BasicSchema, name, basePath)
     }
   }
 

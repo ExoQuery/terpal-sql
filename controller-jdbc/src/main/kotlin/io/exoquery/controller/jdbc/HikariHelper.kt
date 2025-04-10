@@ -15,23 +15,23 @@ object HikariHelper {
   }
 }
 
-fun DatabaseController.Postgres.Companion.fromConfig(prefix: String) =
-  DatabaseController.Postgres(HikariHelper.makeDataSource(prefix))
+fun JdbcControllers.Postgres.Companion.fromConfig(prefix: String) =
+  JdbcControllers.Postgres(HikariHelper.makeDataSource(prefix))
 
-fun DatabaseController.PostgresLegacy.Companion.fromConfig(prefix: String) =
-  DatabaseController.PostgresLegacy(HikariHelper.makeDataSource(prefix))
+fun JdbcControllers.PostgresLegacy.Companion.fromConfig(prefix: String) =
+  JdbcControllers.PostgresLegacy(HikariHelper.makeDataSource(prefix))
 
-fun DatabaseController.H2.Companion.fromConfig(prefix: String) =
-  DatabaseController.H2(HikariHelper.makeDataSource(prefix))
+fun JdbcControllers.H2.Companion.fromConfig(prefix: String) =
+  JdbcControllers.H2(HikariHelper.makeDataSource(prefix))
 
-fun DatabaseController.Mysql.Companion.fromConfig(prefix: String) =
-  DatabaseController.Mysql(HikariHelper.makeDataSource(prefix))
+fun JdbcControllers.Mysql.Companion.fromConfig(prefix: String) =
+  JdbcControllers.Mysql(HikariHelper.makeDataSource(prefix))
 
-fun DatabaseController.Sqlite.Companion.fromConfig(prefix: String) =
-  DatabaseController.Sqlite(HikariHelper.makeDataSource(prefix))
+fun JdbcControllers.Sqlite.Companion.fromConfig(prefix: String) =
+  JdbcControllers.Sqlite(HikariHelper.makeDataSource(prefix))
 
-fun DatabaseController.SqlServer.Companion.fromConfig(prefix: String) =
-  DatabaseController.SqlServer(HikariHelper.makeDataSource(prefix))
+fun JdbcControllers.SqlServer.Companion.fromConfig(prefix: String) =
+  JdbcControllers.SqlServer(HikariHelper.makeDataSource(prefix))
 
-fun DatabaseController.Oracle.Companion.fromConfig(prefix: String) =
-  DatabaseController.Oracle(HikariHelper.makeDataSource(prefix))
+fun JdbcControllers.Oracle.Companion.fromConfig(prefix: String) =
+  JdbcControllers.Oracle(HikariHelper.makeDataSource(prefix))
