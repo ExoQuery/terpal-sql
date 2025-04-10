@@ -75,9 +75,9 @@ When using JDBC, add the following to your `build.gradle.kts` file:
 
 ```kotlin
 plugins {
-    kotlin("jvm") version "2.1.0" // Currently the plugin is only available for Kotlin-JVM
-    id("io.exoquery.terpal-plugin") version "2.1.0-2.0.0.PL"
-    kotlin("plugin.serialization") version "2.1.0"
+    kotlin("jvm") version "2.1.20" // Currently the plugin is only available for Kotlin-JVM
+    id("io.exoquery.terpal-plugin") version "2.1.20-2.0.0.PL"
+    kotlin("plugin.serialization") version "2.1.20"
 }
 
 dependencies {
@@ -116,9 +116,9 @@ For Android development, add the following to your `build.gradle.kts` file:
 
 ```kotlin
 plugins {
-    kotlin("android") version "2.1.0"
-    id("io.exoquery.terpal-plugin") version "2.1.0-2.0.0.PL"
-    kotlin("plugin.serialization") version "2.1.0"
+    kotlin("android") version "2.1.20"
+    id("io.exoquery.terpal-plugin") version "2.1.20-2.0.0.PL"
+    kotlin("plugin.serialization") version "2.1.20"
 }
 
 dependencies {
@@ -211,9 +211,9 @@ val person: List<Person> = Sql("SELECT * FROM Person").queryOf<Person>().runOn(c
 For iOS, OSX, Linux and Windows development, with Kotlin Multiplatform, add the following to your `build.gradle.kts` file:
 ```kotlin
 plugins {
-    kotlin("multiplatform") version "2.1.0"
-    id("io.exoquery.terpal-plugin") version "2.1.0-2.0.0.PL"
-    kotlin("plugin.serialization") version "2.1.0"
+    kotlin("multiplatform") version "2.1.20"
+    id("io.exoquery.terpal-plugin") version "2.1.20-2.0.0.PL"
+    kotlin("plugin.serialization") version "2.1.20"
 }
 
 kotlin {
@@ -223,7 +223,7 @@ kotlin {
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.6.2")
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
                 // Note that terpal-sql-native supports iOS, OSX, Linux and Windows
-                api("io.exoquery:terpal-runtime:2.1.0-2.0.0.PL")
+                api("io.exoquery:terpal-runtime:2.1.20-2.0.0.PL")
                 implementation("io.exoquery:terpal-sql-native:2.0.0.PL-1.2.0")
             }
         }
