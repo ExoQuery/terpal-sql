@@ -212,11 +212,13 @@ interface ControllerTransactional<Session, Stmt, ExecutionOpts>: Controller<Exec
 interface ControllerCanonical<Session, Stmt, ResultRow, ExecutionOpts>: ControllerTransactional<Session, Stmt, ExecutionOpts>, RequiresSession<Session, Stmt, ExecutionOpts>, RequiresTransactionality<Session, Stmt, ExecutionOpts>, WithEncoding<Session, Stmt, ResultRow>
 
 class ExternalTransactionScope<ExecutionOpts>(private val scope: CoroutineScope, private val ctx: Controller<ExecutionOpts>) {
-  suspend fun <T> Query<T>.run(options: ExecutionOpts = ctx.DefaultOpts()): List<T> = ctx.run(this, options)
-  suspend fun Action.run(options: ExecutionOpts = ctx.DefaultOpts()): Long = ctx.run(this, options)
-  suspend fun BatchAction.run(options: ExecutionOpts = ctx.DefaultOpts()): List<Long> = ctx.run(this, options)
-  suspend fun <T> ActionReturning<T>.run(options: ExecutionOpts = ctx.DefaultOpts()): T = ctx.run(this, options)
-  suspend fun <T> BatchActionReturning<T>.run(options: ExecutionOpts = ctx.DefaultOpts()): List<T> = ctx.run(this, options)
+  suspend fun <T> Transactable<T>.run(options: ExecutionOpts = ctx.DefaultOpts()): T = this.runTransactionally(ctx, options)
+
+  //suspend fun <T> Query<T>.run(options: ExecutionOpts = ctx.DefaultOpts()): List<T> = ctx.run(this, options)
+  //suspend fun Action.run(options: ExecutionOpts = ctx.DefaultOpts()): Long = ctx.run(this, options)
+  //suspend fun BatchAction.run(options: ExecutionOpts = ctx.DefaultOpts()): List<Long> = ctx.run(this, options)
+  //suspend fun <T> ActionReturning<T>.run(options: ExecutionOpts = ctx.DefaultOpts()): T = ctx.run(this, options)
+  //suspend fun <T> BatchActionReturning<T>.run(options: ExecutionOpts = ctx.DefaultOpts()): List<T> = ctx.run(this, options)
 }
 
 suspend fun <T> Query<T>.runOn(ctx: Controller<*>) = ctx.run(this)
