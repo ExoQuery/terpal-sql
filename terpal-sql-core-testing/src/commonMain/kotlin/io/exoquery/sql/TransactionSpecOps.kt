@@ -3,6 +3,7 @@ package io.exoquery.sql
 import io.exoquery.controller.ControllerTransactional
 import io.exoquery.controller.runActions
 import io.exoquery.controller.runOn
+import io.exoquery.controller.transaction
 import io.exoquery.sql.encodingdata.shouldBe
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable

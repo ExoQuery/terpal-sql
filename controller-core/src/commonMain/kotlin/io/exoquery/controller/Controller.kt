@@ -182,10 +182,7 @@ interface ControllerVerbs<ExecutionOpts> {
  */
 @OptIn(TerpalSqlInternal::class)
 interface Controller<ExecutionOpts>: ControllerVerbs<ExecutionOpts> {
-  suspend open fun <T> transaction(executionOptions: ExecutionOpts, block: suspend ExternalTransactionScope<ExecutionOpts>.() -> T): T
-  suspend open fun <T> transaction(block: suspend ExternalTransactionScope<ExecutionOpts>.() -> T): T {
-    return transaction(DefaultOpts()) { block() }
-  }
+
 }
 
 @OptIn(TerpalSqlInternal::class)
@@ -194,12 +191,6 @@ suspend fun Controller<*>.runActions(actions: String): List<Long> =
 
 @OptIn(TerpalSqlInternal::class)
 interface ControllerTransactional<Session, Stmt, ExecutionOpts>: Controller<ExecutionOpts>, RequiresSession<Session, Stmt, ExecutionOpts>, RequiresTransactionality<Session, Stmt, ExecutionOpts> {
-  suspend override open fun <T> transaction(executionOptions: ExecutionOpts, block: suspend ExternalTransactionScope<ExecutionOpts>.() -> T): T =
-    withTransactionScope(executionOptions) {
-      val coroutineScope = this
-      block(ExternalTransactionScope<ExecutionOpts>(coroutineScope, this@ControllerTransactional))
-    }
-
   fun showStats(): String = ""
 }
 
@@ -210,16 +201,6 @@ interface ControllerTransactional<Session, Stmt, ExecutionOpts>: Controller<Exec
  */
 @OptIn(TerpalSqlInternal::class)
 interface ControllerCanonical<Session, Stmt, ResultRow, ExecutionOpts>: ControllerTransactional<Session, Stmt, ExecutionOpts>, RequiresSession<Session, Stmt, ExecutionOpts>, RequiresTransactionality<Session, Stmt, ExecutionOpts>, WithEncoding<Session, Stmt, ResultRow>
-
-class ExternalTransactionScope<ExecutionOpts>(private val scope: CoroutineScope, private val ctx: Controller<ExecutionOpts>) {
-  suspend fun <T> Transactable<T>.run(options: ExecutionOpts = ctx.DefaultOpts()): T = this.runTransactionally(ctx, options)
-
-  //suspend fun <T> Query<T>.run(options: ExecutionOpts = ctx.DefaultOpts()): List<T> = ctx.run(this, options)
-  //suspend fun Action.run(options: ExecutionOpts = ctx.DefaultOpts()): Long = ctx.run(this, options)
-  //suspend fun BatchAction.run(options: ExecutionOpts = ctx.DefaultOpts()): List<Long> = ctx.run(this, options)
-  //suspend fun <T> ActionReturning<T>.run(options: ExecutionOpts = ctx.DefaultOpts()): T = ctx.run(this, options)
-  //suspend fun <T> BatchActionReturning<T>.run(options: ExecutionOpts = ctx.DefaultOpts()): List<T> = ctx.run(this, options)
-}
 
 suspend fun <T> Query<T>.runOn(ctx: Controller<*>) = ctx.run(this)
 suspend fun <T> Query<T>.streamOn(ctx: Controller<*>) = ctx.stream(this)

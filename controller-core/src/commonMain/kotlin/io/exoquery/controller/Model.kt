@@ -12,24 +12,17 @@ import kotlinx.serialization.*
 @Target(AnnotationTarget.CLASS, AnnotationTarget.PROPERTY, AnnotationTarget.TYPE)
 annotation class SqlJsonValue
 
-interface Transactable<T> {
-  suspend fun <ExecutionOpts> runTransactionally(ctx: Controller<ExecutionOpts>, opts: ExecutionOpts): T
-}
+data class Query<T>(val sql: String, val params: List<StatementParam<*>>, val resultMaker: KSerializer<T>)
 
-data class Query<T>(val sql: String, val params: List<StatementParam<*>>, val resultMaker: KSerializer<T>): Transactable<List<T>> {
-  override suspend fun <ExecutionOpts> runTransactionally(ctx: Controller<ExecutionOpts>, opts: ExecutionOpts): List<T> = ctx.run(this, opts)
-}
-data class Action(val sql: String, val params: List<StatementParam<*>>): Transactable<Long> {
-  override suspend fun <ExecutionOpts> runTransactionally(ctx: Controller<ExecutionOpts>, opts: ExecutionOpts): Long = ctx.run(this, opts)
-}
+sealed interface ActionVerb<T>
 
-sealed interface ActionReturning<T>: Transactable<T> {
+data class Action(val sql: String, val params: List<StatementParam<*>>): ActionVerb<Long>
+
+sealed interface ActionReturning<T>: ActionVerb<T> {
   val sql: String
   val params: List<StatementParam<*>>
   val resultMaker: KSerializer<T>
   val returningColumns: List<String>
-
-  override suspend fun <ExecutionOpts> runTransactionally(ctx: Controller<ExecutionOpts>, opts: ExecutionOpts): T = ctx.run(this, opts)
 }
 data class ActionReturningRow<T>(override val sql: String, override val params: List<StatementParam<*>>, override val resultMaker: KSerializer<T>, override val returningColumns: List<String>): ActionReturning<T>
 data class ActionReturningId<T>(override val sql: String, override val params: List<StatementParam<*>>, override val resultMaker: KSerializer<T>, override val returningColumns: List<String>): ActionReturning<T> {
@@ -40,17 +33,15 @@ data class ActionReturningId<T>(override val sql: String, override val params: L
   }
 }
 
-data class BatchAction(val sql: String, val params: Sequence<List<StatementParam<*>>>): Transactable<List<Long>> {
-  override suspend fun <ExecutionOpts> runTransactionally(ctx: Controller<ExecutionOpts>, opts: ExecutionOpts): List<Long> = ctx.run(this, opts)
-}
+sealed interface BatchVerb<T>
 
-sealed interface BatchActionReturning<T>: Transactable<List<T>> {
+data class BatchAction(val sql: String, val params: Sequence<List<StatementParam<*>>>): BatchVerb<Long>
+
+sealed interface BatchActionReturning<T>: BatchVerb<T> {
   val sql: String
   val params: Sequence<List<StatementParam<*>>>
   val resultMaker: KSerializer<T>
   val returningColumns: List<String>
-
-  override suspend fun <ExecutionOpts> runTransactionally(ctx: Controller<ExecutionOpts>, opts: ExecutionOpts): List<T> = ctx.run(this, opts)
 }
 data class BatchActionReturningRow<T>(override val sql: String, override val params: Sequence<List<StatementParam<*>>>, override val resultMaker: KSerializer<T>, override val returningColumns: List<String>): BatchActionReturning<T>
 data class BatchActionReturningId<T>(override val sql: String, override val params: Sequence<List<StatementParam<*>>>, override val resultMaker: KSerializer<T>, override val returningColumns: List<String>): BatchActionReturning<T> {

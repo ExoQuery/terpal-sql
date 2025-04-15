@@ -3,6 +3,7 @@ package io.exoquery.sql.mysql
 import io.exoquery.sql.TestDatabases
 import io.exoquery.controller.jdbc.JdbcControllers
 import io.exoquery.controller.runOn
+import io.exoquery.controller.transaction
 import io.exoquery.sql.Sql
 import io.exoquery.sql.run
 import io.kotest.assertions.throwables.shouldThrow
