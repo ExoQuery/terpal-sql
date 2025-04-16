@@ -3,6 +3,7 @@ package io.exoquery.sql
 import io.exoquery.controller.ControllerTransactional
 import io.exoquery.controller.runActions
 import io.exoquery.controller.runOn
+import io.exoquery.controller.transaction
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
