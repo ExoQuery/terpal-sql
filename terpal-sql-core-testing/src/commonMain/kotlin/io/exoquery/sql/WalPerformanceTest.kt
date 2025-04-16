@@ -5,6 +5,7 @@ import io.exoquery.controller.ControllerTransactional
 import io.exoquery.controller.Query
 import io.exoquery.controller.runOn
 import io.exoquery.controller.streamOn
+import io.exoquery.controller.transaction
 import kotlinx.atomicfu.atomic
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.count
