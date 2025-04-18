@@ -92,6 +92,6 @@ data class TimeEntity(
   }
 }
 
-fun insert(e: TimeEntity): Action {
+fun insertTimeEntity(e: TimeEntity): Action {
   return Sql("INSERT INTO TimeEntity VALUES (${e.sqlDate}, ${e.sqlTime}, ${e.sqlTimestamp}, ${e.timeLocalDate}, ${e.timeLocalTime}, ${e.timeLocalDateTime}, ${e.timeZonedDateTime}, ${e.timeInstant}, ${e.timeOffsetTime}, ${e.timeOffsetDateTime})").action()
 }

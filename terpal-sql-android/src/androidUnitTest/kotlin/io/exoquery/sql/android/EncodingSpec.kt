@@ -1,74 +1,92 @@
 package io.exoquery.sql.android
 
 import io.exoquery.controller.runActions
+import io.exoquery.controller.runOn
 import io.exoquery.sql.Sql
+import io.exoquery.sql.android.encodingdata.JavaTestEntity
 import io.exoquery.sql.android.encodingdata.TimeEntity
 import io.exoquery.sql.android.encodingdata.insert
+import io.exoquery.sql.android.encodingdata.insertTimeEntity
+import io.exoquery.sql.encodingdata.insert
 import io.exoquery.sql.encodingdata.EncodingTestEntity
+import io.exoquery.sql.encodingdata.KmpTestEntity
 import io.exoquery.sql.encodingdata.insertBatch
+import io.exoquery.sql.encodingdata.verify
 import kotlinx.coroutines.runBlocking
 import java.time.ZoneId
-import kotlin.invoke
 import kotlin.test.BeforeTest
+import io.exoquery.sql.android.encodingdata.verify
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import kotlin.test.Test
 
+@RunWith(RobolectricTestRunner::class)
 class EncodingSpec {
   val ctx = TestDatabase.ctx
 
   @BeforeTest
-  fun setup() = runBlocking {
+  fun setup(): Unit = runBlocking {
     ctx.runActions("DELETE FROM EncodingTestEntity")
   }
 
+  @Test
   fun `encodes and decodes nullables - not nulls`() = runBlocking {
     insert(EncodingTestEntity.regular).runOn(ctx)
     val res = Sql("SELECT * FROM EncodingTestEntity").queryOf<EncodingTestEntity>().runOn(ctx)
     verify(res.first(), EncodingTestEntity.regular)
   }
 
-  fun `encodes and decodes batch`() {
+  @Test
+  fun `encodes and decodes batch`() = runBlocking {
     insertBatch(listOf(EncodingTestEntity.regular, EncodingTestEntity.regular)).runOn(ctx)
     val res = Sql("SELECT * FROM EncodingTestEntity").queryOf<EncodingTestEntity>().runOn(ctx)
     verify(res.get(0), EncodingTestEntity.regular)
     verify(res.get(1), EncodingTestEntity.regular)
   }
 
-  fun `encodes and decodes nullables - nulls`() {
+  @Test
+  fun `encodes and decodes nullables - nulls`() = runBlocking {
     insert(EncodingTestEntity.empty).runOn(ctx)
     val res = Sql("SELECT * FROM EncodingTestEntity").queryOf<EncodingTestEntity>().runOn(ctx)
     verify(res.first(), EncodingTestEntity.empty)
   }
 
-  fun `EncodeDecode Additional Java Types - regular`() {
+  @Test
+  fun `EncodeDecode Additional Java Types - regular`() = runBlocking {
     Sql("DELETE FROM JavaTestEntity").action().runOn(ctx)
     insert(JavaTestEntity.regular).runOn(ctx)
     val actual = Sql("SELECT * FROM JavaTestEntity").queryOf<JavaTestEntity>().runOn(ctx).first()
     verify(actual, JavaTestEntity.regular)
   }
 
-  fun `EncodeDecode Additional Java Types - empty`() {
+  @Test
+  fun `EncodeDecode Additional Java Types - empty`() = runBlocking {
     Sql("DELETE FROM JavaTestEntity").action().runOn(ctx)
     insert(JavaTestEntity.empty).runOn(ctx)
     val actual = Sql("SELECT * FROM JavaTestEntity").queryOf<JavaTestEntity>().runOn(ctx).first()
     verify(actual, JavaTestEntity.empty)
   }
 
-  fun `EncodeDecode KMP Types`() {
+  @Test
+  fun `EncodeDecode KMP Types`() = runBlocking {
     Sql("DELETE FROM KmpTestEntity").action().runOn(ctx)
     insert(KmpTestEntity.regular).runOn(ctx)
     val actual = Sql("SELECT * FROM KmpTestEntity").queryOf<KmpTestEntity>().runOn(ctx).first()
     verify(actual, KmpTestEntity.regular)
   }
 
-  fun `EncodeDecode Other Time Types`() {
+  @Test
+  fun `EncodeDecode Other Time Types`() = runBlocking {
     Sql("DELETE FROM TimeEntity").action().runOn(ctx)
     val zid = ZoneId.systemDefault()
     val timeEntity = TimeEntity.make(zid)
-    insert(timeEntity).runOn(ctx)
+    insertTimeEntity(timeEntity).runOn(ctx)
     val actual = Sql("SELECT * FROM TimeEntity").queryOf<TimeEntity>().runOn(ctx).first()
     assert(timeEntity == actual)
   }
 
-  fun `EncodeDecode Other Time Types ordering`() {
+  @Test
+  fun `EncodeDecode Other Time Types ordering`() = runBlocking {
     Sql("DELETE FROM TimeEntity").action().runOn(ctx)
 
     val zid = ZoneId.systemDefault()
@@ -76,8 +94,8 @@ class EncodingSpec {
     val timeEntityB = TimeEntity.make(zid, TimeEntity.TimeEntityInput(2022, 2, 2, 2, 2, 2, 0))
 
     // Importing extras messes around with the quto-quote, need to look into why
-    insert(timeEntityA).runOn(ctx)
-    insert(timeEntityB).runOn(ctx)
+    insertTimeEntity(timeEntityA).runOn(ctx)
+    insertTimeEntity(timeEntityB).runOn(ctx)
 
     assert(timeEntityB.sqlDate > timeEntityA.sqlDate)
     assert(timeEntityB.sqlTime > timeEntityA.sqlTime)
