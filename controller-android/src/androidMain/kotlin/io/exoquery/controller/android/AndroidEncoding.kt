@@ -106,10 +106,11 @@ value class AndroidxStatementWrapper(val stmt: SupportSQLiteStatement): SqliteSt
 
 data class AndroidxArrayWrapper(val paramsSize: Int): SqliteStatementWrapper {
   val array: Array<Any?> = Array(paramsSize) { null }
-  override fun bindBytes(index: Int, bytes: ByteArray) { array[index] = bytes }
-  override fun bindLong(index: Int, long: Long) { array[index] = long }
-  override fun bindDouble(index: Int, double: Double) { array[index] = double }
-  override fun bindString(index: Int, string: String) { array[index] = string }
-  override fun bindBoolean(index: Int, boolean: Boolean) { array[index] = boolean }
-  override fun bindNull(index: Int) { array[index] = null }
+  // Note that the binding is 1-based since that is usually how it is done in database prepared statements
+  override fun bindBytes(index: Int, bytes: ByteArray) { array[index-1] = bytes }
+  override fun bindLong(index: Int, long: Long) { array[index-1] = long }
+  override fun bindDouble(index: Int, double: Double) { array[index-1] = double }
+  override fun bindString(index: Int, string: String) { array[index-1] = string }
+  override fun bindBoolean(index: Int, boolean: Boolean) { array[index-1] = boolean }
+  override fun bindNull(index: Int) { array[index-1] = null }
 }

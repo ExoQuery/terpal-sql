@@ -21,7 +21,7 @@ function get_host() {
 function setup_sqlite() {
     # DB File in terpal-sql
     echo "Creating sqlite DB File"
-    DB_FILE=terpal-sql-jdbc/terpal_test.db
+    DB_FILE=terpal-sql-jdbc/exoquery_test.db
     echo "Removing Previous sqlite DB File (if any)"
     rm -f $DB_FILE
     echo "Creating sqlite DB File"
@@ -56,24 +56,24 @@ function setup_mysql() {
 
     echo "**Verifying MySQL Connection> mysql --protocol=tcp --host=$connection --password='...' --port=$port -u root -e 'select 1'"
     mysql --protocol=tcp --host=$connection --password="$MYSQL_ROOT_PASSWORD" --port=$port -u root -e "select 1"
-    echo "MySql: Create terpal_test"
-    mysql --protocol=tcp --host=$connection --password="$MYSQL_ROOT_PASSWORD" --port=$port -u root -e "CREATE DATABASE terpal_test;"
-    echo "MySql: Write Schema to terpal_test"
-    mysql --protocol=tcp --host=$connection --password="$MYSQL_ROOT_PASSWORD" --port=$port -u root terpal_test < $MYSQL_SCRIPT
+    echo "MySql: Create exoquery_test"
+    mysql --protocol=tcp --host=$connection --password="$MYSQL_ROOT_PASSWORD" --port=$port -u root -e "CREATE DATABASE exoquery_test;"
+    echo "MySql: Write Schema to exoquery_test"
+    mysql --protocol=tcp --host=$connection --password="$MYSQL_ROOT_PASSWORD" --port=$port -u root exoquery_test < $MYSQL_SCRIPT
 }
 
 function setup_sqlserver() {
     host=$(get_host $1)
     echo "Waiting for SqlServer"
-    until /opt/mssql-tools/bin/sqlcmd -S $1 -U SA -P "TerpalRocks!" -Q "select 1;" &> /dev/null; do
-        echo "Tapping SqlServer Connection, this may show an error> /opt/mssql-tools/bin/sqlcmd -S $1 -U SA -P "TerpalRocks!" -Q "select 1" &> /dev/null"
-        /opt/mssql-tools/bin/sqlcmd -S $1 -U SA -P "TerpalRocks!" -Q "select 1;" || true
+    until /opt/mssql-tools/bin/sqlcmd -S $1 -U SA -P "ExoQueryRocks!" -Q "select 1;" &> /dev/null; do
+        echo "Tapping SqlServer Connection, this may show an error> /opt/mssql-tools/bin/sqlcmd -S $1 -U SA -P "ExoQueryRocks!" -Q "select 1" &> /dev/null"
+        /opt/mssql-tools/bin/sqlcmd -S $1 -U SA -P "ExoQueryRocks!" -Q "select 1;" || true
         sleep 5;
     done
     echo "Connected to SqlServer"
 
-    /opt/mssql-tools/bin/sqlcmd -S $1 -U SA -P "TerpalRocks!" -Q "CREATE DATABASE terpal_test"
-    /opt/mssql-tools/bin/sqlcmd -S $1 -U SA -P "TerpalRocks!" -d terpal_test -i $2
+    /opt/mssql-tools/bin/sqlcmd -S $1 -U SA -P "ExoQueryRocks!" -Q "CREATE DATABASE exoquery_test"
+    /opt/mssql-tools/bin/sqlcmd -S $1 -U SA -P "ExoQueryRocks!" -d exoquery_test -i $2
 }
 
 # Do a simple netcat poll to make sure the oracle database is ready.
@@ -91,28 +91,28 @@ function setup_oracle() {
     java -cp '/sqlline/sqlline.jar:/sqlline/ojdbc.jar' 'sqlline.SqlLine' \
       -u 'jdbc:oracle:thin:@oracle:1521:xe' \
       -n secretsysuser -p 'secretpassword' \
-      -e 'CREATE USER terpal_test IDENTIFIED BY "TerpalRocks!" QUOTA 50M ON system;' \
+      -e 'CREATE USER exoquery_test IDENTIFIED BY "ExoQueryRocks!" QUOTA 50M ON system;' \
       --showWarnings=false
 
-    # For some reason need to do `GRANT DBA TO terpal_test;` in a separate command from the the `CREATE USER` command.
+    # For some reason need to do `GRANT DBA TO exoquery_test;` in a separate command from the the `CREATE USER` command.
     echo "Granting Oracle Roles"
     java -cp '/sqlline/sqlline.jar:/sqlline/ojdbc.jar' 'sqlline.SqlLine' \
       -u 'jdbc:oracle:thin:@oracle:1521:xe' \
       -n secretsysuser -p 'secretpassword' \
-      -e "GRANT DBA TO terpal_test;" \
+      -e "GRANT DBA TO exoquery_test;" \
       --showWarnings=false
 
     echo "Running Oracle Setup Script"
     java -cp '/sqlline/sqlline.jar:/sqlline/ojdbc.jar' 'sqlline.SqlLine' \
       -u 'jdbc:oracle:thin:@oracle:1521:xe' \
-      -n terpal_test -p 'TerpalRocks!' \
+      -n exoquery_test -p 'ExoQueryRocks!' \
       -f "$ORACLE_SCRIPT" \
       --showWarnings=false
 
     echo "Extending Oracle Expirations"
     java -cp '/sqlline/sqlline.jar:/sqlline/ojdbc.jar' 'sqlline.SqlLine' \
       -u 'jdbc:oracle:thin:@oracle:1521:xe' \
-      -n terpal_test -p 'TerpalRocks!' \
+      -n exoquery_test -p 'ExoQueryRocks!' \
       -e "alter profile DEFAULT limit PASSWORD_REUSE_TIME unlimited; alter profile DEFAULT limit PASSWORD_LIFE_TIME  unlimited; alter profile DEFAULT limit PASSWORD_GRACE_TIME unlimited;" \
       --showWarnings=false
 

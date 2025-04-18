@@ -249,13 +249,20 @@ class AndroidDatabaseController internal constructor(
       }
     }
 
+  fun List<StatementParam<*>>.prepareParamArray() = run {
+    val params = this
+    val queryParams = AndroidxArrayWrapper(params.size)
+    prepare(queryParams, Unused, params)
+    queryParams
+  }
+
   open suspend fun <T> runActionReturningScoped(act: ActionReturning<T>, options: UnusedOpts): Flow<T> =
     flowWithConnection(options) {
       if (!act.sql.trim().lowercase().startsWith("insert"))
         throw IllegalArgumentException("In SQLite a ActionReturning can only be an INSERT statement.")
 
       val conn = localConnection()
-      val queryParams = AndroidxArrayWrapper(act.params.size)
+      val queryParams = act.params.prepareParamArray()
 
       when (act) {
         is ActionReturningRow -> {
@@ -288,14 +295,14 @@ class AndroidDatabaseController internal constructor(
     }
 
   protected fun <T> Query<T>.toSqliteQuery(): SimpleSQLiteQuery {
-    val queryParams = AndroidxArrayWrapper(this.params.size)
+    val queryParams = this.params.prepareParamArray()
     return SimpleSQLiteQuery(this.sql, queryParams.array)
   }
 
   override suspend fun <T> stream(query: Query<T>, options: UnusedOpts): Flow<T> =
     flowWithConnectionReadOnly(options) {
       val conn = localConnection()
-      val queryParams = AndroidxArrayWrapper(query.params.size)
+      val queryParams = query.params.prepareParamArray()
       // No caching used here, get the session directly
       tryCatchQuery(query.sql) {
         val sqliteQuery = SimpleSQLiteQuery(query.sql, queryParams.array)
@@ -310,7 +317,7 @@ class AndroidDatabaseController internal constructor(
   suspend fun <T> streamRaw(query: Query<T>, options: UnusedOpts): Flow<T> =
     flowWithConnectionReadOnly(options) {
       val conn = localConnection()
-      val queryParams = AndroidxArrayWrapper(query.params.size)
+      val queryParams = query.params.prepareParamArray()
       // No caching used here, get the session directly
       tryCatchQuery(query.sql) {
         conn.value.session.query(query.toSqliteQuery()).use {

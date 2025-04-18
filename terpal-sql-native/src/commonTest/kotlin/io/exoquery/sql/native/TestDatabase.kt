@@ -24,7 +24,7 @@ object WalTestDatabase {
 }
 
 object TestDatabase {
-  val name = "terpal_test.db"
+  val name = "exoquery_test.db"
   //val basePath = "/home/alexi/git/terpal-sql/terpal-sql-native/"
   val basePath = "./"
   val ctx by lazy {

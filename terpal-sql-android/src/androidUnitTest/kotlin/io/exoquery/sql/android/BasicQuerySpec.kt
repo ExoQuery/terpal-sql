@@ -39,6 +39,17 @@ class BasicQuerySpec {
     )
   }
 
+  @Test
+  fun `SELECT Person - simple with param`() = runBlocking {
+    @Serializable
+    data class Person(val id: Int, val firstName: String, val lastName: String, val age: Int)
+
+    val joe = "Joe"
+    Sql("SELECT id, firstName, lastName, age FROM Person WHERE firstName = ${joe}").queryOf<Person>().runOn(ctx) shouldBe listOf(
+      Person(1, "Joe", "Bloggs", 111)
+    )
+  }
+
   object Joins {
     @Serializable
     data class Person(val id: Int, val firstName: String, val lastName: String, val age: Int)

@@ -15,7 +15,7 @@ object EmptyCallback: SupportSQLiteOpenHelper.Callback(1) {
 }
 
 object TestDatabase {
-  val databaseName = "terpal_test.db"
+  val databaseName = "exoquery_test.db"
   val ctx by lazy {
     // NOTE any stdio output here seems to be swallowed by Robolectric and/or the CI test runner
     ShadowLog.stream = System.out
