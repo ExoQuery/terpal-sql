@@ -152,27 +152,27 @@ interface RequiresTransactionality<Session, Stmt, ExecutionOpts>: RequiresSessio
 interface ControllerVerbs<ExecutionOpts> {
   fun DefaultOpts(): ExecutionOpts
 
-  suspend fun <T> stream(query: Query<T>, options: ExecutionOpts): Flow<T>
-  suspend fun <T> stream(query: BatchActionReturning<T>, options: ExecutionOpts): Flow<T>
-  suspend fun <T> stream(query: ActionReturning<T>, options: ExecutionOpts): Flow<T>
-  suspend fun <T> run(query: Query<T>, options: ExecutionOpts): List<T>
-  suspend fun run(query: Action, options: ExecutionOpts): Long
-  suspend fun run(query: BatchAction, options: ExecutionOpts): List<Long>
-  suspend fun <T> run(query: ActionReturning<T>, options: ExecutionOpts): T
-  suspend fun <T> run(query: BatchActionReturning<T>, options: ExecutionOpts): List<T>
+  suspend fun <T> stream(query: ControllerQuery<T>, options: ExecutionOpts): Flow<T>
+  suspend fun <T> stream(query: ControllerBatchActionReturning<T>, options: ExecutionOpts): Flow<T>
+  suspend fun <T> stream(query: ControllerActionReturning<T>, options: ExecutionOpts): Flow<T>
+  suspend fun <T> run(query: ControllerQuery<T>, options: ExecutionOpts): List<T>
+  suspend fun run(query: ControllerAction, options: ExecutionOpts): Long
+  suspend fun run(query: ControllerBatchAction, options: ExecutionOpts): List<Long>
+  suspend fun <T> run(query: ControllerActionReturning<T>, options: ExecutionOpts): T
+  suspend fun <T> run(query: ControllerBatchActionReturning<T>, options: ExecutionOpts): List<T>
 
-  suspend fun <T> runRaw(query: Query<T>, options: ExecutionOpts): List<List<Pair<String, String?>>>
+  suspend fun <T> runRaw(query: ControllerQuery<T>, options: ExecutionOpts): List<List<Pair<String, String?>>>
 
-  suspend fun <T> stream(query: Query<T>): Flow<T> = stream(query, DefaultOpts())
-  suspend fun <T> stream(query: BatchActionReturning<T>): Flow<T> = stream(query, DefaultOpts())
-  suspend fun <T> stream(query: ActionReturning<T>): Flow<T> = stream(query, DefaultOpts())
-  suspend fun <T> run(query: Query<T>): List<T> = run(query, DefaultOpts())
-  suspend fun run(query: Action): Long = run(query, DefaultOpts())
-  suspend fun run(query: BatchAction): List<Long> = run(query, DefaultOpts())
-  suspend fun <T> run(query: ActionReturning<T>): T = run(query, DefaultOpts())
-  suspend fun <T> run(query: BatchActionReturning<T>): List<T> = run(query, DefaultOpts())
+  suspend fun <T> stream(query: ControllerQuery<T>): Flow<T> = stream(query, DefaultOpts())
+  suspend fun <T> stream(query: ControllerBatchActionReturning<T>): Flow<T> = stream(query, DefaultOpts())
+  suspend fun <T> stream(query: ControllerActionReturning<T>): Flow<T> = stream(query, DefaultOpts())
+  suspend fun <T> run(query: ControllerQuery<T>): List<T> = run(query, DefaultOpts())
+  suspend fun run(query: ControllerAction): Long = run(query, DefaultOpts())
+  suspend fun run(query: ControllerBatchAction): List<Long> = run(query, DefaultOpts())
+  suspend fun <T> run(query: ControllerActionReturning<T>): T = run(query, DefaultOpts())
+  suspend fun <T> run(query: ControllerBatchActionReturning<T>): List<T> = run(query, DefaultOpts())
 
-  suspend fun <T> runRaw(query: Query<T>): List<List<Pair<String, String?>>> = runRaw(query, DefaultOpts())
+  suspend fun <T> runRaw(query: ControllerQuery<T>): List<List<Pair<String, String?>>> = runRaw(query, DefaultOpts())
 }
 
 /**
@@ -187,7 +187,7 @@ interface Controller<ExecutionOpts>: ControllerVerbs<ExecutionOpts> {
 
 @OptIn(TerpalSqlInternal::class)
 suspend fun Controller<*>.runActions(actions: String): List<Long> =
-  actions.split(";").map { it.trim() }.filter { it.isNotEmpty() }.map { run(Action(it, listOf()), DefaultOpts()) }
+  actions.split(";").map { it.trim() }.filter { it.isNotEmpty() }.map { run(ControllerAction(it, listOf()), DefaultOpts()) }
 
 @OptIn(TerpalSqlInternal::class)
 interface ControllerTransactional<Session, Stmt, ExecutionOpts>: Controller<ExecutionOpts>, RequiresSession<Session, Stmt, ExecutionOpts>, RequiresTransactionality<Session, Stmt, ExecutionOpts> {
@@ -202,11 +202,11 @@ interface ControllerTransactional<Session, Stmt, ExecutionOpts>: Controller<Exec
 @OptIn(TerpalSqlInternal::class)
 interface ControllerCanonical<Session, Stmt, ResultRow, ExecutionOpts>: ControllerTransactional<Session, Stmt, ExecutionOpts>, RequiresSession<Session, Stmt, ExecutionOpts>, RequiresTransactionality<Session, Stmt, ExecutionOpts>, WithEncoding<Session, Stmt, ResultRow>
 
-suspend fun <T> Query<T>.runOn(ctx: Controller<*>) = ctx.run(this)
-suspend fun <T> Query<T>.streamOn(ctx: Controller<*>) = ctx.stream(this)
-suspend fun <T> Query<T>.runRawOn(ctx: Controller<*>) = ctx.runRaw(this)
-suspend fun Action.runOn(ctx: Controller<*>) = ctx.run(this)
-suspend fun <T> ActionReturning<T>.runOn(ctx: Controller<*>) = ctx.run(this)
-suspend fun BatchAction.runOn(ctx: Controller<*>) = ctx.run(this)
-suspend fun <T> BatchActionReturning<T>.runOn(ctx: Controller<*>) = ctx.run(this)
-suspend fun <T> BatchActionReturning<T>.streamOn(ctx: Controller<*>) = ctx.stream(this)
+suspend fun <T> ControllerQuery<T>.runOn(ctx: Controller<*>) = ctx.run(this)
+suspend fun <T> ControllerQuery<T>.streamOn(ctx: Controller<*>) = ctx.stream(this)
+suspend fun <T> ControllerQuery<T>.runRawOn(ctx: Controller<*>) = ctx.runRaw(this)
+suspend fun ControllerAction.runOn(ctx: Controller<*>) = ctx.run(this)
+suspend fun <T> ControllerActionReturning<T>.runOn(ctx: Controller<*>) = ctx.run(this)
+suspend fun ControllerBatchAction.runOn(ctx: Controller<*>) = ctx.run(this)
+suspend fun <T> ControllerBatchActionReturning<T>.runOn(ctx: Controller<*>) = ctx.run(this)
+suspend fun <T> ControllerBatchActionReturning<T>.streamOn(ctx: Controller<*>) = ctx.stream(this)

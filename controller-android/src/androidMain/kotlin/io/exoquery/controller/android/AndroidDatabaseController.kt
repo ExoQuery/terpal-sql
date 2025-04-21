@@ -256,16 +256,13 @@ class AndroidDatabaseController internal constructor(
     queryParams
   }
 
-  open suspend fun <T> runActionReturningScoped(act: ActionReturning<T>, options: UnusedOpts): Flow<T> =
+  open suspend fun <T> runActionReturningScoped(act: ControllerActionReturning<T>, options: UnusedOpts): Flow<T> =
     flowWithConnection(options) {
-      if (!act.sql.trim().lowercase().startsWith("insert"))
-        throw IllegalArgumentException("In SQLite a ActionReturning can only be an INSERT statement.")
-
       val conn = localConnection()
       val queryParams = act.params.prepareParamArray()
 
       when (act) {
-        is ActionReturningRow -> {
+        is ControllerActionReturning.Row -> {
           if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
             throw IllegalArgumentException(
               """Cannot use RETURNING clause in SQLite versions below 3.35.0. This requires Android SDK 34+ (Upside Down Cake)
@@ -282,7 +279,7 @@ class AndroidDatabaseController internal constructor(
             }
           }
         }
-        is ActionReturningId -> {
+        is ControllerActionReturning.Id -> {
           accessStmt(act.sql, conn) { stmt ->
             prepare(wrap(stmt), Unused, act.params)
             tryCatchQuery(act.sql) {
@@ -294,12 +291,12 @@ class AndroidDatabaseController internal constructor(
       }
     }
 
-  protected fun <T> Query<T>.toSqliteQuery(): SimpleSQLiteQuery {
+  protected fun <T> ControllerQuery<T>.toSqliteQuery(): SimpleSQLiteQuery {
     val queryParams = this.params.prepareParamArray()
     return SimpleSQLiteQuery(this.sql, queryParams.array)
   }
 
-  override suspend fun <T> stream(query: Query<T>, options: UnusedOpts): Flow<T> =
+  override suspend fun <T> stream(query: ControllerQuery<T>, options: UnusedOpts): Flow<T> =
     flowWithConnectionReadOnly(options) {
       val conn = localConnection()
       val queryParams = query.params.prepareParamArray()
@@ -314,7 +311,7 @@ class AndroidDatabaseController internal constructor(
       }
     }
 
-  suspend fun <T> streamRaw(query: Query<T>, options: UnusedOpts): Flow<T> =
+  suspend fun <T> streamRaw(query: ControllerQuery<T>, options: UnusedOpts): Flow<T> =
     flowWithConnectionReadOnly(options) {
       val conn = localConnection()
       val queryParams = query.params.prepareParamArray()
@@ -328,7 +325,7 @@ class AndroidDatabaseController internal constructor(
       }
     }
 
-  override suspend fun <T> runRaw(query: Query<T>, options: UnusedOpts) =
+  override suspend fun <T> runRaw(query: ControllerQuery<T>, options: UnusedOpts) =
     withConnection(options) {
       val conn = localConnection()
       val result = mutableListOf<List<Pair<String, String?>>>()
@@ -347,7 +344,7 @@ class AndroidDatabaseController internal constructor(
       result
     }
 
-  override open suspend fun <T> run(query: Query<T>, options: UnusedOpts): List<T> = run {
+  override open suspend fun <T> run(query: ControllerQuery<T>, options: UnusedOpts): List<T> = run {
     withReadOnlyConnection(options) {
       val conn = localConnection()
       val result = mutableListOf<T>()
@@ -366,17 +363,17 @@ class AndroidDatabaseController internal constructor(
     }
   }
 
-  open override suspend fun run(query: Action, options: UnusedOpts): Long = runActionScoped(query.sql, options, query.params)
-  open override suspend fun <T> run(query: ActionReturning<T>, options: UnusedOpts): T = runActionReturningScoped(query, options).first()
-  open override suspend fun <T> stream(query: ActionReturning<T>, options: UnusedOpts): Flow<T> = runActionReturningScoped(query, options)
+  open override suspend fun run(query: ControllerAction, options: UnusedOpts): Long = runActionScoped(query.sql, options, query.params)
+  open override suspend fun <T> run(query: ControllerActionReturning<T>, options: UnusedOpts): T = runActionReturningScoped(query, options).first()
+  open override suspend fun <T> stream(query: ControllerActionReturning<T>, options: UnusedOpts): Flow<T> = runActionReturningScoped(query, options)
 
-  override suspend fun run(query: BatchAction, options: UnusedOpts): List<Long> =
+  override suspend fun run(query: ControllerBatchAction, options: UnusedOpts): List<Long> =
     throw IllegalArgumentException("Batch Actions are not supported in NativeContext.")
 
-  override suspend fun <T> run(query: BatchActionReturning<T>, options: UnusedOpts): List<T> =
+  override suspend fun <T> run(query: ControllerBatchActionReturning<T>, options: UnusedOpts): List<T> =
     throw IllegalArgumentException("Batch Queries are not supported in NativeContext.")
 
-  override suspend fun <T> stream(query: BatchActionReturning<T>, options: UnusedOpts): Flow<T> =
+  override suspend fun <T> stream(query: ControllerBatchActionReturning<T>, options: UnusedOpts): Flow<T> =
     throw IllegalArgumentException("Batch Queries are not supported in NativeContext.")
 
   fun runRaw(sql: String, options: UnusedOpts = UnusedOpts) = runBlocking {

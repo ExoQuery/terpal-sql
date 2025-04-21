@@ -227,11 +227,11 @@ class NativeDatabaseController internal constructor(
       }
     }
 
-  open suspend fun <T> runActionReturningScoped(act: ActionReturning<T>, options: UnusedOpts): Flow<T> =
+  open suspend fun <T> runActionReturningScoped(act: ControllerActionReturning<T>, options: UnusedOpts): Flow<T> =
     flowWithConnection(options) {
       val conn = localConnection()
       when (act) {
-        is ActionReturningId -> {
+        is ControllerActionReturning.Id -> {
           accessStmtReturning(act.sql, conn, options, emptyList()) { stmt ->
             prepare(DelightStatementWrapper(stmt), Unused, act.params)
             tryCatchQuery(act.sql) {
@@ -240,7 +240,7 @@ class NativeDatabaseController internal constructor(
             }
           }
         }
-        is ActionReturningRow -> {
+        is ControllerActionReturning.Row -> {
           accessStmtReturning(act.sql, conn, options, act.returningColumns) { stmt ->
             prepare(DelightStatementWrapper(stmt), Unused, act.params)
             tryCatchQuery(act.sql) {
@@ -254,7 +254,7 @@ class NativeDatabaseController internal constructor(
       }
     }
 
-  override suspend fun <T> stream(query: Query<T>, options: UnusedOpts): Flow<T> =
+  override suspend fun <T> stream(query: ControllerQuery<T>, options: UnusedOpts): Flow<T> =
     flowWithConnectionReadOnly(options) {
       val conn = localConnection()
       accessStmt(query.sql, conn) { stmt ->
@@ -268,7 +268,7 @@ class NativeDatabaseController internal constructor(
       }
     }
 
-  override suspend fun <T> runRaw(query: Query<T>, options: UnusedOpts) =
+  override suspend fun <T> runRaw(query: ControllerQuery<T>, options: UnusedOpts) =
     withReadOnlyConnection(options) {
       val conn = localConnection()
       accessStmt(query.sql, conn) { stmt ->
@@ -289,18 +289,18 @@ class NativeDatabaseController internal constructor(
       }
     }
 
-  open override suspend fun <T> run(query: Query<T>, options: UnusedOpts): List<T> = stream(query, options).toList()
-  open override suspend fun run(query: Action, options: UnusedOpts): Long = runActionScoped(query.sql, query.params, options)
-  open override suspend fun <T> run(query: ActionReturning<T>, options: UnusedOpts): T = runActionReturningScoped(query, options).first()
-  open override suspend fun <T> stream(query: ActionReturning<T>, options: UnusedOpts): Flow<T> = runActionReturningScoped(query, options)
+  open override suspend fun <T> run(query: ControllerQuery<T>, options: UnusedOpts): List<T> = stream(query, options).toList()
+  open override suspend fun run(query: ControllerAction, options: UnusedOpts): Long = runActionScoped(query.sql, query.params, options)
+  open override suspend fun <T> run(query: ControllerActionReturning<T>, options: UnusedOpts): T = runActionReturningScoped(query, options).first()
+  open override suspend fun <T> stream(query: ControllerActionReturning<T>, options: UnusedOpts): Flow<T> = runActionReturningScoped(query, options)
 
-  override suspend fun run(query: BatchAction, options: UnusedOpts): List<Long> =
+  override suspend fun run(query: ControllerBatchAction, options: UnusedOpts): List<Long> =
     throw IllegalArgumentException("Batch Actions are not supported in NativeContext.")
 
-  override suspend fun <T> run(query: BatchActionReturning<T>, options: UnusedOpts): List<T> =
+  override suspend fun <T> run(query: ControllerBatchActionReturning<T>, options: UnusedOpts): List<T> =
     throw IllegalArgumentException("Batch Queries are not supported in NativeContext.")
 
-  override suspend fun <T> stream(query: BatchActionReturning<T>, options: UnusedOpts): Flow<T> =
+  override suspend fun <T> stream(query: ControllerBatchActionReturning<T>, options: UnusedOpts): Flow<T> =
     throw IllegalArgumentException("Batch Queries are not supported in NativeContext.")
 
   fun runRaw(sql: String, options: UnusedOpts = UnusedOpts) = runBlocking {

@@ -3,7 +3,7 @@
 set -e
 
 # import setup functions
-. /app/scripts/setup_db_scripts.sh
+. scripts/setup_db_scripts.sh
 
 time setup_sqlite
 

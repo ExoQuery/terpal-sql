@@ -1,6 +1,5 @@
 package io.exoquery.controller
 
-import io.exoquery.controller.ControllerTransactional
 import kotlinx.coroutines.CoroutineScope
 
 suspend fun <T, Session, Stmt, ExecutionOpts> ControllerTransactional<Session, Stmt, ExecutionOpts>.transaction(executionOptions: ExecutionOpts, block: suspend ExternalTransactionScope<ExecutionOpts>.() -> T): T =
@@ -13,9 +12,9 @@ suspend fun <T, Session, Stmt, ExecutionOpts> ControllerTransactional<Session, S
   transaction(this.DefaultOpts(), block)
 
 class ExternalTransactionScope<ExecutionOpts>(private val scope: CoroutineScope, private val ctx: Controller<ExecutionOpts>) {
-  suspend fun <T> Query<T>.run(options: ExecutionOpts = ctx.DefaultOpts()): List<T> = ctx.run(this, options)
-  suspend fun Action.run(options: ExecutionOpts = ctx.DefaultOpts()): Long = ctx.run(this, options)
-  suspend fun BatchAction.run(options: ExecutionOpts = ctx.DefaultOpts()): List<Long> = ctx.run(this, options)
-  suspend fun <T> ActionReturning<T>.run(options: ExecutionOpts = ctx.DefaultOpts()): T = ctx.run(this, options)
-  suspend fun <T> BatchActionReturning<T>.run(options: ExecutionOpts = ctx.DefaultOpts()): List<T> = ctx.run(this, options)
+  suspend fun <T> ControllerQuery<T>.run(options: ExecutionOpts = ctx.DefaultOpts()): List<T> = ctx.run(this, options)
+  suspend fun ControllerAction.run(options: ExecutionOpts = ctx.DefaultOpts()): Long = ctx.run(this, options)
+  suspend fun ControllerBatchAction.run(options: ExecutionOpts = ctx.DefaultOpts()): List<Long> = ctx.run(this, options)
+  suspend fun <T> ControllerActionReturning<T>.run(options: ExecutionOpts = ctx.DefaultOpts()): T = ctx.run(this, options)
+  suspend fun <T> ControllerBatchActionReturning<T>.run(options: ExecutionOpts = ctx.DefaultOpts()): List<T> = ctx.run(this, options)
 }

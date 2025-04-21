@@ -15,9 +15,11 @@ import java.math.BigDecimal
 import java.sql.SQLException
 import java.sql.Time
 import java.sql.Timestamp
+import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZoneOffset
+import java.time.ZonedDateTime
 import java.util.Date
 import java.util.Locale
 import java.util.UUID
@@ -92,10 +94,17 @@ open class AdditionalSqliteEncoding(val dateHelper: SqliteDateHelper = SqliteDat
   val JDateEncoder: SqliteEncoderAny<java.util.Date> = SqlTimestampEncoder.contramap { v: java.util.Date -> Timestamp(v.getTime()) }
   val JDateDecoder: SqliteDecoderAny<java.util.Date> = SqlTimestampDecoder.map { v: Timestamp -> java.util.Date(v.getTime()) }
 
+  // Strange! ZonedDateTime.toInstant has existed since Java 8 but only seems to have been added to Android in API 34.
+  // Don't want to rely on something that recent.
+  fun ZonedDateTime.toEpochMilli() =
+    toLocalDateTime()
+      .atZone(getZone())
+      .toEpochSecond() * 1000 + getNano() / 1_000_000;
+
   val JLocalDateEncoder: SqliteEncoderAny<java.time.LocalDate> = SqlDateEncoder.contramap { v: java.time.LocalDate -> v.toSqlDate(dateHelper.encodingZoneId) }
   val JLocalTimeEncoder: SqliteEncoderAny<java.time.LocalTime> = SqlTimeEncoder.contramap { v: java.time.LocalTime -> v.toSqlTime(dateHelper.encodingZoneId) }
   val JLocalDateTimeEncoder: SqliteEncoderAny<java.time.LocalDateTime> = SqlTimestampEncoder.contramap { v: java.time.LocalDateTime -> v.toSqlTimestamp(dateHelper.encodingZoneId) }
-  val JZonedDateTimeEncoder: SqliteEncoderAny<java.time.ZonedDateTime> = SqlTimestampEncoder.contramap { v: java.time.ZonedDateTime -> Timestamp(v.toInstant().toEpochMilli()) }
+  val JZonedDateTimeEncoder: SqliteEncoderAny<java.time.ZonedDateTime> = SqlTimestampEncoder.contramap { v: java.time.ZonedDateTime -> java.sql.Timestamp(v.toEpochMilli()) }
   val JInstantEncoder: SqliteEncoderAny<java.time.Instant> = SqlTimestampEncoder.contramap { v: java.time.Instant -> Timestamp(v.toEpochMilli()) }
   val JOffsetTimeEncoder: SqliteEncoderAny<java.time.OffsetTime> = SqlTimeEncoder.contramap { v: java.time.OffsetTime -> v.toLocalTime().toSqlTime(dateHelper.encodingZoneId) }
   val JOffsetDateTimeEncoder: SqliteEncoderAny<java.time.OffsetDateTime> = SqlTimestampEncoder.contramap { v: java.time.OffsetDateTime -> Timestamp(v.toInstant().toEpochMilli()) }

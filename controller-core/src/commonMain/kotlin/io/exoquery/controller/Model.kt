@@ -12,42 +12,45 @@ import kotlinx.serialization.*
 @Target(AnnotationTarget.CLASS, AnnotationTarget.PROPERTY, AnnotationTarget.TYPE)
 annotation class SqlJsonValue
 
-data class Query<T>(val sql: String, val params: List<StatementParam<*>>, val resultMaker: KSerializer<T>)
+data class ControllerQuery<T>(val sql: String, val params: List<StatementParam<*>>, val resultMaker: KSerializer<T>)
 
 sealed interface ActionVerb<T>
 
-data class Action(val sql: String, val params: List<StatementParam<*>>): ActionVerb<Long>
+data class ControllerAction(val sql: String, val params: List<StatementParam<*>>): ActionVerb<Long>
 
-sealed interface ActionReturning<T>: ActionVerb<T> {
+sealed interface ControllerActionReturning<T>: ActionVerb<T> {
   val sql: String
   val params: List<StatementParam<*>>
   val resultMaker: KSerializer<T>
   val returningColumns: List<String>
-}
-data class ActionReturningRow<T>(override val sql: String, override val params: List<StatementParam<*>>, override val resultMaker: KSerializer<T>, override val returningColumns: List<String>): ActionReturning<T>
-data class ActionReturningId<T>(override val sql: String, override val params: List<StatementParam<*>>, override val resultMaker: KSerializer<T>, override val returningColumns: List<String>): ActionReturning<T> {
-  companion object {
-    operator fun invoke(sql: String, params: List<StatementParam<*>>, resultMaker: KSerializer<Long>, returningColumn: String? = null): ActionReturningId<Long> {
-      return ActionReturningId(sql, params, resultMaker, listOfNotNull(returningColumn))
+
+  data class Row<T>(override val sql: String, override val params: List<StatementParam<*>>, override val resultMaker: KSerializer<T>, override val returningColumns: List<String>): ControllerActionReturning<T>
+  data class Id<T>(override val sql: String, override val params: List<StatementParam<*>>, override val resultMaker: KSerializer<T>, override val returningColumns: List<String>): ControllerActionReturning<T> {
+    companion object {
+      operator fun invoke(sql: String, params: List<StatementParam<*>>, resultMaker: KSerializer<Long>, returningColumn: String? = null): ControllerActionReturning.Id<Long> {
+        return ControllerActionReturning.Id(sql, params, resultMaker, listOfNotNull(returningColumn))
+      }
     }
   }
 }
 
+
 sealed interface BatchVerb<T>
 
-data class BatchAction(val sql: String, val params: Sequence<List<StatementParam<*>>>): BatchVerb<Long>
+data class ControllerBatchAction(val sql: String, val params: Sequence<List<StatementParam<*>>>): BatchVerb<Long>
 
-sealed interface BatchActionReturning<T>: BatchVerb<T> {
+sealed interface ControllerBatchActionReturning<T>: BatchVerb<T> {
   val sql: String
   val params: Sequence<List<StatementParam<*>>>
   val resultMaker: KSerializer<T>
   val returningColumns: List<String>
-}
-data class BatchActionReturningRow<T>(override val sql: String, override val params: Sequence<List<StatementParam<*>>>, override val resultMaker: KSerializer<T>, override val returningColumns: List<String>): BatchActionReturning<T>
-data class BatchActionReturningId<T>(override val sql: String, override val params: Sequence<List<StatementParam<*>>>, override val resultMaker: KSerializer<T>, override val returningColumns: List<String>): BatchActionReturning<T> {
-  companion object {
-    operator fun invoke(sql: String, params: Sequence<List<StatementParam<*>>>, resultMaker: KSerializer<Long>, returningColumn: String? = null): BatchActionReturningId<Long> {
-      return BatchActionReturningId(sql, params, resultMaker, listOfNotNull(returningColumn))
+
+  data class Row<T>(override val sql: String, override val params: Sequence<List<StatementParam<*>>>, override val resultMaker: KSerializer<T>, override val returningColumns: List<String>): ControllerBatchActionReturning<T>
+  data class Id<T>(override val sql: String, override val params: Sequence<List<StatementParam<*>>>, override val resultMaker: KSerializer<T>, override val returningColumns: List<String>): ControllerBatchActionReturning<T> {
+    companion object {
+      operator fun invoke(sql: String, params: Sequence<List<StatementParam<*>>>, resultMaker: KSerializer<Long>, returningColumn: String? = null): ControllerBatchActionReturning.Id<Long> {
+        return ControllerBatchActionReturning.Id(sql, params, resultMaker, listOfNotNull(returningColumn))
+      }
     }
   }
 }

@@ -107,11 +107,11 @@ object JdbcControllers {
         JavaTimeEncoding<Connection, PreparedStatement, ResultSet> by JdbcTimeEncodingLegacy,
         JavaUuidEncoding<Connection, PreparedStatement, ResultSet> by JdbcUuidStringEncoding {}
 
-    protected override open suspend fun <T> runActionReturningScoped(act: ActionReturning<T>, options: JdbcExecutionOptions): Flow<T> =
+    protected override open suspend fun <T> runActionReturningScoped(act: ControllerActionReturning<T>, options: JdbcExecutionOptions): Flow<T> =
       flowWithConnection(options) {
         val conn = localConnection()
         when (act) {
-          is ActionReturningId -> {
+          is ControllerActionReturning.Id -> {
             accessStmtReturning(act.sql, conn, options, act.returningColumns) { stmt ->
               prepare(stmt, conn, act.params)
               stmt.execute()
@@ -122,7 +122,7 @@ object JdbcControllers {
                 { conn, rs -> act.resultMaker.makeExtractor<T>(QueryDebugInfo(act.sql)).invoke(conn, rs) })
             }
           }
-          is ActionReturningRow -> {
+          is ControllerActionReturning.Row -> {
             accessStmtReturning(act.sql, conn, options, act.returningColumns) { stmt ->
               prepare(stmt, conn, act.params)
               emitResultSet(conn, stmt.executeQuery(), act.resultMaker.makeExtractor<T>(QueryDebugInfo(act.sql)))
@@ -131,12 +131,12 @@ object JdbcControllers {
         }
       }
 
-    protected override open suspend fun <T> runBatchActionReturningScoped(act: BatchActionReturning<T>, options: JdbcExecutionOptions): Flow<T> =
+    protected override open suspend fun <T> runBatchActionReturningScoped(act: ControllerBatchActionReturning<T>, options: JdbcExecutionOptions): Flow<T> =
       flowWithConnection(options) {
         val conn = localConnection()
         act.params.forEach { batch ->
           when (act) {
-            is BatchActionReturningId ->
+            is ControllerBatchActionReturning.Id ->
               accessStmtReturning(act.sql, conn, options, emptyList()) { stmt ->
                 prepare(stmt, conn, batch)
                 emitResultSet(
@@ -144,7 +144,7 @@ object JdbcControllers {
                   stmt.generatedKeys,
                   { conn, rs -> act.resultMaker.makeExtractor<T>(QueryDebugInfo(act.sql)).invoke(conn, rs) as T })
               }
-            is BatchActionReturningRow ->
+            is ControllerBatchActionReturning.Row ->
               accessStmtReturning(act.sql, conn, options, act.returningColumns) { stmt ->
                 prepare(stmt, conn, batch)
                 emitResultSet(conn, stmt.executeQuery(), act.resultMaker.makeExtractor<T>(QueryDebugInfo(act.sql)))
@@ -200,11 +200,11 @@ object JdbcControllers {
         JavaTimeEncoding<Connection, PreparedStatement, ResultSet> by JdbcTimeEncoding(),
         JavaUuidEncoding<Connection, PreparedStatement, ResultSet> by JdbcUuidStringEncoding {}
 
-    override suspend fun <T> runActionReturningScoped(act: ActionReturning<T>, options: JdbcExecutionOptions): Flow<T> =
+    override suspend fun <T> runActionReturningScoped(act: ControllerActionReturning<T>, options: JdbcExecutionOptions): Flow<T> =
       flowWithConnection(options) {
         val conn = localConnection()
         when (act) {
-          is ActionReturningId -> {
+          is ControllerActionReturning.Id -> {
             // TODO error looks like it should be impossible!
             accessStmtReturning(act.sql, conn, options, act.returningColumns) { stmt ->
               prepare(stmt, conn, act.params)
@@ -218,7 +218,7 @@ object JdbcControllers {
                 { conn, rs -> act.resultMaker.makeExtractor<T>(QueryDebugInfo(act.sql)).invoke(conn, rs) as T })
             }
           }
-          is ActionReturningRow -> {
+          is ControllerActionReturning.Row -> {
             accessStmtReturning(act.sql, conn, options, act.returningColumns) { stmt ->
               prepare(stmt, conn, act.params)
               // See comment about SQL Server not supporting getGeneratedKeys below
@@ -228,7 +228,7 @@ object JdbcControllers {
         }
       }
 
-    override suspend fun <T> runBatchActionReturningScoped(act: BatchActionReturning<T>, options: JdbcExecutionOptions): Flow<T> =
+    override suspend fun <T> runBatchActionReturningScoped(act: ControllerBatchActionReturning<T>, options: JdbcExecutionOptions): Flow<T> =
       flowWithConnection(options) {
         val conn = localConnection()
         accessStmtReturning(act.sql, conn, options, listOf()) { stmt ->

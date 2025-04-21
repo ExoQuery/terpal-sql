@@ -1,6 +1,6 @@
 package io.exoquery.sql.encodingdata
 
-import io.exoquery.controller.Action
+import io.exoquery.controller.ControllerAction
 import io.exoquery.sql.Param
 import io.exoquery.sql.Sql
 import io.kotest.matchers.bigdecimal.shouldBeEqualIgnoringScale
@@ -44,7 +44,7 @@ data class JavaTestEntity(
   }
 }
 
-fun insert(e: JavaTestEntity): Action {
+fun insert(e: JavaTestEntity): ControllerAction {
   fun wrap(value: UUID?): Param<UUID> = Param.ctx(value)
   return Sql("INSERT INTO JavaTestEntity VALUES (${e.bigDecimalMan}, ${e.javaUtilDateMan}, ${wrap(e.uuidMan)}, ${e.bigDecimalOpt}, ${e.javaUtilDateOpt}, ${wrap(e.uuidOpt)})").action()
 }

@@ -24,7 +24,7 @@ android {
 
   compileSdk = 34
   defaultConfig {
-    minSdk = 23
+    minSdk = 26
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
 //  sourceSets {
@@ -70,7 +70,7 @@ kotlin {
         dependencies {
           api(project(":terpal-sql-core"))
           api(project(":controller-android"))
-          
+
           api("org.jetbrains.kotlinx:kotlinx-serialization-core:1.6.2")
           api("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
           api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")

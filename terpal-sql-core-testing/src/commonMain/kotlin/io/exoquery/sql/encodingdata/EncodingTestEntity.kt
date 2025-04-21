@@ -1,7 +1,7 @@
 package io.exoquery.sql.encodingdata
 
-import io.exoquery.controller.Action
-import io.exoquery.controller.BatchAction
+import io.exoquery.controller.ControllerAction
+import io.exoquery.controller.ControllerBatchAction
 import io.exoquery.sql.*
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
@@ -93,12 +93,12 @@ data class EncodingTestEntity(
   }
 }
 
-fun insert(e: EncodingTestEntity): Action {
+fun insert(e: EncodingTestEntity): ControllerAction {
   fun wrap(value: SerializeableTestType?): Param<SerializeableTestType> = Param.withSer(value, SerializeableTestType.serializer())
   return Sql("INSERT INTO EncodingTestEntity VALUES (${e.stringMan}, ${e.booleanMan}, ${e.byteMan}, ${e.shortMan}, ${e.intMan}, ${e.long}, ${e.floatMan}, ${e.double}, ${e.byteArrayMan}, ${wrap(e.customMan)}, ${e.stringOpt}, ${e.booleanOpt}, ${e.byteOpt}, ${e.shortOpt}, ${e.intOpt}, ${e.longOpt}, ${e.floatOpt}, ${e.doubleOpt}, ${e.byteArrayOpt}, ${wrap(e.customOpt)})").action()
 }
 
-fun insertBatch(es: List<EncodingTestEntity>): BatchAction {
+fun insertBatch(es: List<EncodingTestEntity>): ControllerBatchAction {
   fun wrap(value: SerializeableTestType?): Param<SerializeableTestType> = Param.withSer(value, SerializeableTestType.serializer())
   return SqlBatch { e: EncodingTestEntity ->
     "INSERT INTO EncodingTestEntity VALUES (${e.stringMan}, ${e.booleanMan}, ${e.byteMan}, ${e.shortMan}, ${e.intMan}, ${e.long}, ${e.floatMan}, ${e.double}, ${e.byteArrayMan}, ${wrap(e.customMan)}, ${e.stringOpt}, ${e.booleanOpt}, ${e.byteOpt}, ${e.shortOpt}, ${e.intOpt}, ${e.longOpt}, ${e.floatOpt}, ${e.doubleOpt}, ${e.byteArrayOpt}, ${wrap(e.customOpt)})"

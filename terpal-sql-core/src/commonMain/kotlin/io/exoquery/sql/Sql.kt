@@ -2,10 +2,8 @@
 
 package io.exoquery.sql
 
-import io.exoquery.controller.BatchAction
-import io.exoquery.controller.BatchActionReturning
-import io.exoquery.controller.BatchActionReturningId
-import io.exoquery.controller.BatchActionReturningRow
+import io.exoquery.controller.ControllerBatchAction
+import io.exoquery.controller.ControllerBatchActionReturning
 import io.exoquery.controller.JsonValue
 import io.exoquery.controller.TerpalSqlInternal
 import io.exoquery.terpal.*
@@ -127,27 +125,27 @@ class SqlBatchCallWithValues<A: Any>(protected val batch: SqlBatchCall<A>, prote
   // Note that we don't actually care about the value of element of the batch anymore
   // because the parameters have been prepared and it just needs to be excuted
   // We only need type-data when there is a value returned
-  fun action(): BatchAction {
+  fun action(): ControllerBatchAction {
     val sql = batch.parts.joinToString("?")
     val paramSeq = values.map { batch.params(it).map { it.toStatementParam() } }
-    return BatchAction(sql, paramSeq)
+    return ControllerBatchAction(sql, paramSeq)
   }
 
   fun batchCallValues() = values
   fun batchCall() = batch
 
-  inline fun <reified T> actionReturning(vararg returningColumns: String): BatchActionReturning<T> {
+  inline fun <reified T> actionReturning(vararg returningColumns: String): ControllerBatchActionReturning<T> {
     val sql = batchCall().parts.joinToString("?")
     val paramSeq = batchCallValues().map { batchCall().params(it).map { it.toStatementParam() } }
     val resultMaker = serializer<T>()
-    return BatchActionReturningRow(sql, paramSeq, resultMaker, returningColumns.toList())
+    return ControllerBatchActionReturning.Row(sql, paramSeq, resultMaker, returningColumns.toList())
   }
 
-  fun actionReturningId(): BatchActionReturning<Long> {
+  fun actionReturningId(): ControllerBatchActionReturning<Long> {
     val sql = batchCall().parts.joinToString("?")
     val paramSeq = batchCallValues().map { batchCall().params(it).map { it.toStatementParam() } }
     val resultMaker = serializer<Long>()
-    return BatchActionReturningId(sql, paramSeq, resultMaker)
+    return ControllerBatchActionReturning.Id(sql, paramSeq, resultMaker)
   }
 }
 

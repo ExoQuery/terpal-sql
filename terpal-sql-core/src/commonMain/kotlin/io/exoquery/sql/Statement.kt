@@ -1,10 +1,8 @@
 package io.exoquery.sql
 
-import io.exoquery.controller.Action
-import io.exoquery.controller.ActionReturning
-import io.exoquery.controller.ActionReturningId
-import io.exoquery.controller.ActionReturningRow
-import io.exoquery.controller.Query
+import io.exoquery.controller.ControllerAction
+import io.exoquery.controller.ControllerActionReturning
+import io.exoquery.controller.ControllerQuery
 import io.exoquery.controller.StatementParam
 import io.exoquery.controller.TerpalSqlInternal
 import kotlinx.serialization.KSerializer
@@ -42,26 +40,26 @@ data class Statement(val ir: IR.Splice): SqlFragment {
     }
   }
 
-  inline fun <reified T> queryOf(): Query<T> {
+  inline fun <reified T> queryOf(): ControllerQuery<T> {
     val (sql, params) = constructQuery(ir)
     val resultMaker = serializer<T>()
-    return Query(sql, params.map { it.toStatementParam() }, resultMaker)
+    return ControllerQuery(sql, params.map { it.toStatementParam() }, resultMaker)
   }
 
-  fun <T> queryOf(serializer: KSerializer<T>): Query<T> {
+  fun <T> queryOf(serializer: KSerializer<T>): ControllerQuery<T> {
     val (sql, params) = constructQuery(ir)
-    return Query(sql, params.map { it.toStatementParam() }, serializer)
+    return ControllerQuery(sql, params.map { it.toStatementParam() }, serializer)
   }
 
-  fun action(): Action {
+  fun action(): ControllerAction {
     val (sql, params) = constructQuery(ir)
-    return Action(sql, params.map { it.toStatementParam() })
+    return ControllerAction(sql, params.map { it.toStatementParam() })
   }
 
-  inline fun <reified T> actionReturning(vararg returningColumns: String): ActionReturning<T> {
+  inline fun <reified T> actionReturning(vararg returningColumns: String): ControllerActionReturning<T> {
     val (sql, params) = constructQuery(ir)
     val resultMaker = serializer<T>()
-    return ActionReturningRow(sql, params.map { it.toStatementParam() }, resultMaker, returningColumns.toList())
+    return ControllerActionReturning.Row(sql, params.map { it.toStatementParam() }, resultMaker, returningColumns.toList())
   }
 
   /**
@@ -76,9 +74,9 @@ data class Statement(val ir: IR.Splice): SqlFragment {
    * they will try to return all of the generated columns. That is what the idColumn parameter is for.
    * Otherwise you can ignore it.
    */
-  inline fun actionReturningId(idColumn: String? = null): ActionReturningId<Long> {
+  inline fun actionReturningId(idColumn: String? = null): ControllerActionReturning.Id<Long> {
     val (sql, params) = constructQuery(ir)
     val resultMaker = serializer<Long>()
-    return ActionReturningId(sql, params.map { it.toStatementParam() }, resultMaker, idColumn)
+    return ControllerActionReturning.Id(sql, params.map { it.toStatementParam() }, resultMaker, idColumn)
   }
 }

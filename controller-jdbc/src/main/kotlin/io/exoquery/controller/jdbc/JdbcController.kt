@@ -98,7 +98,7 @@ abstract class JdbcController internal constructor(
     }
   }
 
-  protected open suspend fun <T> runActionReturningScoped(act: ActionReturning<T>, options: JdbcExecutionOptions): Flow<T> =
+  protected open suspend fun <T> runActionReturningScoped(act: ControllerActionReturning<T>, options: JdbcExecutionOptions): Flow<T> =
     flowWithConnection(options) {
       val conn = localConnection()
       accessStmtReturning(act.sql, conn, options, act.returningColumns) { stmt ->
@@ -108,7 +108,7 @@ abstract class JdbcController internal constructor(
       }
     }
 
-  protected open suspend fun runBatchActionScoped(query: BatchAction, options: JdbcExecutionOptions): List<Long> =
+  protected open suspend fun runBatchActionScoped(query: ControllerBatchAction, options: JdbcExecutionOptions): List<Long> =
     withConnection(options) {
       val conn = localConnection()
       accessStmt(query.sql, conn) { stmt ->
@@ -121,7 +121,7 @@ abstract class JdbcController internal constructor(
       }
     }
 
-  protected open suspend fun <T> runBatchActionReturningScoped(act: BatchActionReturning<T>, options: JdbcExecutionOptions): Flow<T> =
+  protected open suspend fun <T> runBatchActionReturningScoped(act: ControllerBatchActionReturning<T>, options: JdbcExecutionOptions): Flow<T> =
     flowWithConnection(options) {
       val conn = localConnection()
       accessStmtReturning(act.sql, conn, options, act.returningColumns) { stmt ->
@@ -146,7 +146,7 @@ abstract class JdbcController internal constructor(
       }
     }
 
-  override suspend fun <T> runRaw(query: Query<T>, options: JdbcExecutionOptions) =
+  override suspend fun <T> runRaw(query: ControllerQuery<T>, options: JdbcExecutionOptions) =
     withConnection(options) {
       val conn = localConnection()
       accessStmt(query.sql, conn) { stmt ->
@@ -168,7 +168,7 @@ abstract class JdbcController internal constructor(
       }
     }
 
-  override open suspend fun <T> stream(query: Query<T>, options: JdbcExecutionOptions): Flow<T> =
+  override open suspend fun <T> stream(query: ControllerQuery<T>, options: JdbcExecutionOptions): Flow<T> =
     flowWithConnection(options) {
       val conn = localConnection()
       accessStmt(query.sql, conn) { stmt ->
@@ -188,11 +188,11 @@ abstract class JdbcController internal constructor(
       throw SQLException("Error executing query: ${sql}", e)
     }
 
-  override open suspend fun <T> stream(query: BatchActionReturning<T>, options: JdbcExecutionOptions): Flow<T> = runBatchActionReturningScoped(query, options)
-  override open suspend fun <T> stream(query: ActionReturning<T>, options: JdbcExecutionOptions): Flow<T> = runActionReturningScoped(query, options)
-  override open suspend fun <T> run(query: Query<T>, options: JdbcExecutionOptions): List<T> = stream(query, options).toList()
-  override open suspend fun run(query: Action, options: JdbcExecutionOptions): Long = runActionScoped(query.sql, query.params, options)
-  override open suspend fun run(query: BatchAction, options: JdbcExecutionOptions): List<Long> = runBatchActionScoped(query, options)
-  override open suspend fun <T> run(query: ActionReturning<T>, options: JdbcExecutionOptions): T = stream(query, options).first()
-  override open suspend fun <T> run(query: BatchActionReturning<T>, options: JdbcExecutionOptions): List<T> = stream(query, options).toList()
+  override open suspend fun <T> stream(query: ControllerBatchActionReturning<T>, options: JdbcExecutionOptions): Flow<T> = runBatchActionReturningScoped(query, options)
+  override open suspend fun <T> stream(query: ControllerActionReturning<T>, options: JdbcExecutionOptions): Flow<T> = runActionReturningScoped(query, options)
+  override open suspend fun <T> run(query: ControllerQuery<T>, options: JdbcExecutionOptions): List<T> = stream(query, options).toList()
+  override open suspend fun run(query: ControllerAction, options: JdbcExecutionOptions): Long = runActionScoped(query.sql, query.params, options)
+  override open suspend fun run(query: ControllerBatchAction, options: JdbcExecutionOptions): List<Long> = runBatchActionScoped(query, options)
+  override open suspend fun <T> run(query: ControllerActionReturning<T>, options: JdbcExecutionOptions): T = stream(query, options).first()
+  override open suspend fun <T> run(query: ControllerBatchActionReturning<T>, options: JdbcExecutionOptions): List<T> = stream(query, options).toList()
 }

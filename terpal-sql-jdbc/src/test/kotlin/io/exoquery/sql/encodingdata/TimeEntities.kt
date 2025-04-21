@@ -1,6 +1,6 @@
 package io.exoquery.sql.encodingdata
 
-import io.exoquery.controller.Action
+import io.exoquery.controller.ControllerAction
 import io.exoquery.sql.Sql
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
@@ -67,6 +67,6 @@ data class TimeEntity(
   }
 }
 
-fun insert(e: TimeEntity): Action {
+fun insert(e: TimeEntity): ControllerAction {
   return Sql("INSERT INTO TimeEntity VALUES (${e.sqlDate}, ${e.sqlTime}, ${e.sqlTimestamp}, ${e.timeLocalDate}, ${e.timeLocalTime}, ${e.timeLocalDateTime}, ${e.timeZonedDateTime}, ${e.timeInstant}, ${e.timeOffsetTime}, ${e.timeOffsetDateTime})").action()
 }

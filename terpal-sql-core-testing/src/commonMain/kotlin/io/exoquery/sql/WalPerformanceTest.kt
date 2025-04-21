@@ -1,8 +1,8 @@
 package io.exoquery.sql
 
-import io.exoquery.controller.Action
+import io.exoquery.controller.ControllerAction
 import io.exoquery.controller.ControllerTransactional
-import io.exoquery.controller.Query
+import io.exoquery.controller.ControllerQuery
 import io.exoquery.controller.runOn
 import io.exoquery.controller.streamOn
 import io.exoquery.controller.transaction
@@ -26,8 +26,8 @@ class WallPerformanceTest<Session, Stmt, ExecutionOpts>(
   val rand: Random = Random.Default,
   val maxReaders: Int? = 100
 ) {
-  inline fun <reified T> String.toQuery() = Query<T>(this, listOf(), serializer<T>())
-  inline fun String.toAction() = Action(this, listOf())
+  inline fun <reified T> String.toQuery() = ControllerQuery<T>(this, listOf(), serializer<T>())
+  inline fun String.toAction() = ControllerAction(this, listOf())
 
 
   @Serializable

@@ -1,6 +1,6 @@
 package io.exoquery.sql.android.encodingdata
 
-import io.exoquery.controller.Action
+import io.exoquery.controller.ControllerAction
 import io.exoquery.controller.android.time.toSqlDate
 import io.exoquery.controller.android.time.toSqlTime
 import io.exoquery.controller.android.time.toSqlTimestamp
@@ -74,6 +74,6 @@ data class TimeEntity(
   }
 }
 
-fun insertTimeEntity(e: TimeEntity): Action {
+fun insertTimeEntity(e: TimeEntity): ControllerAction {
   return Sql("INSERT INTO TimeEntity VALUES (${e.sqlDate}, ${e.sqlTime}, ${e.sqlTimestamp}, ${e.timeLocalDate}, ${e.timeLocalTime}, ${e.timeLocalDateTime}, ${e.timeZonedDateTime}, ${e.timeInstant}, ${e.timeOffsetTime}, ${e.timeOffsetDateTime})").action()
 }

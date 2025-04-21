@@ -21,7 +21,7 @@ class SqlDelightController(
   override val allEncoders by lazy { encodingApi.computeEncoders() + encodingConfig.additionalEncoders }
   override val allDecoders by lazy { encodingApi.computeDecoders() + encodingConfig.additionalDecoders }
 
-  fun runToResult(query: Action, sqlDelightId: Int?): QueryResult<Long> =
+  fun runToResult(query: ControllerAction, sqlDelightId: Int?): QueryResult<Long> =
     database.execute(
       sqlDelightId,
       query.sql,
@@ -29,7 +29,7 @@ class SqlDelightController(
       { prepare(DelightStatementWrapper.fromDelightStatement(this), Unused, query.params) }
     )
 
-  fun <T> runToResult(query: Query<T>, sqlDelightId: Int?): QueryResult<List<T>> =
+  fun <T> runToResult(query: ControllerQuery<T>, sqlDelightId: Int?): QueryResult<List<T>> =
     database.executeQuery(
       sqlDelightId,
       query.sql,
