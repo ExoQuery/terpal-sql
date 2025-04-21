@@ -273,12 +273,15 @@ class NativeDatabaseController internal constructor(
       val conn = localConnection()
       accessStmt(query.sql, conn) { stmt ->
         prepare(DelightStatementWrapper(stmt), Unused, query.params)
-        val result = mutableListOf<Pair<String, String?>>()
+        val result = mutableListOf<List<Pair<String, String?>>>()
         tryCatchQuery(query.sql) {
           stmt.query().let { rs ->
-            rs.next()
-            for (i in 1..rs.columnCount) {
-              result.add(rs.columnName(i) to rs.getString(i))
+            while (rs.next()) {
+              val row = mutableListOf<Pair<String, String?>>()
+              for (i in 1..rs.columnCount) {
+                row.add(rs.columnName(i) to rs.getString(i))
+              }
+              result.add(row)
             }
           }
         }

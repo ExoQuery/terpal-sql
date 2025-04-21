@@ -28,6 +28,6 @@ open class EncoderAny<T: Any, TypeId: Any, Session, Stmt>(
         }
     }
 
-  inline fun <reified R: Any> contramap(crossinline f: (R) -> T): EncoderAny<R, TypeId, Session, Stmt> =
-    EncoderAny<R, TypeId, Session, Stmt>(this@EncoderAny.dataType, R::class, this@EncoderAny.setNull) { _, value, _ -> f(value) }
+  inline fun <reified R: Any> contramap(crossinline from: (R) -> T): EncoderAny<R, TypeId, Session, Stmt> =
+    EncoderAny<R, TypeId, Session, Stmt>(this@EncoderAny.dataType, R::class, this@EncoderAny.setNull) { ctx, value, i -> this.f(ctx, from(value), i) }
 }

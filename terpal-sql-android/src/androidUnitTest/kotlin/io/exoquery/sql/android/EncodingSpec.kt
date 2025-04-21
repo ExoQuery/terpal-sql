@@ -19,6 +19,7 @@ import io.exoquery.sql.android.encodingdata.verify
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import kotlin.test.Test
+import kotlin.test.assertEquals
 
 @RunWith(RobolectricTestRunner::class)
 class EncodingSpec {
@@ -36,13 +37,14 @@ class EncodingSpec {
     verify(res.first(), EncodingTestEntity.regular)
   }
 
-  @Test
-  fun `encodes and decodes batch`() = runBlocking {
-    insertBatch(listOf(EncodingTestEntity.regular, EncodingTestEntity.regular)).runOn(ctx)
-    val res = Sql("SELECT * FROM EncodingTestEntity").queryOf<EncodingTestEntity>().runOn(ctx)
-    verify(res.get(0), EncodingTestEntity.regular)
-    verify(res.get(1), EncodingTestEntity.regular)
-  }
+  // Not supported in android
+  //@Test
+  //fun `encodes and decodes batch`() = runBlocking {
+  //  insertBatch(listOf(EncodingTestEntity.regular, EncodingTestEntity.regular)).runOn(ctx)
+  //  val res = Sql("SELECT * FROM EncodingTestEntity").queryOf<EncodingTestEntity>().runOn(ctx)
+  //  verify(res.get(0), EncodingTestEntity.regular)
+  //  verify(res.get(1), EncodingTestEntity.regular)
+  //}
 
   @Test
   fun `encodes and decodes nullables - nulls`() = runBlocking {
@@ -125,7 +127,18 @@ class EncodingSpec {
           """
       ).queryOf<TimeEntity>().runOn(ctx).first()
 
-    assert(actual == timeEntityB)
+    assertEquals(timeEntityB.sqlDate, actual.sqlDate)
+    assertEquals(timeEntityB.sqlTime, actual.sqlTime)
+    assertEquals(timeEntityB.sqlTimestamp, actual.sqlTimestamp)
+    assertEquals(timeEntityB.timeLocalDate, actual.timeLocalDate)
+    assertEquals(timeEntityB.timeLocalTime, actual.timeLocalTime)
+    assertEquals(timeEntityB.timeLocalDateTime, actual.timeLocalDateTime)
+    assertEquals(timeEntityB.timeZonedDateTime, actual.timeZonedDateTime)
+    assertEquals(timeEntityB.timeInstant, actual.timeInstant)
+    assertEquals(timeEntityB.timeOffsetTime, actual.timeOffsetTime)
+    assertEquals(timeEntityB.timeOffsetDateTime, actual.timeOffsetDateTime)
+
+    assert(timeEntityB == actual)
   }
 
 

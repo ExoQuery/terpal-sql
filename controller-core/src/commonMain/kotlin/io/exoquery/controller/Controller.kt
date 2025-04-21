@@ -161,7 +161,7 @@ interface ControllerVerbs<ExecutionOpts> {
   suspend fun <T> run(query: ActionReturning<T>, options: ExecutionOpts): T
   suspend fun <T> run(query: BatchActionReturning<T>, options: ExecutionOpts): List<T>
 
-  suspend fun <T> runRaw(query: Query<T>, options: ExecutionOpts): List<Pair<String, String?>>
+  suspend fun <T> runRaw(query: Query<T>, options: ExecutionOpts): List<List<Pair<String, String?>>>
 
   suspend fun <T> stream(query: Query<T>): Flow<T> = stream(query, DefaultOpts())
   suspend fun <T> stream(query: BatchActionReturning<T>): Flow<T> = stream(query, DefaultOpts())
@@ -172,7 +172,7 @@ interface ControllerVerbs<ExecutionOpts> {
   suspend fun <T> run(query: ActionReturning<T>): T = run(query, DefaultOpts())
   suspend fun <T> run(query: BatchActionReturning<T>): List<T> = run(query, DefaultOpts())
 
-  suspend fun <T> runRaw(query: Query<T>): List<Pair<String, String?>> = runRaw(query, DefaultOpts())
+  suspend fun <T> runRaw(query: Query<T>): List<List<Pair<String, String?>>> = runRaw(query, DefaultOpts())
 }
 
 /**

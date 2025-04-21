@@ -28,25 +28,13 @@ typealias SqliteEncoder<T> = SqlEncoder<Unused, SqliteStatementWrapper, T>
 typealias SqliteEncodingContext = EncodingContext<Unused, SqliteStatementWrapper>
 typealias SqliteDecodingContext = DecodingContext<Unused, SqliteCursorWrapper>
 
-class SqliteEncoderAny<T: Any>(
-  override val dataType: SqliteFieldType,
-  override val type: KClass<T>,
-  override val f: (SqliteEncodingContext, T, Int) -> Unit
-): EncoderAny<T, SqliteFieldType, Unused, SqliteStatementWrapper>(
-  dataType,
-  type,
-  { index, stmt, _ -> stmt.bindNull(index) },
-  f
-)
+typealias SqliteEncoderAny<T> = EncoderAny<T, SqliteFieldType, Unused, SqliteStatementWrapper>
+typealias SqliteDecoderAny<T> = DecoderAny<T, Unused, SqliteCursorWrapper>
 
-class SqliteDecoderAny<T: Any>(
-  override val type: KClass<T>,
-  override val f: (SqliteDecodingContext, Int) -> T
-): DecoderAny<T, Unused, SqliteCursorWrapper>(
-  type,
-  { index, cursor -> cursor.isNull(index) },
-  f
-)
+fun <T: Any> SqliteEncoderAny(dataType: SqliteFieldType, type: KClass<T>, f: (SqliteEncodingContext, T, Int) -> Unit) =
+  EncoderAny<T, SqliteFieldType, Unused, SqliteStatementWrapper>(dataType, type, { index, stmt, _ -> stmt.bindNull(index) }, f)
+fun <T: Any> SqliteDecoderAny(type: KClass<T>, f: (SqliteDecodingContext, Int) -> T) =
+  DecoderAny<T, Unused, SqliteCursorWrapper>(type, { index, cursor -> cursor.isNull(index) }, f)
 
 
 object SqliteSqlEncoding: SqlEncoding<Unused, SqliteStatementWrapper, SqliteCursorWrapper>,
@@ -57,9 +45,76 @@ object SqliteSqlEncodingStringTimes: SqlEncoding<Unused, SqliteStatementWrapper,
   BasicEncoding<Unused, SqliteStatementWrapper, SqliteCursorWrapper> by SqliteBasicEncoding,
   TimeEncoding<Unused, SqliteStatementWrapper, SqliteCursorWrapper> by SqliteTimeStringEncoding
 
-// Similar to Sqliter FieldType but implemented separately so it can live in common code
-enum class SqliteFieldType(val nativeCode: Int) {
-  TYPE_INTEGER(1), TYPE_FLOAT(2), TYPE_BLOB(4), TYPE_NULL(5), TYPE_TEXT(3)
+
+/**
+ * The SQLite spec describes 5 kinds of fields but there isn't even
+ * a consistent integer-code that each implementor decides to use so I
+ * needed to encode all three sitautions.
+ */
+sealed interface SqliteFieldType {
+  data object TYPE_INTEGER: SqliteFieldType
+  data object TYPE_FLOAT: SqliteFieldType
+  data object TYPE_TEXT: SqliteFieldType
+  data object TYPE_BLOB: SqliteFieldType
+  data object TYPE_NULL: SqliteFieldType
+
+  /**
+   * From the Sqliter Driver Driver:
+   * @see co.touchlab.sqliter.Cursor.kt
+   * public static final int SQLITE_INTEGER = 1;
+   * public static final int SQLITE_FLOAT = 2;
+   * public static final int SQLITE_TEXT = 3;
+   * public static final int SQLITE_BLOB = 4;
+   * public static final int SQLITE_NULL = 5;
+   */
+  companion object {
+
+
+    fun fromSqliterCode(code: Int): SqliteFieldType =
+      when {
+        code == 1 -> SqliteFieldType.TYPE_INTEGER
+        code == 2 -> SqliteFieldType.TYPE_FLOAT
+        code == 3 -> SqliteFieldType.TYPE_TEXT
+        code == 4 -> SqliteFieldType.TYPE_BLOB
+        code == 5 -> SqliteFieldType.TYPE_NULL
+        else -> throw IllegalArgumentException("Unsupported SQlite field type: $code")
+      }
+
+    /**
+     * From the JDBC Sqlite Driver
+     * @see org.sqlite.core.Codes.java
+     *
+     * public static final int SQLITE_INTEGER = 1;
+     * public static final int SQLITE_FLOAT = 2;
+     * public static final int SQLITE_TEXT = 3;
+     * public static final int SQLITE_BLOB = 4;
+     * public static final int SQLITE_NULL = 5;
+     *
+     */
+    fun fromJdbcCode(code: Int): SqliteFieldType =
+      when {
+        code == 1 -> SqliteFieldType.TYPE_INTEGER
+        code == 2 -> SqliteFieldType.TYPE_FLOAT
+        code == 3 -> SqliteFieldType.TYPE_TEXT
+        code == 4 -> SqliteFieldType.TYPE_BLOB
+        code == 5 -> SqliteFieldType.TYPE_NULL
+        else -> throw IllegalArgumentException("Unsupported SQlite field type: $code")
+      }
+
+    /**
+     * From the Android Sqlite Driver
+     * @see android.database.Cursor.java
+     */
+    fun fromAndroidCode(code: Int): SqliteFieldType =
+      when {
+        code == 0 -> SqliteFieldType.TYPE_NULL
+        code == 1 -> SqliteFieldType.TYPE_INTEGER
+        code == 2 -> SqliteFieldType.TYPE_FLOAT
+        code == 3 -> SqliteFieldType.TYPE_TEXT
+        code == 4 -> SqliteFieldType.TYPE_BLOB
+        else -> throw IllegalArgumentException("Unsupported SQlite field type: $code")
+      }
+  }
 }
 
 object SqliteBasicEncoding: BasicEncoding<Unused, SqliteStatementWrapper, SqliteCursorWrapper> {
@@ -97,6 +152,7 @@ object SqliteBasicEncoding: BasicEncoding<Unused, SqliteStatementWrapper, Sqlite
   override fun isNull(index: Int, row: SqliteCursorWrapper): Boolean = row.isNull(index)
 }
 
+// TODO refactor to configureable date resolution the same way as  AdditionalAndroidEncoding works
 object SqliteTimeEncoding: TimeEncoding<Unused, SqliteStatementWrapper, SqliteCursorWrapper> {
   override val InstantEncoder: SqliteEncoderAny<Instant> = SqliteEncoderAny(SqliteFieldType.TYPE_INTEGER, Instant::class) { ctx, value, index -> ctx.stmt.bindLong(index, value.toEpochMilliseconds()) }
   override val InstantDecoder: SqliteDecoderAny<Instant> = SqliteDecoderAny(Instant::class) { ctx, index -> ctx.row.getLong(index).let { Instant.fromEpochMilliseconds(it) } }

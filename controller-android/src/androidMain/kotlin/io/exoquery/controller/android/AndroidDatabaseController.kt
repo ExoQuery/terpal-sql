@@ -331,12 +331,16 @@ class AndroidDatabaseController internal constructor(
   override suspend fun <T> runRaw(query: Query<T>, options: UnusedOpts) =
     withConnection(options) {
       val conn = localConnection()
-      val result = mutableListOf<Pair<String, String?>>()
+      val result = mutableListOf<List<Pair<String, String?>>>()
       tryCatchQuery(query.sql) {
         conn.value.session.query(query.toSqliteQuery()).use { rs ->
           val meta = rs.columnNames
-          for (i in 0 until meta.size) {
-            result.add(meta[i] to rs.getString(i))
+          while (rs.moveToNext()) {
+            val row = mutableListOf<Pair<String, String?>>()
+            for (i in 0 until meta.size) {
+              row.add(meta[i] to rs.getString(i))
+            }
+            result.add(row)
           }
         }
       }

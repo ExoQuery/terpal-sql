@@ -57,8 +57,8 @@ data class AndroidEncodingConfig private constructor(
 //    ) = Default(additionalEncoders, additionalDecoders, json, module, timezone)
 
     fun Empty(
-      additionalEncoders: Set<SqlEncoder<Unused, SqliteStatementWrapper, out Any>> = setOf(),
-      additionalDecoders: Set<SqlDecoder<Unused, SqliteCursorWrapper, out Any>> = setOf(),
+      additionalEncoders: Set<SqlEncoder<Unused, SqliteStatementWrapper, out Any>> = AdditionalSqliteEncoding().encoders,
+      additionalDecoders: Set<SqlDecoder<Unused, SqliteCursorWrapper, out Any>> = AdditionalSqliteEncoding().decoders,
       json: Json = Json,
       module: SerializersModule = EmptySerializersModule(),
       timezone: TimeZone = TimeZone.currentSystemDefault()

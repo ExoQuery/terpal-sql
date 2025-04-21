@@ -151,13 +151,16 @@ abstract class JdbcController internal constructor(
       val conn = localConnection()
       accessStmt(query.sql, conn) { stmt ->
         prepare(stmt, conn, query.params)
-        val result = mutableListOf<Pair<String, String?>>()
+        val result = mutableListOf<List<Pair<String, String?>>>()
         tryCatchQuery(query.sql) {
           options.prepareResult(stmt.executeQuery()).use { rs ->
-            rs.next()
             val meta = rs.metaData
-            for (i in 1..meta.columnCount) {
-              result.add(meta.getColumnName(i) to rs.getString(i))
+            while (rs.next()) {
+              for (i in 1..meta.columnCount) {
+                val row = mutableListOf<Pair<String, String?>>()
+                row.add(meta.getColumnName(i) to rs.getString(i))
+                result.add(row)
+              }
             }
           }
         }

@@ -1,6 +1,9 @@
 package io.exoquery.sql.android.encodingdata
 
 import io.exoquery.controller.Action
+import io.exoquery.controller.android.time.toSqlDate
+import io.exoquery.controller.android.time.toSqlTime
+import io.exoquery.controller.android.time.toSqlTimestamp
 import io.exoquery.sql.Sql
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
@@ -46,27 +49,6 @@ data class TimeEntity(
   }
 
   companion object {
-    fun LocalDate.toSqlDate(): java.sql.Date = run {
-      val date = this
-      java.sql.Date(date.getYear() - 1900, date.getMonthValue() -1,date.getDayOfMonth())
-    }
-
-    fun LocalTime.toSqlTime(): java.sql.Time = run {
-      val time = this
-      java.sql.Time(time.getHour(), time.getMinute(), time.getSecond())
-    }
-
-    fun LocalDateTime.toSqlTimestamp(): java.sql.Timestamp = run {
-      val dateTime = this
-      java.sql.Timestamp(dateTime.getYear() - 1900,
-        dateTime.getMonthValue() - 1,
-        dateTime.getDayOfMonth(),
-        dateTime.getHour(),
-        dateTime.getMinute(),
-        dateTime.getSecond(),
-        dateTime.getNano()
-      )
-    }
 
     fun make(zoneIdRaw: ZoneId, timeEntity: TimeEntityInput = TimeEntityInput.default) = run {
       val zoneId = zoneIdRaw.normalized()
@@ -77,9 +59,9 @@ data class TimeEntity(
       val nowTime = nowDateTime.toLocalTime()
       val nowZoned = ZonedDateTime.of(nowDateTime, zoneId)
       TimeEntity(
-        nowDate.toSqlDate(),
-        nowTime.toSqlTime(),
-        nowDateTime.toSqlTimestamp(),
+        nowDate.toSqlDate(zoneIdRaw),
+        nowTime.toSqlTime(zoneIdRaw),
+        nowDateTime.toSqlTimestamp(zoneIdRaw),
         nowDate,
         nowTime,
         nowDateTime,
