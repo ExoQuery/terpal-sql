@@ -3,6 +3,7 @@ package io.exoquery.sql.android
 import androidx.test.core.app.ApplicationProvider
 import io.exoquery.sql.*
 import io.exoquery.sql.android.WalTestDatabase.databaseName
+import io.exoquery.sql.android.WalTestDatabase.ctx
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -112,7 +113,6 @@ import kotlin.test.assertEquals
 
 @RunWith(RobolectricTestRunner::class)
 class WalConcurrencySpec {
-  val ctx get() = WalTestDatabase.ctx
   val ops by lazy { WalConcurrencyOps(ctx) }
 
   @BeforeTest

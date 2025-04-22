@@ -84,23 +84,22 @@ interface HasTransactionalityAndroid: RequiresTransactionality<Connection, Suppo
       when (walMode) {
         // When in WAL mode, we want readers to be able to read while the writer is writing
         WalMode.Enabled -> {
-          //println("------- Beginning non-exclusive transaction")
+          println("------- Beginning non-exclusive transaction")
           session.value.session.beginTransactionNonExclusive()
         }
         else -> {
-          //println("------- Beginning transaction")
+          println("------- Beginning transaction")
           session.value.session.beginTransaction()
         }
       }
       val result = withContext(transaction) { block() }
       // setting it successful makes it not rollback
       session.value.session.setTransactionSuccessful()
-      session.value.session.endTransaction()
       return result
     } catch (ex: Throwable) {
-      session.value.session.endTransaction()
       throw ex
     } finally {
+      session.value.session.endTransaction()
       transaction.complete()
     }
   }
