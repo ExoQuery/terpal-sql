@@ -14,6 +14,16 @@ repositories {
   google()
 }
 
+tasks.register("publishAllMacToOss") {
+  dependsOn(
+    ":controller-core:publishMacosX64PublicationToOss",
+    ":controller-core:publishMacosArm64PublicationToOss",
+    ":controller-core:publishIosX64PublicationToOss",
+    ":controller-core:publishIosArm64PublicationToOssRepository",
+    // ... etc ...
+  )
+}
+
 subprojects {
 
   repositories {

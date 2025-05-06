@@ -15,18 +15,6 @@ configurations.forEach {
   it.exclude(group = "com.sschr15.annotations", module = "jb-annotations-kmp")
 }
 
-// Enable logging of wrappers
-//tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-//    compilerOptions {
-//        freeCompilerArgs.addAll(
-//            listOf(
-//                "-P",
-//                "plugin:io.exoquery.terpal-plugin:traceWrappers=true"
-//            )
-//        )
-//    }
-//}
-
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile>().configureEach {
   compilerOptions {
     freeCompilerArgs.add("-Xcontext-receivers")
@@ -78,9 +66,9 @@ kotlin {
         api("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
         api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
         // Optional by the user. This library provides certain utilities that enhance Hikari.
-        implementation("com.zaxxer:HikariCP:5.0.1")
+
         implementation("com.typesafe:config:1.4.1")
-        implementation("org.xerial:sqlite-jdbc:3.42.0.1")
+
         implementation("org.jetbrains:annotations:24.1.0")
       }
     }
@@ -91,6 +79,8 @@ kotlin {
       dependencies {
         api(project(":terpal-sql-core-testing"))
 
+        implementation("com.zaxxer:HikariCP:5.0.1")
+        implementation("org.xerial:sqlite-jdbc:3.42.0.1")
         implementation("io.exoquery:pprint-kotlin:2.0.2")
         implementation("io.zonky.test:embedded-postgres:2.0.7")
         implementation("mysql:mysql-connector-java:8.0.29")
