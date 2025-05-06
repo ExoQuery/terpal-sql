@@ -32,7 +32,6 @@ kotlin {
         api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
         //api("org.jetbrains.kotlinx:kotlinx-datetime:0.6.0")
         implementation("org.jetbrains.kotlinx:atomicfu:0.23.1")
-        implementation("com.sschr15.annotations:jb-annotations-kmp:24.1.0+apple")
       }
     }
 
