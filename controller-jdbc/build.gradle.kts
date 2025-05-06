@@ -67,9 +67,10 @@ kotlin {
         api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
         // Optional by the user. This library provides certain utilities that enhance Hikari.
 
-        implementation("com.typesafe:config:1.4.1")
+        // Note for user to include these in dependencies if they want to use them
+        compileOnly("com.zaxxer:HikariCP:5.0.1")
+        compileOnly("com.typesafe:config:1.4.1")
 
-        implementation("org.jetbrains:annotations:24.1.0")
       }
     }
     jvmTest {
@@ -79,7 +80,6 @@ kotlin {
       dependencies {
         api(project(":terpal-sql-core-testing"))
 
-        implementation("com.zaxxer:HikariCP:5.0.1")
         implementation("org.xerial:sqlite-jdbc:3.42.0.1")
         implementation("io.exoquery:pprint-kotlin:2.0.2")
         implementation("io.zonky.test:embedded-postgres:2.0.7")
