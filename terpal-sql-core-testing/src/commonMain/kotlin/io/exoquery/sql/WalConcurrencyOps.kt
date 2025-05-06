@@ -26,22 +26,20 @@ class WalConcurrencyOps<Session, Stmt, ExecutionOpts>(val ctx: ControllerTransac
 
   data class MiscTest(val id: Long, val value: String)
 
-  suspend fun insertTestData(testData: MiscTest) {
-    Sql("INSERT INTO MiscTest VALUES (${testData.id}, ${testData.value})").action().runOn(ctx)
-  }
-
   fun `Write_Should_Not_Block_Read`() {
     val counter = atomic(0)
     val transactionStarted = atomic(0)
 
     val block: suspend () -> Int = {
       ctx.transaction {
-        insertTestData(MiscTest(1L, "arst 1"))
+        //println("------------------------ Insert Test Data in Transaction: ${counter.value} ------------------------")
+        val testData = MiscTest(1L, "arst 1")
+        Sql("INSERT INTO MiscTest VALUES (${testData.id}, ${testData.value})").action().run()
 
-        //println("------------------------ Insert Done in Transaction: ${counter.value}")
+        //println("------------------------ Insert Done in Transaction: ${counter.value} ------------------------")
         transactionStarted.incrementAndGet()
         delay(3500)
-        //println("------------------------ Transaction complete: ${counter.value}")
+        //println("------------------------ Transaction complete: ${counter.value} ------------------------")
         counter.incrementAndGet()
       }
     }
@@ -51,7 +49,7 @@ class WalConcurrencyOps<Session, Stmt, ExecutionOpts>(val ctx: ControllerTransac
 
       withTimeout(20000) {
         //assertEquals(0L, countRows(), "Initial row-count should be 0")
-        //println("------------------------ Count rows initial: ${countRows()}")
+        //println("------------------------ Count rows initial: ${countRows()} ------------------------")
         val transactionJob = launch {
           block()
         }
@@ -63,9 +61,9 @@ class WalConcurrencyOps<Session, Stmt, ExecutionOpts>(val ctx: ControllerTransac
 
         // Make sure the rows can be counted before the transaction completes
         assertEquals(0, counter.value, "Counter should be 0 (transaction not finished) - before read")
-        //println("------------------------ Count rows - about to run")
+        //println("------------------------ Count rows - about to run ------------------------")
         val count = countRows()
-        //println("------------------------ Count rows: ${count}")
+        //println("------------------------ Count rows: ${count} ------------------------")
         assertEquals(0L, count, "No rows should be present before transaction completes")
         assertEquals(0, counter.value, "Counter should be 0 (transaction not finished) - after read")
 
