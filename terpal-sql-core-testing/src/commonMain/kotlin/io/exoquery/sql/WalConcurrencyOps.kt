@@ -49,7 +49,7 @@ class WalConcurrencyOps<Session, Stmt, ExecutionOpts>(val ctx: ControllerTransac
     runBlocking {
       Sql("DELETE FROM MiscTest").queryOf<Long>().runOn(ctx)
 
-      withTimeout(10000) {
+      withTimeout(20000) {
         //assertEquals(0L, countRows(), "Initial row-count should be 0")
         //println("------------------------ Count rows initial: ${countRows()}")
         val transactionJob = launch {

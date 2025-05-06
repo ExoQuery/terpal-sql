@@ -96,6 +96,8 @@ kotlin {
         api(project(":controller-jdbc"))
         api(project(":terpal-sql-core-testing"))
 
+        implementation("com.typesafe:config:1.4.1")
+        implementation("com.zaxxer:HikariCP:5.0.1")
         implementation("org.xerial:sqlite-jdbc:3.42.0.1")
         implementation("io.exoquery:pprint-kotlin:2.0.2")
         implementation("io.zonky.test:embedded-postgres:2.0.7")
