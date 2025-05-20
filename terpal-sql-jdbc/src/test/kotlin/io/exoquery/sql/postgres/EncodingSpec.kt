@@ -22,6 +22,12 @@ class EncodingSpec: FreeSpec({
     verify(res.first(), EncodingTestEntity.regular)
   }
 
+  "encodes and decodes custom impls nullables - not nulls" {
+    insert(EncodingTestEntityImp.regular).runOn(ctx)
+    val res = Sql("SELECT * FROM EncodingTestEntity").queryOf<EncodingTestEntityImp>().runOn(ctx)
+    verify(res.first(), EncodingTestEntityImp.regular)
+  }
+
   "encodes and decodes batch" {
     insertBatch(listOf(EncodingTestEntity.regular, EncodingTestEntity.regular)).runOn(ctx)
     val res = Sql("SELECT * FROM EncodingTestEntity").queryOf<EncodingTestEntity>().runOn(ctx)

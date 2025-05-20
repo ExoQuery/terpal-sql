@@ -2,6 +2,7 @@ package io.exoquery.sql.encodingdata
 
 import io.exoquery.controller.ControllerAction
 import io.exoquery.controller.ControllerBatchAction
+import io.exoquery.controller.util.SerializerFrom
 import io.exoquery.sql.*
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
@@ -18,6 +19,7 @@ object TestTypeSerialzier: KSerializer<SerializeableTestType> {
 
 @Serializable(with = TestTypeSerialzier::class)
 data class SerializeableTestType(val value: String)
+
 
 @Serializable
 data class EncodingTestEntity(
