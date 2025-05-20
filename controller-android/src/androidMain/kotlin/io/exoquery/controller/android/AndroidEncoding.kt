@@ -25,7 +25,7 @@ data class AndroidEncodingConfig private constructor(
   override val json: Json,
   // If you want to use any primitive-wrapped contextual encoders you need to add them here
   override val module: SerializersModule,
-  override val timezone: TimeZone
+  override val timezone: TimeZone, override val debugMode: Boolean
 ): EncodingConfig<Unused, SqliteStatementWrapper, SqliteCursorWrapper> {
   companion object {
 //    val Default get() =
@@ -61,8 +61,9 @@ data class AndroidEncodingConfig private constructor(
       additionalDecoders: Set<SqlDecoder<Unused, SqliteCursorWrapper, out Any>> = AdditionalSqliteEncoding().decoders,
       json: Json = Json,
       module: SerializersModule = EmptySerializersModule(),
-      timezone: TimeZone = TimeZone.currentSystemDefault()
-    ) = AndroidEncodingConfig(additionalEncoders, additionalDecoders, json, module, timezone)
+      timezone: TimeZone = TimeZone.currentSystemDefault(),
+      debugMode: Boolean = false
+    ) = AndroidEncodingConfig(additionalEncoders, additionalDecoders, json, module, timezone, debugMode)
   }
 }
 

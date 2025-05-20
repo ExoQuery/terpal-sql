@@ -21,7 +21,7 @@ data class JdbcEncodingConfig private constructor(
   override val json: Json,
   // If you want to use any primitive-wrapped contextual encoders you need to add them here
   override val module: SerializersModule,
-  override val timezone: TimeZone
+  override val timezone: TimeZone, override val debugMode: Boolean
 ): EncodingConfig<Connection, PreparedStatement, ResultSet> {
   companion object {
     val Default get() =
@@ -35,13 +35,15 @@ data class JdbcEncodingConfig private constructor(
       additionalDecoders: Set<SqlDecoder<Connection, ResultSet, out Any>> = setOf(),
       json: Json = Json,
       module: SerializersModule = EmptySerializersModule(),
-      timezone: TimeZone = TimeZone.currentSystemDefault()
+      timezone: TimeZone = TimeZone.currentSystemDefault(),
+      debugMode: Boolean = false
     ) = JdbcEncodingConfig(
       additionalEncoders + AdditionalJdbcEncoding.encoders,
       additionalDecoders + AdditionalJdbcEncoding.decoders,
       json,
       module,
-      timezone
+      timezone,
+      debugMode
     )
 
     operator fun invoke(

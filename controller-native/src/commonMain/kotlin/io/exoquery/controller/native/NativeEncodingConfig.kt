@@ -16,5 +16,6 @@ data class NativeEncodingConfig(
   override val additionalDecoders: Set<SqlDecoder<Unused, SqliteCursorWrapper, out Any>> = setOf(),
   override val json: Json = Json,
   override val module: SerializersModule = EmptySerializersModule(),
-  override val timezone: TimeZone = TimeZone.currentSystemDefault()
+  override val timezone: TimeZone = TimeZone.currentSystemDefault(),
+  override val debugMode: Boolean = false
 ) : EncodingConfig<Unused, SqliteStatementWrapper, SqliteCursorWrapper>

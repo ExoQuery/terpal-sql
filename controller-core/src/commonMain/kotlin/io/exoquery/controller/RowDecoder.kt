@@ -9,7 +9,9 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.modules.SerializersModule
 
-data class ColumnInfo(val name: String, val type: String)
+data class ColumnInfo(val name: String, val type: String) {
+  override fun toString(): String = "(${name}:${type})"
+}
 
 // Note, this is a class-level annotation so to use Descriptor.annotations.find(...) on it is actually possible
 // i.e. you can find the annotation on the object itself. Normally annotations that are on the field-level
@@ -93,6 +95,7 @@ class RowDecoder<Session, Row> private constructor(
   val decoders: Set<SqlDecoder<Session, Row, out Any>>,
   val type: RowDecoderType,
   val json: Json,
+  val debugMode: Boolean,
   val endCallback: (Int) -> Unit
 ): Decoder, CompositeDecoder {
 
@@ -104,16 +107,17 @@ class RowDecoder<Session, Row> private constructor(
       decoders: Set<SqlDecoder<Session, Row, out Any>>,
       descriptor: SerialDescriptor,
       json: Json,
+      debugMode: Boolean,
       startingIndex: StartingIndex
     ): RowDecoder<Session, Row> {
       // If the column infos actaully exist, then verify them
       ctx.columnInfos?.let { columns -> descriptor.verifyColumns(columns) }
-      return RowDecoder(ctx, module,  startingIndex.value, api, decoders, RowDecoderType.Regular, json, {})
+      return RowDecoder(ctx, module,  startingIndex.value, api, decoders, RowDecoderType.Regular, json, debugMode, {})
     }
   }
 
   fun cloneSelf(ctx: DecodingContext<Session, Row>, initialRowIndex: Int, type: RowDecoderType, endCallback: (Int) -> Unit): RowDecoder<Session, Row> =
-    RowDecoder(ctx, this.serializersModule, initialRowIndex, api, decoders, type, json, endCallback)
+    RowDecoder(ctx, this.serializersModule, initialRowIndex, api, decoders, type, json, debugMode, endCallback)
 
   // helper to get column names
   fun colName(index: Int) = ctx.columnInfos?.get(index)?.name ?: "<UNKNOWN>"
@@ -123,16 +127,18 @@ class RowDecoder<Session, Row> private constructor(
 
   fun nextRowIndex(desc: SerialDescriptor, descIndex: Int, note: String = ""): Int {
     val curr = rowIndex
-    // TODO logging integration
-    //println("---- Get Row ${columnInfos[rowIndex-1].name}, Index: ${curr} - (${descIndex}) ${desc.getElementDescriptor(descIndex)} - (Preview:${api.preview(rowIndex, ctx.row)})" + (if (note != "") " - ${note}" else ""))
+    if (debugMode) {
+      println("[RowDecoder] Get Row ${ctx.columnInfo(rowIndex)}, Index: ${curr} - (${descIndex}) ${desc.getElementDescriptor(descIndex)} - (Preview:${api.preview(rowIndex, ctx.row)})" + (if (note != "") " - ${note}" else ""))
+    }
     rowIndex += 1
     return curr
   }
 
   fun nextRowIndex(note: String = ""): Int {
     val curr = rowIndex
-    // TODO logging integration
-    //println("---- Get Row ${columnInfos[rowIndex-1].name} - (Preview:${api.preview(rowIndex, ctx.row)})" + (if (note != "") " - ${note}" else ""))
+    if (debugMode) {
+      println("[RowDecoder] Get Next Row Index ${ctx.columnInfo(rowIndex)?.name} - (Preview:${api.preview(rowIndex, ctx.row)})" + (if (note != "") " - ${note}" else ""))
+    }
     rowIndex += 1
     return curr
   }
@@ -280,16 +286,20 @@ class RowDecoder<Session, Row> private constructor(
         // Since we're always at the current index (e.g. (Person(name,age),Address(street,zip)) when we're on `street` the index will be 3
         // so we need to check [street..<zip] indexes i.e. [3..<(3+2)] for nullity
         val allColsNull = run {
-          val callData =
+          val callData by lazy {
             (rowIndex until (rowIndex + childDesc.elementsCount)).map { i ->
               val rowName = ctx.columnInfo(i)?.name ?: "<UNKNOWN>"
               "${i}:${rowName}=${api.preview(i, ctx.row)}"
             }.joinToString("-")
-
+          }
           val allColsNull = (rowIndex until (rowIndex + childDesc.elementsCount)).all {
             api.isNull(it, ctx.row)
           }
-          println("[RowDecoder] allColsNull:${allColsNull} -> ${callData} (for: ${childDesc})")
+
+          // Very useful to know row-level data for each object so returning it if debugMode is enabled
+          if (debugMode) {
+            println("[RowDecoder] allColsNull:${allColsNull} -> ${callData} (for: ${childDesc})")
+          }
           allColsNull
         }
 
@@ -305,14 +315,10 @@ class RowDecoder<Session, Row> private constructor(
         }
       }
       // When it is contextual and a contextual decoder exists, use that
-      (childDesc.kind == SerialKind.CONTEXTUAL || childDesc.isInline) && serializersModule.getContextualDescriptor(childDesc) != null -> {
+      childDesc.kind == SerialKind.CONTEXTUAL && serializersModule.getContextualDescriptor(childDesc) != null -> {
         val desc = serializersModule.getContextualDescriptor(childDesc) ?: throw IllegalStateException("Impossible state")
         decodeBestEffortFromDescriptor(desc, descriptor, index, deserializer)
       }
-
-      // At this point we know we don't have a custom contextual descriptor for it, if it is inline we know to fail it
-      childDesc.isInline ->
-        throw IllegalArgumentException("Error decoding column:${currColName()}. Could not find a decoder for the inline type ${childDesc.capturedKClass} with the descriptor: ${childDesc}.")
 
       childDesc.kind == SerialKind.CONTEXTUAL -> {
         val decoder = decoders.find { it.type == childDesc.capturedKClass }?.asNullableIfSpecified()
@@ -370,18 +376,27 @@ class RowDecoder<Session, Row> private constructor(
               // For example this is the case in the Oracle StringDecoder since Oracle (very strangely!) automacally converts empty-strings to null-values. Therefore
               // we need to call the deserializer to handle the null-value and return a non-null value (e.g. an empty string) in the case of a null-value.
               validNullOrElse(desc, index) {
-                alternateDeserializer.deserialize(this)
+                val out = alternateDeserializer.deserialize(this)
+                out
               }
             }
           } as T?
         }
+
+      desc.kind == StructureKind.CLASS && desc.isInline ->
+        validNullOrElse(desc, index) {
+          val out = alternateDeserializer.deserialize(this)
+          out
+        }
+
       else ->
-        throw IllegalArgumentException("Unsupported kind: ${desc.kind} at column:${ctx.columnInfos?.get(index)}")
+        throw IllegalArgumentException("Unsupported kind: `${desc.kind}` at index: ${index} (info:${ctx.columnInfos?.get(index)})")
     }
   }
 
 
   override fun decodeInlineElement(descriptor: SerialDescriptor, index: Int): Decoder = this
+
   @OptIn(ExperimentalSerializationApi::class)
   override fun decodeElementIndex(descriptor: SerialDescriptor): Int {
     if (classIndex >= descriptor.elementsCount) return CompositeDecoder.DECODE_DONE
@@ -411,10 +426,10 @@ class RowDecoder<Session, Row> private constructor(
     TODO("Not yet implemented")
   }
 
-  // When using classes with a single primitive (e.g. value-classes) this is very useful because we want to retain informaiton about the primitive type.
-  // For example, if we have a class `class NewTypeInt(val value: Int?)` we want to know that the value is a nullable-Int and not just an Int.
-  // Currently this functionality is not used but we might want to know the type of the primitive in the future.
-  override fun decodeInline(descriptor: SerialDescriptor): Decoder = cloneSelf(ctx, rowIndex, RowDecoderType.Inline(descriptor), endCallback)
+
+  // Can optionally allow you to create a new decoder for inline classes. In that case we would need to update
+  // the row-index on a callback the way we do classes. This is not needed yet.
+  override fun decodeInline(descriptor: SerialDescriptor): Decoder = this
 
   /**
    * Checks to see if the element is null before calling an actual deserialzier. Can't use this for nested classes because

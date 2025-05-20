@@ -30,6 +30,7 @@ interface EncodingConfig<Session, Stmt, ResultRow> {
   // If you want to use any primitive-wrapped contextual encoders you need to add them here
   val module: SerializersModule
   val timezone: TimeZone
+  val debugMode: Boolean
 }
 
 @OptIn(TerpalSqlInternal::class)
@@ -67,7 +68,7 @@ interface WithEncoding<Session, Stmt, ResultRow> {
 
   fun <T> KSerializer<T>.makeExtractor(debugInfo: QueryDebugInfo?) =
     { conn: Session, rs: ResultRow ->
-      val decoder = RowDecoder(createDecodingContext(conn, rs, debugInfo), encodingConfig.module, encodingApi, allDecoders, descriptor, encodingConfig.json, startingResultRowIndex)
+      val decoder = RowDecoder(createDecodingContext(conn, rs, debugInfo), encodingConfig.module, encodingApi, allDecoders, descriptor, encodingConfig.json, encodingConfig.debugMode, startingResultRowIndex)
       // If this is specifically a top-level class annotated with @SqlJsonValue it needs special decoding
       if (this.descriptor.isJsonClassAnnotated()) {
         decoder.decodeJsonAnnotated(descriptor, 0, this) ?:
