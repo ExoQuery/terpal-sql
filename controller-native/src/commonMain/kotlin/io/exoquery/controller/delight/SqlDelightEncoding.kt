@@ -32,31 +32,25 @@ data class StatementWrapper(val stmt: Statement): DelightStatementWrapper {
   override fun bindNull(index: Int) = stmt.bindNull(index)
 }
 
- fun failNull(index: Int): Nothing = run {
-   throw IllegalStateException("Cannot read column $index in the query")
- }
-
 interface DelightCursorWrapper: SqliteCursorWrapper {
   companion object {
     operator fun invoke(cursor: Cursor): CursorWrapper = CursorWrapper(cursor)
     fun fromDelightCursor(cursor: SqlCursor): DelightCursorWrapper =
       object: DelightCursorWrapper {
-        override fun getString(index: Int): String = cursor.getString(index) ?: failNull(index)
-        override fun getLong(index: Int): Long = cursor.getLong(index) ?: failNull(index)
-        override fun getBytes(index: Int): ByteArray = cursor.getBytes(index) ?: failNull(index)
-        override fun getDouble(index: Int): Double = cursor.getDouble(index) ?: failNull(index)
-        override fun isNull(index: Int): Boolean = cursor.getBytes(index) == null
+        override fun getString(index: Int) = cursor.getString(index)
+        override fun getLong(index: Int) = cursor.getLong(index)
+        override fun getBytes(index: Int) = cursor.getBytes(index)
+        override fun getDouble(index: Int) = cursor.getDouble(index)
+        override fun isNull(index: Int) = cursor.getBytes(index) == null
       }
   }
 }
 
 data class CursorWrapper(val cursor: Cursor): DelightCursorWrapper {
   fun next() = cursor.next()
-  override fun getString(index: Int): String = cursor.getString(index)
-  override fun getLong(index: Int): Long = cursor.getLong(index)
-  override fun getBytes(index: Int): ByteArray = cursor.getBytes(index)
-  override fun getDouble(index: Int): Double = cursor.getDouble(index)
-  override fun isNull(index: Int): Boolean = cursor.isNull(index)
+  override fun getString(index: Int) = cursor.getString(index)
+  override fun getLong(index: Int) = cursor.getLong(index)
+  override fun getBytes(index: Int) = cursor.getBytes(index)
+  override fun getDouble(index: Int) = cursor.getDouble(index)
+  override fun isNull(index: Int) = cursor.isNull(index)
 }
-
-

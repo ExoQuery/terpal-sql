@@ -9,6 +9,14 @@ open class DecodingContext<Session, Row>(
   open val session: Session,
   open val row: Row,
   open val timeZone: TimeZone,
+  open val startingIndex: StartingIndex,
   val columnInfos: List<ColumnInfo>?,
   open val debugInfo: QueryDebugInfo?
-)
+) {
+  /**
+   * Get the column info for the given index. The index is 1-based since this is the general case for database row-sets.
+   * (TODO what about the android result-set)
+   */
+  fun columnInfo(index: Int): ColumnInfo? =
+    columnInfos?.get(index-startingIndex.value)
+}

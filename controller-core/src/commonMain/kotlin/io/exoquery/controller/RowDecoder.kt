@@ -275,29 +275,44 @@ class RowDecoder<Session, Row> private constructor(
         // if there is a decoder for the specific array-type use that, otherwise
         run { decodeWithDecoder(decoder as SqlDecoder<Session, Row, T>) }
       }
-      childDesc.kind == StructureKind.CLASS -> {
+      childDesc.kind == StructureKind.CLASS && !childDesc.isInline -> {
         // Only if all the columns are null (and the returned element can be null) can we assume that the decoded element should be null
         // Since we're always at the current index (e.g. (Person(name,age),Address(street,zip)) when we're on `street` the index will be 3
         // so we need to check [street..<zip] indexes i.e. [3..<(3+2)] for nullity
-        val allColsNull =
-          (rowIndex until (rowIndex + childDesc.elementsCount)).all {
+        val allColsNull = run {
+          val callData =
+            (rowIndex until (rowIndex + childDesc.elementsCount)).map { i ->
+              val rowName = ctx.columnInfo(i)?.name ?: "<UNKNOWN>"
+              "${i}:${rowName}=${api.preview(i, ctx.row)}"
+            }.joinToString("-")
+
+          val allColsNull = (rowIndex until (rowIndex + childDesc.elementsCount)).all {
             api.isNull(it, ctx.row)
           }
+          println("[RowDecoder] allColsNull:${allColsNull} -> ${callData} (for: ${childDesc})")
+          allColsNull
+        }
 
         // If all columns are null and the object (that is currently childDesc) is nullable e.g. childDesc=Person(name:Name?, age:Int), Name(first:String?, last:String?)
         // and first/last are both null make Name null (i.e. Person(null, 123)). If Name is not nullable (i.e. Person(name:Name, age:Int))
         // make it Name(null, null)
         if (allColsNull && childDesc.isNullable) {
+          // Need to advanced the rowIndex by the number of elements that would have been null
+          rowIndex = rowIndex + childDesc.elementsCount
           decodeNull()
         } else {
           deserializer.deserialize(cloneSelf(ctx, rowIndex, type, { childIndex -> this.rowIndex = childIndex }))
         }
       }
       // When it is contextual and a contextual decoder exists, use that
-      childDesc.kind == SerialKind.CONTEXTUAL && serializersModule.getContextualDescriptor(childDesc) != null -> {
+      (childDesc.kind == SerialKind.CONTEXTUAL || childDesc.isInline) && serializersModule.getContextualDescriptor(childDesc) != null -> {
         val desc = serializersModule.getContextualDescriptor(childDesc) ?: throw IllegalStateException("Impossible state")
         decodeBestEffortFromDescriptor(desc, descriptor, index, deserializer)
       }
+
+      // At this point we know we don't have a custom contextual descriptor for it, if it is inline we know to fail it
+      childDesc.isInline ->
+        throw IllegalArgumentException("Error decoding column:${currColName()}. Could not find a decoder for the inline type ${childDesc.capturedKClass} with the descriptor: ${childDesc}.")
 
       childDesc.kind == SerialKind.CONTEXTUAL -> {
         val decoder = decoders.find { it.type == childDesc.capturedKClass }?.asNullableIfSpecified()

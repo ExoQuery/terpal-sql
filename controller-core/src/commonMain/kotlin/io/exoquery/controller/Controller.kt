@@ -40,7 +40,7 @@ interface WithEncoding<Session, Stmt, ResultRow> {
   fun createEncodingContext(session: Session, stmt: Stmt) =
     EncodingContext(session, stmt, encodingConfig.timezone)
   fun createDecodingContext(session: Session, row: ResultRow, debugInfo: QueryDebugInfo?) =
-    DecodingContext(session, row, encodingConfig.timezone, catchRethrowColumnInfoExtractError { extractColumnInfo(row) }, debugInfo)
+    DecodingContext(session, row, encodingConfig.timezone, startingResultRowIndex, catchRethrowColumnInfoExtractError { extractColumnInfo(row) }, debugInfo)
 
   fun extractColumnInfo(row: ResultRow): List<ColumnInfo>?
 

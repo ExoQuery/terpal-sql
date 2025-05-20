@@ -65,8 +65,8 @@ open class AdditionalSqliteEncoding(val dateHelper: SqliteDateHelper = SqliteDat
     when (val colType = ctx.getFieldType(i)) {
       // Null encoding of value is handled by the .asNullable() method of DecoderAny
       //SqliteFieldType.TYPE_NULL -> null
-      SqliteFieldType.TYPE_FLOAT -> BigDecimal.valueOf(ctx.row.getDouble(i))
-      SqliteFieldType.TYPE_INTEGER -> BigDecimal.valueOf(ctx.row.getLong(i))
+      SqliteFieldType.TYPE_FLOAT -> ctx.row.getDouble(i)?.let { BigDecimal.valueOf(it) }
+      SqliteFieldType.TYPE_INTEGER -> ctx.row.getLong(i)?.let { BigDecimal.valueOf(it) }
       else -> {
         val stringValue = ctx.row.getString(i)
         try {
@@ -87,9 +87,9 @@ open class AdditionalSqliteEncoding(val dateHelper: SqliteDateHelper = SqliteDat
   val SqlTimestampEncoder: SqliteEncoderAny<Timestamp> =
     SqliteEncoderAny(SqliteFieldType.TYPE_INTEGER, Timestamp::class) { ctx, v, i -> dateHelper.setDateByMilliseconds(i, v.time, Calendar.getInstance(), ctx.stmt) }
 
-  val SqlDateDecoder: SqliteDecoderAny<java.sql.Date> = SqliteDecoderAny(java.sql.Date::class) { ctx, i ->  java.sql.Date(dateHelper.getTimeInMilliseconds(ctx, i)) }
-  val SqlTimeDecoder: SqliteDecoderAny<Time> = SqliteDecoderAny(Time::class) { ctx, i -> java.sql.Time(dateHelper.getTimeInMilliseconds(ctx, i)) }
-  val SqlTimestampDecoder: SqliteDecoderAny<Timestamp> = SqliteDecoderAny(Timestamp::class) { ctx, i -> java.sql.Timestamp(dateHelper.getTimeInMilliseconds(ctx, i)) }
+  val SqlDateDecoder: SqliteDecoderAny<java.sql.Date> = SqliteDecoderAny(java.sql.Date::class) { ctx, i ->  dateHelper.getTimeInMilliseconds(ctx, i)?.let { java.sql.Date(it) } }
+  val SqlTimeDecoder: SqliteDecoderAny<Time> = SqliteDecoderAny(Time::class) { ctx, i -> dateHelper.getTimeInMilliseconds(ctx, i)?.let { java.sql.Time(it) } }
+  val SqlTimestampDecoder: SqliteDecoderAny<Timestamp> = SqliteDecoderAny(Timestamp::class) { ctx, i -> dateHelper.getTimeInMilliseconds(ctx, i)?.let { java.sql.Timestamp(it) } }
 
   val JDateEncoder: SqliteEncoderAny<java.util.Date> = SqlTimestampEncoder.contramap { v: java.util.Date -> Timestamp(v.getTime()) }
   val JDateDecoder: SqliteDecoderAny<java.util.Date> = SqlTimestampDecoder.map { v: Timestamp -> java.util.Date(v.getTime()) }
@@ -183,7 +183,7 @@ data class SqliteDateHelper(
       DatePrecision.Second -> 1L
     }
 
-  fun getTimeInMilliseconds(ctx: SqliteDecodingContext, i: Int): Long {
+  fun getTimeInMilliseconds(ctx: SqliteDecodingContext, i: Int): Long? {
     val colType = ctx.getFieldType(i)
     return when (colType) {
       SqliteFieldType.TYPE_TEXT -> {
@@ -191,7 +191,7 @@ data class SqliteDateHelper(
         val date = SimpleDateFormat.getPatternInstance(this.dateStringFormat).parse(dateText)
         date.time
       }
-      SqliteFieldType.TYPE_INTEGER -> ctx.row.getLong(i) * this.dateMultiplier()
+      SqliteFieldType.TYPE_INTEGER -> ctx.row.getLong(i)?.let { it * this.dateMultiplier() }
       SqliteFieldType.TYPE_FLOAT -> {
         val convertedValue = julianDateToCalendar(ctx.row.getDouble(i), java.util.Calendar.getInstance())
           ?: throw SQLException("Bad value for type java.sql.Date : ${ctx.row.getString(i)}")

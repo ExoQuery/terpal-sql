@@ -55,6 +55,21 @@ class BasicQuerySpec : FreeSpec({
       )
     }
 
+    "SELECT Person, Address - leftJoin + null (Triple(NN,null,null))" {
+      Sql("SELECT p.id, p.firstName, p.lastName, p.age, a.ownerId, a.street, a.zip, aa.ownerId, aa.street, aa.zip FROM Person p LEFT JOIN Address a ON p.id = a.ownerId LEFT JOIN Address aa ON p.id = aa.ownerId").queryOf<Triple<Person, Address?, Address?>>().runOn(ctx) shouldBe listOf(
+        Triple(Person(1, "Joe", "Bloggs", 111), Address(1, "123 Main St", "12345"), Address(1, "123 Main St", "12345")),
+        Triple(Person(2, "Jim", "Roogs", 222), null, null)
+      )
+    }
+
+    // This is a test for the RowEncoder to advanced number number null elements (in the child decoder) that are needed when all rows are null i.e. the `rowIndex = rowIndex + childDesc.elementsCount` part in decodeNullableSerializableElement.
+    "SELECT Person, Address - leftJoin + null (Triple(NN,null,NN))" {
+      Sql("SELECT p.id, p.firstName, p.lastName, p.age, a.ownerId, a.street, a.zip, aa.ownerId, aa.street, aa.zip FROM Person p LEFT JOIN Address a ON p.id = a.ownerId LEFT JOIN Address aa ON 1 = aa.ownerId").queryOf<Triple<Person, Address?, Address?>>().runOn(ctx) shouldBe listOf(
+        Triple(Person(1, "Joe", "Bloggs", 111), Address(1, "123 Main St", "12345"), Address(1, "123 Main St", "12345")),
+        Triple(Person(2, "Jim", "Roogs", 222), null, Address(1, "123 Main St", "12345"))
+      )
+    }
+
     @Serializable
     data class CustomRow1(val Person: Person, val Address: Address)
     @Serializable

@@ -11,7 +11,7 @@ typealias JdbcDecoder<T> = SqlDecoder<Connection, ResultSet, T>
 
 class JdbcDecoderAny<T: Any>(
   override val type: KClass<T>,
-  override val f: (JdbcDecodingContext, Int) -> T
+  override val f: (JdbcDecodingContext, Int) -> T?
 ): DecoderAny<T, Connection, ResultSet>(
     type,
     { index, row ->
@@ -19,4 +19,5 @@ class JdbcDecoderAny<T: Any>(
       row.wasNull()
     },
     f
-  )
+  ) {
+}

@@ -87,10 +87,10 @@ class AndroidxCursorWrapper(val cursor: Cursor, windowSizeBytes: Long?): SqliteC
   }
 
   fun next(): Boolean = cursor.moveToNext()
-  override fun getString(index: Int): String = cursor.getString(index)
-  override fun getLong(index: Int): Long = cursor.getLong(index)
-  override fun getBytes(index: Int): ByteArray = cursor.getBlob(index)
-  override fun getDouble(index: Int): Double = cursor.getDouble(index)
+  override fun getString(index: Int): String? = cursor.getString(index)
+  override fun getLong(index: Int): Long? = cursor.getLong(index)
+  override fun getBytes(index: Int): ByteArray? = cursor.getBlob(index)
+  override fun getDouble(index: Int): Double? = cursor.getDouble(index)
   override fun isNull(index: Int): Boolean = cursor.isNull(index)
 }
 
