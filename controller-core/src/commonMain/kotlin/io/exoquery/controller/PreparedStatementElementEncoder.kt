@@ -1,7 +1,9 @@
 package io.exoquery.controller
 
 import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerializationStrategy
+import kotlinx.serialization.builtins.nullable
 import kotlinx.serialization.descriptors.*
 import kotlinx.serialization.encoding.CompositeEncoder
 import kotlinx.serialization.encoding.Encoder
@@ -118,6 +120,15 @@ class PreparedStatementElementEncoder<Session, Stmt>(
         @Suppress("UNCHECKED_CAST")
         run { (encoder as SqlEncoder<Session, Stmt, T?>).encode(ctx, value, index) }
       }
+
+      desc.kind == StructureKind.CLASS && desc.isInline -> {
+        if (value != null)
+          serializer.serialize(this, value)
+        else
+          (serializer as? KSerializer<T>)?.nullable?.serialize(this, value)
+            ?: throw IllegalArgumentException("Cannot encode null value at index ${index} with the descriptor ${desc}. The serializer ${serializer} could not be converted into a KSerializer.")
+      }
+
       else -> {
         if (value == null) {
           when (desc.kind) {
