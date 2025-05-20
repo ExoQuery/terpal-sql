@@ -10,6 +10,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
+import org.intellij.lang.annotations.Language
 import kotlin.coroutines.AbstractCoroutineContextElement
 import kotlin.experimental.ExperimentalTypeInference
 
@@ -186,7 +187,7 @@ interface Controller<ExecutionOpts>: ControllerVerbs<ExecutionOpts> {
 }
 
 @OptIn(TerpalSqlInternal::class)
-suspend fun Controller<*>.runActions(actions: String): List<Long> =
+suspend fun Controller<*>.runActions(@Language("SQL") actions: String): List<Long> =
   actions.split(";").map { it.trim() }.filter { it.isNotEmpty() }.map { run(ControllerAction(it, listOf()), DefaultOpts()) }
 
 @OptIn(TerpalSqlInternal::class)

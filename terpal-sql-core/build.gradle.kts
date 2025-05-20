@@ -34,7 +34,7 @@ kotlin {
         //api("org.jetbrains.kotlinx:kotlinx-datetime:0.6.0")
         api("io.exoquery:terpal-runtime:2.1.0-2.0.0.PL")
         implementation("org.jetbrains.kotlinx:atomicfu:0.23.1")
-        implementation("com.sschr15.annotations:jb-annotations-kmp:24.1.0+apple")
+        implementation("org.jetbrains:annotations:26.0.2")
       }
     }
 

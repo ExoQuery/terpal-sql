@@ -129,25 +129,6 @@ dependencies {
 }
 ```
 
-> #### Duplicate class issue
-> When using the `terpal-sql-android` dependency with `terpal-sql-core` in commonMain, be sure
-> to add and exclusion for `jb-annotations-kmp` otherwise symbol conflicts will occur e.g.
-> ```
-> Duplicate class org.intellij.lang.annotations.Flow found in modules annotations-26.0.1.jar -> annotations-26.0.1 (org.jetbrains:annotations:26.0.1) and jb-annotations-kmp-jvm-24.1.0+apple.jar -> jb-annotations-kmp-jvm-24.1.0+apple (com.sschr15.annotations:jb-annotations-kmp-jvm:24.1.0+apple)
-> Duplicate class org.intellij.lang.annotations.Identifier found in modules annotations-26.0.1.jar -> annotations-26.0.1 (org.jetbrains:annotations:26.0.1) and jb-annotations-kmp-jvm-24.1.0+apple.jar -> jb-annotations-kmp-jvm-24.1.0+apple (com.sschr15.annotations:jb-annotations-kmp-jvm:24.1.0+apple)
-> ...
-> ```
-> To fix it do this:
-> ```kotlin
-> commonMain.dependencies {
->   implementation("io.exoquery:terpal-sql-core:2.0.0.PL-1.2.0") {
->     exclude("com.sschr15.annotations","jb-annotations-kmp")
->   }
-> }
-> ```
-
-Then create the `TerpalAndroidDriver` using one of the following constructors.
-
 ### Construct from ApplicationContext
 Use the `TerpalAndroidDriver.fromApplicationDriver` method to create a terpal context from an Android Application Driver
 ```kotlin

@@ -10,12 +10,6 @@ plugins {
 
 val thisVersion = version
 
-// Exclude the jb-annotations-kmp in favor of the official jebrains one (in dependencies below)
-configurations.forEach {
-  //create("cleanedAnnotations")
-  it.exclude(group = "com.sschr15.annotations", module = "jb-annotations-kmp")
-}
-
 // Enable logging of wrappers
 //tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
 //    compilerOptions {
@@ -81,7 +75,7 @@ kotlin {
         api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
         // Optional by the user. This library provides certain utilities that enhance Hikari.
 
-        implementation("org.jetbrains:annotations:24.1.0")
+        implementation("org.jetbrains:annotations:26.0.2")
 
         // Note for user to include these in dependencies if they want to use them
         compileOnly("com.typesafe:config:1.4.1")

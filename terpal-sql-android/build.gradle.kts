@@ -14,11 +14,6 @@ plugins {
   //id("org.jetbrains.kotlin.android") version "1.9.23"
 }
 
-configurations.forEach {
-  //create("cleanedAnnotations")
-  it.exclude(group = "com.sschr15.annotations", module = "jb-annotations-kmp")
-}
-
 android {
   namespace = "io.exoquery.sql"
 

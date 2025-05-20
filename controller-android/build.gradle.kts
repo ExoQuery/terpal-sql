@@ -15,10 +15,6 @@ plugins {
 
 version = extra["controllerVersion"].toString()
 
-configurations.forEach {
-  it.exclude(group = "com.sschr15.annotations", module = "jb-annotations-kmp")
-}
-
 android {
   namespace = "io.exoquery.sql"
 

@@ -9,12 +9,6 @@ plugins {
 
 version = extra["controllerVersion"].toString()
 
-// Exclude the jb-annotations-kmp in favor of the official jebrains one (in dependencies below)
-configurations.forEach {
-  //create("cleanedAnnotations")
-  it.exclude(group = "com.sschr15.annotations", module = "jb-annotations-kmp")
-}
-
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile>().configureEach {
   compilerOptions {
     freeCompilerArgs.add("-Xcontext-receivers")
