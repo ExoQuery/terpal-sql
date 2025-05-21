@@ -105,7 +105,7 @@ jobs:
           java-version: '17'
           distribution: 'adopt'
       - name: Validate Gradle wrapper
-        uses: gradle/wrapper-validation-action@v1
+        uses: gradle/actions/wrapper-validation@v3
 
       - run: echo "*************** PublishCommand ${{ matrix.publish_command }}"
 
