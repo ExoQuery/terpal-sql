@@ -78,16 +78,8 @@ fun verify(e1: EncodingTestEntityImp, e2: EncodingTestEntityImp, oracleStrings: 
   e1.longOpt shouldBeEqualNullable e2.longOpt
   e1.floatOpt shouldBeEqualNullable(e2.floatOpt)
   e1.doubleOpt shouldBeEqualNullable(e2.doubleOpt)
-  if (e1.byteArrayOpt != null) {
-    if (e2.byteArrayOpt != null) {
-      if (e1.byteArrayOpt!!.contentEquals(e2.byteArrayOpt!!)) {}
-    }
-  }
-  if (e1.customOpt != null) {
-    if (e2.customOpt != null) {
-      if (e1.customOpt == null) {}
-    }
-  }
+  (e1.byteArrayOpt?.toList() ?: emptyList()) shouldBeEqualNullable (e2.byteArrayOpt?.toList() ?: emptyList())
+  e1.customOpt shouldBeEqualNullable e2.customOpt
 }
 
 @Serializable
