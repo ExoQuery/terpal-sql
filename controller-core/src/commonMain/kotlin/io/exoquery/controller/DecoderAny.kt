@@ -20,8 +20,15 @@ open class DecoderAny<T: Any, Session, Row>(
     return value as T
   }
 
-  inline fun <reified R: Any> map(crossinline f: (T) -> R): DecoderAny<R, Session, Row> =
-    DecoderAny<R, Session, Row>(R::class, isNull) { ctx, index -> f(this.decode(ctx, index)) }
+  /**
+   * Transforms this decoder into another decoder by applying the given function to the decoded value.
+   * Alias for [map].
+   */
+  inline fun <reified R: Any> transformInto(crossinline into: (T) -> R): DecoderAny<R, Session, Row> =
+    map(into)
+
+  inline fun <reified R: Any> map(crossinline into: (T) -> R): DecoderAny<R, Session, Row> =
+    DecoderAny<R, Session, Row>(R::class, isNull) { ctx, index -> into(this.decode(ctx, index)) }
 
   override fun asNullable(): SqlDecoder<Session, Row, T?> =
     object: SqlDecoder<Session, Row, T?>() {

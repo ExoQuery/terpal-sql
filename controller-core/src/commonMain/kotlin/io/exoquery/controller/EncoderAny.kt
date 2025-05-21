@@ -28,6 +28,13 @@ open class EncoderAny<T: Any, TypeId: Any, Session, Stmt>(
         }
     }
 
+  /**
+   * Transforms this encoder into another encoder by applying the given function to the value before encoding it.
+   * Alias for [contramap].
+   */
+  inline fun <reified R: Any> transformFrom(crossinline from: (R) -> T): EncoderAny<R, TypeId, Session, Stmt> =
+    contramap(from)
+
   inline fun <reified R: Any> contramap(crossinline from: (R) -> T): EncoderAny<R, TypeId, Session, Stmt> =
     EncoderAny<R, TypeId, Session, Stmt>(this@EncoderAny.dataType, R::class, this@EncoderAny.setNull) { ctx, value, i -> this.f(ctx, from(value), i) }
 }
