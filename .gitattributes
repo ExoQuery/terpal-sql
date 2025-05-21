@@ -1,3 +1,6 @@
-* text eol=lf
 # Need to NEVER modify the line endings of this file since it is supposed to be a windows compilation
 libs/windows/libsqlite3.a -text
+gradlew text eol=lf
+gradlew.bat text eol=crlf
+gradle/wrapper/gradle-wrapper.jar binary
+gradle/wrapper/gradle-wrapper.properties text eol=lf
