@@ -57,9 +57,10 @@ interface WithEncoding<Session, Stmt, ResultRow> {
   // Do it this way so we can avoid value casting in the runScoped function
   @Suppress("UNCHECKED_CAST")
   fun <T> StatementParam<T>.write(index: Int, conn: Session, ps: Stmt): Unit {
-    // TODO logging integration
-    //println("----- Preparing parameter $index - $value - using $serializer")
-    PreparedStatementElementEncoder(createEncodingContext(conn, ps), index + startingStatementIndex.value, encodingApi, allEncoders, encodingConfig.module, encodingConfig.json).encodeNullableSerializableValue(serializer, value)
+    if (encodingConfig.debugMode) {
+      println("----- Preparing parameter $index - $value - using $serializer")
+    }
+    PreparedStatementElementEncoder(createEncodingContext(conn, ps), index + startingStatementIndex.value, encodingApi, allEncoders, encodingConfig.module, encodingConfig.json, serializer).encodeNullableSerializableValue(serializer, value)
   }
   fun prepare(stmt: Stmt, conn: Session, params: List<StatementParam<*>>) =
     params.withIndex().forEach { (idx, param) ->

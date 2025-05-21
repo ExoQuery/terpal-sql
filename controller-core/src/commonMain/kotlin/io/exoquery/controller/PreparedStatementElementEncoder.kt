@@ -17,7 +17,8 @@ class PreparedStatementElementEncoder<Session, Stmt>(
   val api: ApiEncoders<Session, Stmt>,
   val encoders: Set<SqlEncoder<Session, Stmt, out Any>>,
   val module: SerializersModule,
-  val json: Json
+  val json: Json,
+  val serializer: SerializationStrategy<*>
 ): Encoder {
 
   override val serializersModule: SerializersModule = module
@@ -55,9 +56,14 @@ class PreparedStatementElementEncoder<Session, Stmt>(
   override fun encodeEnum(enumDescriptor: SerialDescriptor, index: Int) =
     TODO("Enum encoding not yet supported")
 
+  /**
+   * Since the assumption of this encoder is that it is created per every single value that needs to be inserted, we pass a serializer for that particular value
+   * each time. That way we know with absolute certainty what the type of each thing we are trying to encode is. Otherwise if null-values are passed in there
+   * were situations where we did not no their type.
+   */
   @ExperimentalSerializationApi
   override fun encodeNull() =
-    throw IllegalArgumentException("Need to know the type of the column to encode a null value")
+    encodePrimitiveNull(serializer.descriptor)
 
   override fun encodeInline(descriptor: SerialDescriptor): Encoder = this
 
@@ -131,18 +137,7 @@ class PreparedStatementElementEncoder<Session, Stmt>(
 
       else -> {
         if (value == null) {
-          when (desc.kind) {
-            is PrimitiveKind.BYTE -> api.ByteEncoder.asNullable().encode(ctx, null, index)
-            is PrimitiveKind.SHORT -> api.ShortEncoder.asNullable().encode(ctx, null, index)
-            is PrimitiveKind.INT -> api.IntEncoder.asNullable().encode(ctx, null, index)
-            is PrimitiveKind.LONG -> api.LongEncoder.asNullable().encode(ctx, null, index)
-            is PrimitiveKind.FLOAT -> api.FloatEncoder.asNullable().encode(ctx, null, index)
-            is PrimitiveKind.DOUBLE -> api.DoubleEncoder.asNullable().encode(ctx, null, index)
-            is PrimitiveKind.BOOLEAN -> api.BooleanEncoder.asNullable().encode(ctx, null, index)
-            is PrimitiveKind.CHAR -> api.CharEncoder.asNullable().encode(ctx, null, index)
-            is PrimitiveKind.STRING -> api.StringEncoder.asNullable().encode(ctx, null, index)
-            else -> throw IllegalArgumentException("Unsupported null primitive kind: ${desc.kind}")
-          }
+          encodePrimitiveNull(serializer.descriptor)
         } else if (desc.kind is PrimitiveKind) {
           // if it is a primitive type then use the encoder defined in the serialization. Note that
           // if it is a wrappedType (e.g. NewTypeInt(value: Int) then this serializer will be the wrapped one
@@ -152,6 +147,26 @@ class PreparedStatementElementEncoder<Session, Stmt>(
           throw IllegalArgumentException("Unsupported serial-kind: ${desc.kind} for the value ${value} with the descriptor ${desc} could not be decoded as a Array, Contextual, or Primitive value")
         }
       }
+    }
+  }
+
+  fun encodePrimitiveNull(desc: SerialDescriptor) {
+    when {
+      // In addition to primitives, support inline classes
+      desc.kind == StructureKind.CLASS && desc.isInline -> {
+         val elementDescriptor = desc.getElementDescriptor(0)
+        encodePrimitiveNull(elementDescriptor)
+      }
+      desc.kind == PrimitiveKind.BYTE -> api.ByteEncoder.asNullable().encode(ctx, null, index)
+      desc.kind == PrimitiveKind.SHORT -> api.ShortEncoder.asNullable().encode(ctx, null, index)
+      desc.kind == PrimitiveKind.INT -> api.IntEncoder.asNullable().encode(ctx, null, index)
+      desc.kind == PrimitiveKind.LONG -> api.LongEncoder.asNullable().encode(ctx, null, index)
+      desc.kind == PrimitiveKind.FLOAT -> api.FloatEncoder.asNullable().encode(ctx, null, index)
+      desc.kind == PrimitiveKind.DOUBLE -> api.DoubleEncoder.asNullable().encode(ctx, null, index)
+      desc.kind == PrimitiveKind.BOOLEAN -> api.BooleanEncoder.asNullable().encode(ctx, null, index)
+      desc.kind == PrimitiveKind.CHAR -> api.CharEncoder.asNullable().encode(ctx, null, index)
+      desc.kind == PrimitiveKind.STRING -> api.StringEncoder.asNullable().encode(ctx, null, index)
+      else -> throw IllegalArgumentException("Unsupported null primitive kind: ${desc.kind}")
     }
   }
 }
