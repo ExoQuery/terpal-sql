@@ -5,8 +5,8 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 plugins {
   id("conventions")
   kotlin("multiplatform")
-  id("io.exoquery.terpal-plugin") version "2.1.0-2.0.0.PL"
-  kotlin("plugin.serialization") version "2.1.0"
+  id("io.exoquery.terpal-plugin") version "2.1.20-2.0.0.PL"
+  kotlin("plugin.serialization") version "2.1.20"
   id("nativebuild")
 }
 
@@ -32,7 +32,7 @@ kotlin {
         api("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
         api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
         //api("org.jetbrains.kotlinx:kotlinx-datetime:0.6.0")
-        api("io.exoquery:terpal-runtime:2.1.0-2.0.0.PL")
+        api("io.exoquery:terpal-runtime:2.1.20-2.0.0.PL")
         implementation("org.jetbrains.kotlinx:atomicfu:0.23.1")
         implementation("org.jetbrains:annotations:26.0.2")
       }
