@@ -8,8 +8,8 @@ plugins {
   id("conventions")
   kotlin("multiplatform")
   id("com.android.library")
-  id("io.exoquery.terpal-plugin") version "2.1.0-2.0.0.PL"
-  kotlin("plugin.serialization") version "2.1.0"
+  id("io.exoquery.terpal-plugin") version "2.2.0-2.0.0.PL"
+  kotlin("plugin.serialization") version "2.2.0"
   // Already on the classpath
   //id("org.jetbrains.kotlin.android") version "1.9.23"
 }
@@ -52,8 +52,10 @@ kotlin {
 
     androidTarget {
       compilations.all {
-        kotlinOptions {
-          jvmTarget = "17"
+        compileTaskProvider {
+          compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_17)
+          }
         }
       }
       publishLibraryVariants("release", "debug")

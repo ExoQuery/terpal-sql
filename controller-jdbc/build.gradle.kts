@@ -1,10 +1,10 @@
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
-import org.jetbrains.kotlin.gradle.dsl.KotlinCompile
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
 
 plugins {
   id("conventions")
   kotlin("multiplatform")
-  kotlin("plugin.serialization") version "2.1.0"
+  kotlin("plugin.serialization") version "2.2.0"
 }
 
 version = extra["controllerVersion"].toString()
