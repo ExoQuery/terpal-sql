@@ -13,21 +13,11 @@ import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.reactive.awaitFirstOrNull
 import kotlinx.coroutines.reactive.collect
 
-// Minimal execution options placeholder for R2DBC
-data class R2dbcExecutionOptions(
-  val sessionTimeout: Int? = null,
-  val fetchSize: Int? = null,
-  val queryTimeout: Int? = null
-) {
-  companion object {
-    fun Default() = R2dbcExecutionOptions()
-  }
-}
-
 class R2dbcController(
   override val encodingConfig: R2dbcEncodingConfig = R2dbcEncodingConfig.Default(),
   override val connectionFactory: ConnectionFactory
 ):
+  ControllerCanonical<Connection, Statement, Row, R2dbcExecutionOptions>,
   WithEncoding<Connection, Statement, Row>,
   ControllerVerbs<R2dbcExecutionOptions>,
   HasTransactionalityR2dbc

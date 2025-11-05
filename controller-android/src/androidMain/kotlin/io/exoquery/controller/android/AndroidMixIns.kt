@@ -24,8 +24,8 @@ interface HasSessionAndroid: RequiresSession<Connection, SupportSQLiteStatement,
 
   fun prepareSession(session: Connection): Connection
 
-  override fun closeSession(session: Connection): Unit = session.close()
-  override fun isClosedSession(session: Connection): Boolean = !session.isOpen()
+  override suspend fun closeSession(session: Connection): Unit = session.close()
+  override suspend fun isClosedSession(session: Connection): Boolean = !session.isOpen()
 
    override suspend fun <R> accessStmtReturning(
      sql: String,
@@ -64,7 +64,7 @@ interface HasSessionAndroid: RequiresSession<Connection, SupportSQLiteStatement,
   //      reader-needs-writer,writer-needs-reader scenario since the the coroutine that has
   //      the writer session will use it as the reader (see hasOpenReadOnlyConnection which
   //      doesn't care where the thing it has is a reader or writer).
-  override fun CoroutineContext.hasOpenConnection(): Boolean {
+  override suspend fun CoroutineContext.hasOpenConnection(): Boolean {
     val session = get(sessionKey)?.session
     return session != null && session.isWriter && !isClosedSession(session)
   }

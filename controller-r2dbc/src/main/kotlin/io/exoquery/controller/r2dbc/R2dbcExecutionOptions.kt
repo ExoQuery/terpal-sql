@@ -7,10 +7,7 @@ import io.r2dbc.spi.Statement
 data class R2dbcExecutionOptions(
   val sessionTimeout: Int? = null,
   val fetchSize: Int? = null,
-  val queryTimeout: Int? = null,
-  val prepareConnection: (Connection) -> Connection = { it },
-  val prepareStatement: (Statement) -> Statement = { it },
-  val prepareResult: (Row) -> Row = { it }
+  val queryTimeout: Int? = null
 ) {
   companion object {
     fun Default() = R2dbcExecutionOptions()
