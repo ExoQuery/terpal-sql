@@ -8,6 +8,8 @@ import io.exoquery.controller.TerpalSqlInternal
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.serializer
 
+
+
 fun <T> Param<T>.toStatementParam(): StatementParam<T> =
   StatementParam(serializer, cls, value)
 

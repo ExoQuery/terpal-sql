@@ -5,8 +5,8 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 plugins {
   id("conventions")
   kotlin("multiplatform")
-  id("io.exoquery.terpal-plugin") version "2.1.0-2.0.0.PL"
-  kotlin("plugin.serialization") version "2.1.0"
+  id("io.exoquery.terpal-plugin") version "2.2.0-2.0.0.PL"
+  kotlin("plugin.serialization") version "2.2.0"
   id("nativebuild")
 }
 

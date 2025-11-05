@@ -152,7 +152,7 @@ class NativeDatabaseController internal constructor(
   }
 
   // Is there an open writer?
-  override fun CoroutineContext.hasOpenConnection(): Boolean {
+  override suspend fun CoroutineContext.hasOpenConnection(): Boolean {
     val session = get(sessionKey)?.session
     //if (session != null)
     //  println("--------- (${currentThreadId()}) Found session: ${if (session.isWriter) "WRITER" else "JUST READER, needs promotion" } - isClosed: ${isClosedSession(session)}")
@@ -326,7 +326,7 @@ interface WithReadOnlyVerbs: RequiresSession<Connection, Statement, UnusedOpts> 
   suspend fun newReadOnlySession(): Connection = pool.borrowReader()
 
   // Check if there is at least a reader on th context, if it has a writer that's fine too
-  fun CoroutineContext.hasOpenReadOrWriteConnection(): Boolean {
+  suspend fun CoroutineContext.hasOpenReadOrWriteConnection(): Boolean {
     val session = get(sessionKey)?.session
     return session != null && !isClosedSession(session)
   }

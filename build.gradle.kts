@@ -1,9 +1,9 @@
 plugins {
   `maven-publish`
   signing
-  kotlin("jvm") version "2.1.0" apply false
+  kotlin("jvm") version "2.2.0" apply false
   id("io.github.gradle-nexus.publish-plugin") version "1.1.0" apply false
-  kotlin("multiplatform") version "2.1.0" apply false
+  kotlin("multiplatform") version "2.2.0" apply false
   id("com.android.library") version "8.2.0" apply false
   id("org.jetbrains.dokka") version "1.9.10" apply false
 }
@@ -85,9 +85,9 @@ subprojects {
       artifact(javadocJar)
 
       pom {
-        name.set("decomat")
-        description.set("DecoMat - Deconstructive Pattern Matching for Kotlin")
-        url.set("https://github.com/exoquery/decomat")
+        name.set("terpal-sql")
+        description.set("Safe and fun SQL buliding with interpolated strings in Kotlin")
+        url.set("https://github.com/exoquery/terpal-sql")
 
         licenses {
           license {

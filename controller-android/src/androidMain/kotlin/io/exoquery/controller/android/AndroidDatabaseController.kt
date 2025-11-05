@@ -151,7 +151,7 @@ class AndroidDatabaseController internal constructor(
   }
 
   // Is there an open writer?
-  override fun CoroutineContext.hasOpenConnection(): Boolean {
+  override suspend fun CoroutineContext.hasOpenConnection(): Boolean {
     val session = get(sessionKey)?.session
     return session != null && session.isWriter && !isClosedSession(session)
   }
@@ -401,7 +401,7 @@ interface WithReadOnlyVerbs: RequiresSession<Connection, SupportSQLiteStatement,
     prepareSession(pool.borrowReader())
 
   // Check if there is at least a reader on th context, if it has a writer that's fine too
-  fun CoroutineContext.hasOpenReadOrWriteConnection(): Boolean {
+  suspend fun CoroutineContext.hasOpenReadOrWriteConnection(): Boolean {
     val session = get(sessionKey)?.session
     return session != null && !isClosedSession(session)
   }

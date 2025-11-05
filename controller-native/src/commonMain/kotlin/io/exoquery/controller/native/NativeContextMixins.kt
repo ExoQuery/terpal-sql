@@ -26,8 +26,8 @@ interface HasSessionNative: RequiresSession<Connection, Statement, UnusedOpts> {
   // Use this for the transactor pool (that's what the RequiresTransactionality interface is for)
   // for reader connections we borrow readers
   override suspend fun newSession(options: UnusedOpts): Connection = pool.borrowWriter()
-  override fun closeSession(session: Connection): Unit = session.close()
-  override fun isClosedSession(session: Connection): Boolean = !session.isOpen()
+  override suspend fun closeSession(session: Connection): Unit = session.close()
+  override suspend fun isClosedSession(session: Connection): Boolean = !session.isOpen()
 
   override suspend fun <R> accessStmtReturning(sql: String, conn: Connection, options: UnusedOpts, returningColumns: List<String>, block: suspend (Statement) -> R): R {
     val stmt = conn.value.createStatement(sql)
@@ -60,7 +60,7 @@ interface HasSessionNative: RequiresSession<Connection, Statement, UnusedOpts> {
   //      reader-needs-writer,writer-needs-reader scenario since the the coroutine that has
   //      the writer session will use it as the reader (see hasOpenReadOnlyConnection which
   //      doesn't care where the thing it has is a reader or writer).
-  override fun CoroutineContext.hasOpenConnection(): Boolean {
+  override suspend fun CoroutineContext.hasOpenConnection(): Boolean {
     val session = get(sessionKey)?.session
     return session != null && session.isWriter && !isClosedSession(session)
   }

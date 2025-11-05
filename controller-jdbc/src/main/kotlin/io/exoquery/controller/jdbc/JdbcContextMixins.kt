@@ -63,8 +63,8 @@ interface HasSessionJdbc: RequiresSession<Connection, PreparedStatement, JdbcExe
     conn
   }
 
-  override open fun closeSession(session: Connection): Unit = session.close()
-  override open fun isClosedSession(session: Connection): Boolean = session.isClosed
+  override open suspend fun closeSession(session: Connection): Unit = session.close()
+  override open suspend fun isClosedSession(session: Connection): Boolean = session.isClosed
 
   override open suspend fun <R> accessStmtReturning(sql: String, conn: Connection, options: JdbcExecutionOptions, returningColumns: List<String>, block: suspend (PreparedStatement) -> R): R {
     val stmt =

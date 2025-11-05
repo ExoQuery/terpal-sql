@@ -86,12 +86,12 @@ interface RequiresSession<Session, Stmt, ExecutionOpts> {
   // Methods that implementors need to provide
   val sessionKey: CoroutineContext.Key<CoroutineSession<Session>>
   abstract suspend fun newSession(executionOptions: ExecutionOpts): Session
-  abstract fun closeSession(session: Session): Unit
-  abstract fun isClosedSession(session: Session): Boolean
+  abstract suspend fun closeSession(session: Session): Unit
+  abstract suspend fun isClosedSession(session: Session): Boolean
   suspend fun <R> accessStmt(sql: String, conn: Session, block: suspend (Stmt) -> R): R
   suspend fun <R> accessStmtReturning(sql: String, conn: Session, options: ExecutionOpts, returningColumns: List<String>, block: suspend (Stmt) -> R): R
 
-  fun CoroutineContext.hasOpenConnection(): Boolean {
+  suspend fun CoroutineContext.hasOpenConnection(): Boolean {
     val session = get(sessionKey)?.session
     return session != null && !isClosedSession(session)
   }
@@ -102,7 +102,10 @@ interface RequiresSession<Session, Stmt, ExecutionOpts> {
     } else {
       val session = newSession(executionOptions)
       try {
-        withContext(CoroutineSession(session, sessionKey) + Dispatchers.IO) { block() }
+        withContext(CoroutineSession(session, sessionKey) + Dispatchers.IO) {
+          val output = block()
+          output
+        }
       } finally { closeSession(session) }
     }
   }
