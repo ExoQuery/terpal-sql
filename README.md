@@ -58,6 +58,7 @@ Terpal SQL:
 
 Currently Terpal is supported 
 * **On the JVM** using JDBC with: PostgreSQL, MySQL, SQL Server, Oracle, SQLite, and H2. 
+* **On the JVM** using R2DBC via the terpal-sql-r2dbc module. Currently tested with PostgreSQL only.
 * **On Android, iOS, OSX, Linux and Windows** with SQLite
 
 Fistly, be sure that you have the following repositories defined:
@@ -109,6 +110,37 @@ val ctx = TerpalDriver.Postgres.fromConfig("myPostgresDB")
 // }
 ```
 Have a look at the Terpal-SQL [Sample Project](https://github.com/ExoQuery/terpal-sql-sample) for more details.
+
+## Using R2DBC (new)
+Terpal now has reactive/non-blocking support via the terpal-sql-r2dbc module.
+
+Notes:
+* Supported data types include: Boolean, Byte, Char, Double, Float, Int, Long, Short, String, ByteArray.
+* Date/Time types: kotlin x datetime (LocalDate, LocalTime, LocalDateTime, Instant) and java.time (LocalDate, LocalTime, LocalDateTime, ZonedDateTime, Instant, OffsetTime, OffsetDateTime), plus java.util.Date.
+* java.util.UUID and java.math.BigDecimal are supported.
+* JSON columns are supported via SqlJson, with serialization/deserialization powered by Kotlin's kotlinx-serialization library.
+* Currently R2DBC support is only tested with PostgreSQL.
+
+Add the dependency to your build file:
+
+```kotlin
+dependencies {
+    api("io.exoquery:terpal-sql-r2dbc:2.0.0.PL-1.2.0")
+    api("org.jetbrains.kotlinx:kotlinx-serialization-core:1.6.2")
+    api("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
+    // Example driver:
+    implementation("org.postgresql:r2dbc-postgresql:1.0.5.RELEASE")
+}
+```
+
+A minimal setup for Postgres looks like:
+
+```kotlin
+val connectionFactory: io.r2dbc.spi.ConnectionFactory = ... // e.g., via ConnectionFactoryOptions
+val ctx = io.exoquery.controller.r2dbc.R2dbcControllers.Postgres(connectionFactory = connectionFactory)
+
+val people: List<Person> = Sql("SELECT id, firstName, lastName FROM person").queryOf<Person>().runOn(ctx)
+```
 
 ## Using Android
 
