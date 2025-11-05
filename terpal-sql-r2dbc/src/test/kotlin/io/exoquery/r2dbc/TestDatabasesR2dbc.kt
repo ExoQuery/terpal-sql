@@ -1,7 +1,8 @@
-package io.exoquery.sql
+package io.exoquery.r2dbc
 
 import io.r2dbc.spi.ConnectionFactory
 import io.r2dbc.spi.ConnectionFactories
+import io.r2dbc.spi.ConnectionFactoryOptions
 import io.zonky.test.db.postgres.embedded.EmbeddedPostgres
 
 object TestDatabasesR2dbc {
@@ -11,7 +12,12 @@ object TestDatabasesR2dbc {
     val resource = this::class.java.getResource(postgresScriptsPath)
     if (resource == null) throw NullPointerException("The postgres script path `$postgresScriptsPath` was not found")
     val postgresScript = resource.readText()
-    //started.postgresDatabase.run(postgresScript)
+    started.postgresDatabase.connection.use { conn ->
+      val commands = postgresScript.split(';')
+      commands.filter { it.isNotBlank() }.forEach { cmd ->
+        conn.prepareStatement(cmd).execute()
+      }
+    }
     started
   }
 
@@ -22,12 +28,12 @@ object TestDatabasesR2dbc {
     val db = "postgres"
     val user = "postgres"
     ConnectionFactories.get(
-      io.r2dbc.spi.ConnectionFactoryOptions.builder()
-        .option(io.r2dbc.spi.ConnectionFactoryOptions.DRIVER, "postgresql")
-        .option(io.r2dbc.spi.ConnectionFactoryOptions.HOST, host)
-        .option(io.r2dbc.spi.ConnectionFactoryOptions.PORT, port)
-        .option(io.r2dbc.spi.ConnectionFactoryOptions.DATABASE, db)
-        .option(io.r2dbc.spi.ConnectionFactoryOptions.USER, user)
+      ConnectionFactoryOptions.builder()
+        .option(ConnectionFactoryOptions.DRIVER, "postgresql")
+        .option(ConnectionFactoryOptions.HOST, host)
+        .option(ConnectionFactoryOptions.PORT, port)
+        .option(ConnectionFactoryOptions.DATABASE, db)
+        .option(ConnectionFactoryOptions.USER, user)
         // Provide password if needed; EmbeddedPostgres default often doesn't require it
         // .option(io.r2dbc.spi.ConnectionFactoryOptions.PASSWORD, "password")
         .build()

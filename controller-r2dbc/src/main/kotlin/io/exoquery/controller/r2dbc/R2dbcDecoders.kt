@@ -51,6 +51,8 @@ object R2dbcDecoders {
     R2dbcTimeEncoding.JOffsetTimeDecoder,
     R2dbcTimeEncoding.JOffsetDateTimeDecoder,
     R2dbcTimeEncoding.JDateDecoder,
-    R2dbcUuidEncoding.JUuidDecoder
+    R2dbcUuidEncoding.JUuidDecoder,
+
+    R2dbcAdditionalEncoding.BigDecimalDecoder
   )
 }

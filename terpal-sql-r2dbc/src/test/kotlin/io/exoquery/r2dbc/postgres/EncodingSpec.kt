@@ -1,6 +1,5 @@
-package io.exoquery.sql.postgres
+package io.exoquery.r2dbc.postgres
 
-import io.exoquery.sql.*
 import io.exoquery.sql.encodingdata.*
 import io.exoquery.sql.Sql
 import io.exoquery.controller.runOn
@@ -8,7 +7,12 @@ import io.exoquery.controller.runActions
 import io.kotest.core.spec.style.FreeSpec
 import java.time.ZoneId
 import io.exoquery.controller.r2dbc.R2dbcController
-import io.exoquery.sql.TestDatabasesR2dbc
+import io.exoquery.r2dbc.TestDatabasesR2dbc
+import io.exoquery.r2dbc.encodingdata.JavaTestEntity
+import io.exoquery.r2dbc.encodingdata.SimpleTimeEntity
+import io.exoquery.r2dbc.encodingdata.encodingConfig
+import io.exoquery.r2dbc.encodingdata.insert
+import io.exoquery.r2dbc.encodingdata.verify
 
 class EncodingSpec: FreeSpec({
 
@@ -16,8 +20,6 @@ class EncodingSpec: FreeSpec({
   val ctx: R2dbcController by lazy { R2dbcController(encodingConfig = encodingConfig, connectionFactory = cf) }
 
   suspend fun runActions(actions: String) = ctx.runActions(actions)
-
-  beforeSpec { SchemaInitR2dbc.ensureApplied(ctx) }
 
   beforeEach {
     // The main table used across many tests
@@ -69,16 +71,16 @@ class EncodingSpec: FreeSpec({
 
   "Encode/Decode Additional Java Types - regular" {
     runActions("DELETE FROM JavaTestEntity")
-    insert(JavaTestEntity.regular).runOn(ctx)
+    insert(JavaTestEntity.Companion.regular).runOn(ctx)
     val actual = Sql("SELECT * FROM JavaTestEntity").queryOf<JavaTestEntity>().runOn(ctx).first()
-    verify(actual, JavaTestEntity.regular)
+    verify(actual, JavaTestEntity.Companion.regular)
   }
 
   "Encode/Decode Additional Java Types - empty" {
     runActions("DELETE FROM JavaTestEntity")
-    insert(JavaTestEntity.empty).runOn(ctx)
+    insert(JavaTestEntity.Companion.empty).runOn(ctx)
     val actual = Sql("SELECT * FROM JavaTestEntity").queryOf<JavaTestEntity>().runOn(ctx).first()
-    verify(actual, JavaTestEntity.empty)
+    verify(actual, JavaTestEntity.Companion.empty)
   }
 
   "Encode/Decode KMP Types" {
@@ -91,9 +93,19 @@ class EncodingSpec: FreeSpec({
   "Encode/Decode Other Time Types" {
     runActions("DELETE FROM TimeEntity")
     val zid = ZoneId.systemDefault()
-    val timeEntity = TimeEntity.make(zid)
+    val timeEntity = SimpleTimeEntity.Companion.make(zid)
     insert(timeEntity).runOn(ctx)
-    val actual = Sql("SELECT * FROM TimeEntity").queryOf<TimeEntity>().runOn(ctx).first()
+    val actual = Sql("""
+      SELECT
+        timeLocalDate,
+        timeLocalTime,
+        timeLocalDateTime,
+        timeZonedDateTime,
+        timeInstant,
+        timeOffsetTime,
+        timeOffsetDateTime
+      FROM TimeEntity
+      """).queryOf<SimpleTimeEntity>().runOn(ctx).first()
     assert(timeEntity == actual)
   }
 
@@ -101,15 +113,12 @@ class EncodingSpec: FreeSpec({
     runActions("DELETE FROM TimeEntity")
 
     val zid = ZoneId.systemDefault()
-    val timeEntityA = TimeEntity.make(zid, TimeEntity.TimeEntityInput(2022, 1, 1, 1, 1, 1, 0))
-    val timeEntityB = TimeEntity.make(zid, TimeEntity.TimeEntityInput(2022, 2, 2, 2, 2, 2, 0))
+    val timeEntityA = SimpleTimeEntity.make(zid, SimpleTimeEntity.TimeEntityInput(2022, 1, 1, 1, 1, 1, 0))
+    val timeEntityB = SimpleTimeEntity.make(zid, SimpleTimeEntity.TimeEntityInput(2022, 2, 2, 2, 2, 2, 0))
 
     insert(timeEntityA).runOn(ctx)
     insert(timeEntityB).runOn(ctx)
 
-    assert(timeEntityB.sqlDate > timeEntityA.sqlDate)
-    assert(timeEntityB.sqlTime > timeEntityA.sqlTime)
-    assert(timeEntityB.sqlTimestamp > timeEntityA.sqlTimestamp)
     assert(timeEntityB.timeLocalDate > timeEntityA.timeLocalDate)
     assert(timeEntityB.timeLocalTime > timeEntityA.timeLocalTime)
     assert(timeEntityB.timeLocalDateTime > timeEntityA.timeLocalDateTime)
@@ -120,12 +129,17 @@ class EncodingSpec: FreeSpec({
 
     val actual =
       Sql("""
-          SELECT * FROM TimeEntity 
-          WHERE 
-            sqlDate > ${timeEntityA.sqlDate} 
-            AND sqlTime > ${timeEntityA.sqlTime}
-            AND sqlTimestamp > ${timeEntityA.sqlTimestamp}
-            AND timeLocalDate > ${timeEntityA.timeLocalDate}
+          SELECT
+            timeLocalDate,
+            timeLocalTime,
+            timeLocalDateTime,
+            timeZonedDateTime,
+            timeInstant,
+            timeOffsetTime,
+            timeOffsetDateTime
+          FROM TimeEntity 
+          WHERE
+            timeLocalDate > ${timeEntityA.timeLocalDate}
             AND timeLocalTime > ${timeEntityA.timeLocalTime}
             AND timeLocalDateTime > ${timeEntityA.timeLocalDateTime}
             AND timeZonedDateTime > ${timeEntityA.timeZonedDateTime}
@@ -133,7 +147,7 @@ class EncodingSpec: FreeSpec({
             AND timeOffsetTime > ${timeEntityA.timeOffsetTime}
             AND timeOffsetDateTime > ${timeEntityA.timeOffsetDateTime}
           """
-      ).queryOf<TimeEntity>().runOn(ctx).first()
+      ).queryOf<SimpleTimeEntity>().runOn(ctx).first()
 
     assert(actual == timeEntityB)
   }

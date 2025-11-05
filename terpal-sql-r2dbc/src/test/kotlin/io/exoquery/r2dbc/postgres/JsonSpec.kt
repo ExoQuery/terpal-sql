@@ -1,13 +1,14 @@
-package io.exoquery.sql.postgres
+package io.exoquery.r2dbc.postgres
 
 import io.exoquery.controller.JsonValue
 import io.exoquery.controller.SqlJsonValue
 import io.exoquery.controller.r2dbc.R2dbcController
+import io.exoquery.controller.r2dbc.R2dbcControllers
 import io.exoquery.controller.runActions
 import io.exoquery.controller.runOn
+import io.exoquery.r2dbc.TestDatabasesR2dbc
 import io.exoquery.sql.Param
 import io.exoquery.sql.Sql
-import io.exoquery.sql.TestDatabasesR2dbc
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.serialization.Serializable
@@ -27,11 +28,9 @@ object JsonSpecData {
 class JsonSpec: FreeSpec({
 
   val cf = TestDatabasesR2dbc.postgres
-  val ctx: R2dbcController by lazy { R2dbcController(connectionFactory = cf) }
+  val ctx: R2dbcController by lazy { R2dbcControllers.Postgres(connectionFactory = cf) }
 
   suspend fun runActions(actions: String) = ctx.runActions(actions)
-
-  beforeSpec { SchemaInitR2dbc.ensureApplied(ctx) }
 
   beforeEach {
     runActions("DELETE FROM JsonbExample")

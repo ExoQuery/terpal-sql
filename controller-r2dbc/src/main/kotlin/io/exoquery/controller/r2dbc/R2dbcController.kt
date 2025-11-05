@@ -15,7 +15,7 @@ import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.reactive.awaitFirstOrNull
 import kotlinx.coroutines.reactive.collect
 
-class R2dbcController(
+open class R2dbcController(
   override val encodingConfig: R2dbcEncodingConfig = R2dbcEncodingConfig.Default(),
   override val connectionFactory: ConnectionFactory
 ):
@@ -32,6 +32,8 @@ class R2dbcController(
       JavaTimeEncoding<Connection, Statement, Row> by R2dbcTimeEncoding,
       JavaUuidEncoding<Connection, Statement, Row> by R2dbcUuidEncoding {}
 
+  override val allEncoders: Set<SqlEncoder<Connection, Statement, out Any>> by lazy { encodingApi.computeEncoders() + encodingConfig.additionalEncoders }
+  override val allDecoders: Set<SqlDecoder<Connection, Row, out Any>> by lazy { encodingApi.computeDecoders() + encodingConfig.additionalDecoders }
 
   private fun changePlaceholders(sql: String): String {
     // R2DBC uses $1, $2... for placeholders

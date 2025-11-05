@@ -1,4 +1,4 @@
-package io.exoquery.sql.encodingdata
+package io.exoquery.r2dbc.encodingdata
 
 import io.exoquery.controller.ControllerAction
 import io.exoquery.sql.Sql
@@ -7,24 +7,22 @@ import kotlinx.serialization.Serializable
 import java.time.*
 
 @Serializable
-data class TimeEntity(
-  @Contextual val sqlDate: java.sql.Date,                      // DATE
-  @Contextual val sqlTime: java.sql.Time,                      // TIME
-  @Contextual val sqlTimestamp: java.sql.Timestamp,            // DATETIME
-  @Contextual val timeLocalDate: java.time.LocalDate,          // DATE
-  @Contextual val timeLocalTime: java.time.LocalTime,          // TIME
-  @Contextual val timeLocalDateTime: java.time.LocalDateTime,  // DATETIME
-  @Contextual val timeZonedDateTime: java.time.ZonedDateTime,  // DATETIMEOFFSET
-  @Contextual val timeInstant: java.time.Instant,              // DATETIMEOFFSET
-  @Contextual val timeOffsetTime: java.time.OffsetTime,        // TIME
-  @Contextual val timeOffsetDateTime: java.time.OffsetDateTime // DATETIMEOFFSET
+data class SimpleTimeEntity(
+  // Remove java.sql.* types. They are mostly deprecated and not recommended for use in new code.
+  //@Contextual val sqlDate: Date,                      // DATE
+  //@Contextual val sqlTime: Time,                      // TIME
+  //@Contextual val sqlTimestamp: Timestamp,            // DATETIME
+  @Contextual val timeLocalDate: LocalDate,          // DATE
+  @Contextual val timeLocalTime: LocalTime,          // TIME
+  @Contextual val timeLocalDateTime: LocalDateTime,  // DATETIME
+  @Contextual val timeZonedDateTime: ZonedDateTime,  // DATETIMEOFFSET
+  @Contextual val timeInstant: Instant,              // DATETIMEOFFSET
+  @Contextual val timeOffsetTime: OffsetTime,        // TIME
+  @Contextual val timeOffsetDateTime: OffsetDateTime // DATETIMEOFFSET
 ) {
   override fun equals(other: Any?): Boolean =
     when (other) {
-      is TimeEntity ->
-        this.sqlDate == other.sqlDate &&
-          this.sqlTime == other.sqlTime &&
-          this.sqlTimestamp == other.sqlTimestamp &&
+      is SimpleTimeEntity ->
           this.timeLocalDate == other.timeLocalDate &&
           this.timeLocalTime == other.timeLocalTime &&
           this.timeLocalDateTime == other.timeLocalDateTime &&
@@ -50,10 +48,7 @@ data class TimeEntity(
       val nowDate = nowDateTime.toLocalDate()
       val nowTime = nowDateTime.toLocalTime()
       val nowZoned = ZonedDateTime.of(nowDateTime, zoneId)
-      TimeEntity(
-        java.sql.Date.valueOf(nowDate),
-        java.sql.Time.valueOf(nowTime),
-        java.sql.Timestamp.valueOf(nowDateTime),
+      SimpleTimeEntity(
         nowDate,
         nowTime,
         nowDateTime,
@@ -66,6 +61,26 @@ data class TimeEntity(
   }
 }
 
-fun insert(e: TimeEntity): ControllerAction {
-  return Sql("INSERT INTO TimeEntity VALUES (${e.sqlDate}, ${e.sqlTime}, ${e.sqlTimestamp}, ${e.timeLocalDate}, ${e.timeLocalTime}, ${e.timeLocalDateTime}, ${e.timeZonedDateTime}, ${e.timeInstant}, ${e.timeOffsetTime}, ${e.timeOffsetDateTime})").action()
+fun insert(e: SimpleTimeEntity): ControllerAction {
+  return Sql(
+    """
+      INSERT INTO TimeEntity (
+      timeLocalDate,
+      timeLocalTime,
+      timeLocalDateTime,
+      timeZonedDateTime,
+      timeInstant,
+      timeOffsetTime,
+      timeOffsetDateTime
+    ) VALUES (
+      ${e.timeLocalDate},
+      ${e.timeLocalTime},
+      ${e.timeLocalDateTime},
+      ${e.timeZonedDateTime},
+      ${e.timeInstant},
+      ${e.timeOffsetTime},
+      ${e.timeOffsetDateTime}
+    )
+    """
+  ).action()
 }

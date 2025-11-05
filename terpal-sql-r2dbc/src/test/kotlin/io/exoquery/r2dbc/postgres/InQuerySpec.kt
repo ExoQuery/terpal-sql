@@ -1,11 +1,11 @@
-package io.exoquery.sql.postgres
+package io.exoquery.r2dbc.postgres
 
 import io.exoquery.controller.runActions
 import io.exoquery.controller.runOn
 import io.exoquery.controller.r2dbc.R2dbcController
+import io.exoquery.r2dbc.TestDatabasesR2dbc
 import io.exoquery.sql.Params
 import io.exoquery.sql.Sql
-import io.exoquery.sql.TestDatabasesR2dbc
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.serialization.Serializable
@@ -19,8 +19,6 @@ class InQuerySpec : FreeSpec({
   suspend fun runActions(actions: String) = ctx.runActions(actions)
 
   beforeSpec {
-    SchemaInitR2dbc.ensureApplied(ctx)
-
     runActions(
       """
       DELETE FROM Person;

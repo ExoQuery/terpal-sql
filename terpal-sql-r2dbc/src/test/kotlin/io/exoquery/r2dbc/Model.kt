@@ -1,4 +1,4 @@
-package io.exoquery.sql
+package io.exoquery.r2dbc
 
 import kotlinx.serialization.Serializable
 

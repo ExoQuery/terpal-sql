@@ -1,8 +1,10 @@
-package io.exoquery.sql.encodingdata
+package io.exoquery.r2dbc.encodingdata
 
 import io.exoquery.controller.ControllerAction
 import io.exoquery.sql.Param
 import io.exoquery.sql.Sql
+import io.exoquery.sql.encodingdata.shouldBeEqual
+import io.exoquery.sql.encodingdata.shouldBeEqualNullable
 import io.kotest.matchers.bigdecimal.shouldBeEqualIgnoringScale
 import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
@@ -54,6 +56,6 @@ fun verify(e: JavaTestEntity, expected: JavaTestEntity) {
   e.javaUtilDateMan shouldBeEqual expected.javaUtilDateMan
   e.uuidMan shouldBeEqual expected.uuidMan
   e.bigDecimalOpt shouldBeEqualIgnoringScaleNullable expected.bigDecimalOpt
-  e.javaUtilDateOpt shouldBeEqualNullable  expected.javaUtilDateOpt
+  e.javaUtilDateOpt shouldBeEqualNullable expected.javaUtilDateOpt
   e.uuidOpt shouldBeEqualNullable expected.uuidOpt
 }

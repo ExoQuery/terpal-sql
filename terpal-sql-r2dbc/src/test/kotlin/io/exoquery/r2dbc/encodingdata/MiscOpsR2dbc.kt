@@ -1,7 +1,8 @@
-package io.exoquery.sql.encodingdata
+package io.exoquery.r2dbc.encodingdata
 
 import io.exoquery.controller.r2dbc.R2dbcEncoderAny
 import io.exoquery.controller.r2dbc.R2dbcEncodingConfig
+import io.exoquery.sql.encodingdata.SerializeableTestType
 import io.kotest.matchers.bigdecimal.shouldBeEqualIgnoringScale
 import org.junit.jupiter.api.Assertions.assertEquals
 import java.math.BigDecimal

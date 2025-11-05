@@ -1,4 +1,4 @@
-package io.exoquery.sql
+package io.exoquery.r2dbc
 
 import io.exoquery.sql.Sql
 import io.exoquery.sql.SqlBatch

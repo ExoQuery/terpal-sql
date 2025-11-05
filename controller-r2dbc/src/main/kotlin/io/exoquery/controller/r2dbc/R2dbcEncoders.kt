@@ -6,6 +6,7 @@ import io.exoquery.controller.JavaTimeEncoding
 import io.exoquery.controller.JavaUuidEncoding
 import io.exoquery.controller.SqlDecoder
 import io.exoquery.controller.SqlEncoder
+import io.exoquery.controller.SqlJson
 import io.exoquery.controller.r2dbc.R2dbcTimeEncoding.NA
 import io.r2dbc.spi.Connection
 import io.r2dbc.spi.Row
@@ -14,10 +15,12 @@ import kotlinx.datetime.toJavaLocalDate
 import kotlinx.datetime.toJavaLocalDateTime
 import kotlinx.datetime.toJavaLocalTime
 import kotlinx.datetime.toJavaInstant
+import kotlinx.datetime.toJavaZoneId
 import kotlinx.datetime.toKotlinInstant
 import kotlinx.datetime.toKotlinLocalDate
 import kotlinx.datetime.toKotlinLocalDateTime
 import kotlinx.datetime.toKotlinLocalTime
+import java.sql.Types
 import java.time.*
 import java.util.*
 import kotlin.reflect.KClass
@@ -29,7 +32,10 @@ class R2dbcEncoderAny<T: Any>(
   override val f: (R2dbcEncodingContext, T, Int) -> Unit,
 ): EncoderAny<T, Int, Connection, Statement>(
   dataType, type,
-  { i, stmt, _ -> stmt.bindNull(i, type.java) },
+  { i, stmt, _ ->
+    // Always use boxed reference types for nulls to satisfy R2DBC drivers (e.g., Postgres)
+    stmt.bindNull(i, type.javaObjectType)
+  },
   f
 )
 
@@ -84,6 +90,8 @@ object R2dbcBasicEncoding: BasicEncoding<Connection, Statement, Row> {
     R2dbcDecoderAny(ByteArray::class) { ctx, i -> ctx.row.get(i, ByteArray::class.java) }
 }
 
+private fun kotlinx.datetime.TimeZone.toJava(): TimeZone = TimeZone.getTimeZone(this.toJavaZoneId())
+
 object R2dbcTimeEncoding: JavaTimeEncoding<Connection, Statement, Row> {
   private const val NA = 0
 
@@ -123,7 +131,7 @@ object R2dbcTimeEncoding: JavaTimeEncoding<Connection, Statement, Row> {
 
   // java.util.Date -> bind as Instant (supported type)
   override val JDateEncoder: SqlEncoder<Connection, Statement, Date> =
-    R2dbcEncoderAny(NA, Date::class) { ctx, v, i -> ctx.stmt.bind(i, v.toInstant()) }
+    R2dbcEncoderAny(NA, Date::class) { ctx, v, i -> ctx.stmt.bind(i, Instant.ofEpochMilli(v.getTime())) }
 
   // KMP datetime decoders via java.time
   override val LocalDateDecoder: SqlDecoder<Connection, Row, kotlinx.datetime.LocalDate> =
@@ -166,6 +174,15 @@ object R2dbcUuidEncoding: JavaUuidEncoding<Connection, Statement, Row> {
     R2dbcDecoderAny(UUID::class) { ctx, i -> ctx.row.get(i, UUID::class.java) }
 }
 
+object R2dbcAdditionalEncoding {
+  private const val NA = 0
+
+  val BigDecimalEncoder: R2dbcEncoderAny<java.math.BigDecimal> =
+    R2dbcEncoderAny(NA, java.math.BigDecimal::class) { ctx, v, i -> ctx.stmt.bind(i, v) }
+  val BigDecimalDecoder: R2dbcDecoderAny<java.math.BigDecimal> =
+    R2dbcDecoderAny(java.math.BigDecimal::class) { ctx, i -> ctx.row.get(i, java.math.BigDecimal::class.java) }
+}
+
 object R2dbcEncoders {
   @Suppress("UNCHECKED_CAST")
   val encoders: Set<SqlEncoder<Connection, Statement, out Any>> = setOf(
@@ -192,6 +209,8 @@ object R2dbcEncoders {
     R2dbcTimeEncoding.JOffsetTimeEncoder,
     R2dbcTimeEncoding.JOffsetDateTimeEncoder,
     R2dbcTimeEncoding.JDateEncoder,
-    R2dbcUuidEncoding.JUuidEncoder
+    R2dbcUuidEncoding.JUuidEncoder,
+
+    R2dbcAdditionalEncoding.BigDecimalEncoder
   )
 }
