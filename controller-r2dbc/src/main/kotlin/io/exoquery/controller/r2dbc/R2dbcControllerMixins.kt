@@ -1,5 +1,6 @@
 package io.exoquery.controller.r2dbc
 
+import io.exoquery.controller.ControllerError
 import io.exoquery.controller.CoroutineSession
 import io.exoquery.controller.RequiresSession
 import io.exoquery.controller.RequiresTransactionality
@@ -60,10 +61,14 @@ interface HasSessionR2dbc: RequiresSession<Connection, Statement, R2dbcExecution
     session.close().awaitFirstOrNull().run { Unit }
 
   override suspend fun isClosedSession(session: Connection): Boolean =
-    session.validate(ValidationDepth.REMOTE).awaitFirstOrNull() == true
+    session.validate(ValidationDepth.REMOTE).awaitFirstOrNull()?.let { it == false } ?: true // if null returned treat as closed
 
   override suspend fun <R> accessStmt(sql: String, conn: Connection, block: suspend (Statement) -> R): R =
-    block(conn.createStatement(sql))
+    try {
+      block(conn.createStatement(sql))
+    } catch (ex: Throwable) {
+      throw ControllerError("Error preparing statement: $sql", ex)
+    }
 
   override suspend fun <R> accessStmtReturning(sql: String, conn: Connection, options: R2dbcExecutionOptions, returningColumns: List<String>, block: suspend (Statement) -> R): R =
     conn.createStatement(sql).let {

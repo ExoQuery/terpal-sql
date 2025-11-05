@@ -1,0 +1,68 @@
+package io.exoquery.sql.postgres
+
+import io.exoquery.controller.runActions
+import io.exoquery.controller.runOn
+import io.exoquery.controller.r2dbc.R2dbcController
+import io.exoquery.sql.Params
+import io.exoquery.sql.Sql
+import io.exoquery.sql.TestDatabasesR2dbc
+import io.kotest.core.spec.style.FreeSpec
+import io.kotest.matchers.shouldBe
+import kotlinx.serialization.Serializable
+
+class InQuerySpec : FreeSpec({
+  // Start EmbeddedPostgres and build an R2DBC ConnectionFactory from its port
+  val ep = TestDatabasesR2dbc.embeddedPostgres
+  val cf = TestDatabasesR2dbc.postgres
+  val ctx: R2dbcController by lazy { R2dbcController(connectionFactory = cf) }
+
+  suspend fun runActions(actions: String) = ctx.runActions(actions)
+
+  beforeSpec {
+    SchemaInitR2dbc.ensureApplied(ctx)
+
+    runActions(
+      """
+      DELETE FROM Person;
+      DELETE FROM Address;
+      INSERT INTO Person (id, firstName, lastName, age) VALUES (1, 'Joe', 'Bloggs', 111);
+      INSERT INTO Person (id, firstName, lastName, age) VALUES (2, 'Jim', 'Roogs', 222);
+      INSERT INTO Person (id, firstName, lastName, age) VALUES (3, 'Jill', 'Doogs', 222);
+      INSERT INTO Address (ownerId, street, zip) VALUES (1, '123 Main St', '12345');
+      """.trimIndent()
+    )
+  }
+
+  afterSpec { try { ep.close() } catch (_: Throwable) {} }
+
+  @Serializable
+  data class Person(val id: Int, val firstName: String, val lastName: String, val age: Int)
+
+  "Person IN (names) - simple" {
+    val sql = Sql("SELECT id, firstName, lastName, age FROM Person WHERE firstName IN ${Params("Joe", "Jim")}").queryOf<Person>()
+    sql.sql shouldBe "SELECT id, firstName, lastName, age FROM Person WHERE firstName IN (?, ?)"
+    sql.runOn(ctx) shouldBe listOf(
+      Person(1, "Joe", "Bloggs", 111),
+      Person(2, "Jim", "Roogs", 222)
+    )
+  }
+
+  "Person IN (names) - single" {
+    val sql = Sql("SELECT id, firstName, lastName, age FROM Person WHERE firstName IN ${Params("Joe")}").queryOf<Person>()
+    sql.sql shouldBe "SELECT id, firstName, lastName, age FROM Person WHERE firstName IN (?)"
+    sql.runOn(ctx) shouldBe listOf(
+      Person(1, "Joe", "Bloggs", 111)
+    )
+  }
+
+  "Person IN (names) - empty" {
+    val sql = Sql("SELECT id, firstName, lastName, age FROM Person WHERE firstName IN ${Params.empty()}").queryOf<Person>()
+    sql.sql shouldBe "SELECT id, firstName, lastName, age FROM Person WHERE firstName IN (null)"
+    sql.runOn(ctx) shouldBe listOf()
+  }
+
+  "Person IN (names) - empty list" {
+    val names: List<String> = emptyList()
+    Sql("SELECT id, firstName, lastName, age FROM Person WHERE firstName IN ${Params.list(names)}").queryOf<Person>().runOn(ctx) shouldBe listOf()
+  }
+})

@@ -6,7 +6,9 @@ import io.r2dbc.spi.ConnectionFactory
 import io.r2dbc.spi.Row
 import io.r2dbc.spi.Statement
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.reactive.asFlow
@@ -31,15 +33,24 @@ class R2dbcController(
       JavaUuidEncoding<Connection, Statement, Row> by R2dbcUuidEncoding {}
 
 
-  // Helper to create a connection and ensure closure
-  //private suspend fun <T> withConnection(block: suspend (Connection) -> T): T {
-  //  val conn = connectionFactory.create().awaitSingle()
-  //  try {
-  //    return block(conn)
-  //  } finally {
-  //    conn.close().awaitFirstOrNull()
-  //  }
-  //}
+  private fun changePlaceholders(sql: String): String {
+    // R2DBC uses $1, $2... for placeholders
+    val sb = StringBuilder()
+    var paramIndex = 1
+    var i = 0
+    while (i < sql.length) {
+      val c = sql[i]
+      if (c == '?') {
+        sb.append('$').append(paramIndex)
+        paramIndex++
+        i++
+      } else {
+        sb.append(c)
+        i++
+      }
+    }
+    return sb.toString()
+  }
 
   override fun extractColumnInfo(row: Row): List<ColumnInfo>? {
     val meta = row.metadata
@@ -50,36 +61,58 @@ class R2dbcController(
   }
 
   override suspend fun <T> stream(act: ControllerQuery<T>, options: R2dbcExecutionOptions): Flow<T> =
-    withConnection(options) {
+    flowWithConnection(options) {
       val conn = localConnection()
-      accessStmt(act.sql, conn) { stmt ->
+      val preparedSql = changePlaceholders(act.sql)
+      accessStmt(preparedSql, conn) { stmt ->
         prepare(stmt, conn, act.params)
-        val pub = stmt.execute() // TODO try-catch here?
-        pub.awaitFirstOrNull()?.map { row, meta ->
-          val resultMaker = act.resultMaker.makeExtractor(QueryDebugInfo(act.sql))
-          PubResult(resultMaker(conn, row))
-        }?.asFlow()?.map { it.value } ?: emptyFlow()
+        tryCatchQuery(preparedSql) {
+          val pub = stmt.execute()
+          val outputFlow = pub.awaitFirstOrNull()?.map { row, meta ->
+            val resultMaker = act.resultMaker.makeExtractor(QueryDebugInfo(act.sql))
+            PubResult(resultMaker(conn, row))
+          }?.asFlow()?.map { it.value } ?: emptyFlow<T>()
+          emitAll(outputFlow)
+        }
       }
     }
 
-  override suspend fun <T> stream(query: ControllerBatchActionReturning<T>, options: R2dbcExecutionOptions): Flow<T> {
-    throw UnsupportedOperationException("R2dbcController.stream(batchReturning) not yet implemented")
-  }
+  override suspend fun <T> stream(act: ControllerBatchActionReturning<T>, options: R2dbcExecutionOptions): Flow<T> =
+    flowWithConnection(options) {
+      val conn = localConnection()
+      val preparedSql = changePlaceholders(act.sql)
+      // Create and execute a query for each param set and emit results from all queries into the flow
+      act.params.forEach { params ->
+        accessStmtReturning(preparedSql, conn, options, act.returningColumns) { stmt ->
+          prepare(stmt, conn, params)
+          tryCatchQuery(preparedSql) {
+            val pub = stmt.execute().awaitFirstOrNull()
+            val outputFlow = pub?.map { row, _ ->
+              val resultMaker = act.resultMaker.makeExtractor(QueryDebugInfo(act.sql))
+              PubResult(resultMaker(conn, row))
+            }?.asFlow()?.map { it.value } ?: emptyFlow<T>()
+            // Need to actually emit the flow into the surrounding flow that holds the connection
+            emitAll(outputFlow)
+          }
+        }
+      }
+    }
 
   override suspend fun <T> stream(act: ControllerActionReturning<T>, options: R2dbcExecutionOptions): Flow<T> =
-    withConnection(options) {
+    flowWithConnection(options) {
       val conn = localConnection()
-      accessStmt(act.sql, conn) { stmt ->
+      val preparedSql = changePlaceholders(act.sql)
+      accessStmtReturning(preparedSql, conn, options, act.returningColumns) { stmt ->
         prepare(stmt, conn, act.params)
-        val results = mutableListOf<List<Pair<String, String?>>>()
-        val pub = stmt.execute() // TODO try-catch here?
-        // Each Result may contain rows; map them to name->string pairs for all columns
-
-        // convert the publisher into a suspeding function
-        pub.awaitFirstOrNull()?.map { row, meta ->
-          val resultMaker = act.resultMaker.makeExtractor(QueryDebugInfo(act.sql))
-          PubResult(resultMaker(conn, row))
-        }?.asFlow()?.map { it.value } ?: emptyFlow()
+        tryCatchQuery(preparedSql) {
+          val pub = stmt.execute().awaitFirstOrNull()
+          val outputFlow = pub?.map { row, _ ->
+            val resultMaker = act.resultMaker.makeExtractor(QueryDebugInfo(act.sql))
+            PubResult(resultMaker(conn, row))
+          }?.asFlow()?.map { it.value } ?: emptyFlow<T>()
+          // Need to actually emit the flow into the surrounding flow that holds the connection
+          emitAll(outputFlow)
+        }
       }
     }
 
@@ -87,37 +120,56 @@ class R2dbcController(
   @JvmInline
   private value class PubResult<T>(val value: T)
 
-  override suspend fun <T> run(query: ControllerQuery<T>, options: R2dbcExecutionOptions): List<T> = stream(query, options).toList()
+  override suspend fun <T> run(query: ControllerQuery<T>, options: R2dbcExecutionOptions): List<T> =
+    stream(query, options).toList()
 
   override suspend fun run(act: ControllerAction, options: R2dbcExecutionOptions): Long =
-    withConnection(options) {
+    flowWithConnection(options) {
       val conn = localConnection()
-      accessStmt(act.sql, conn) { stmt ->
+      val preparedSql = changePlaceholders(act.sql)
+      accessStmt(preparedSql, conn) { stmt ->
         prepare(stmt, conn, act.params)
         // Execute and sum rowsUpdated across possibly multiple results
-        val pub = stmt.execute()
-        pub.awaitFirstOrNull()?.rowsUpdated?.awaitFirstOrNull() ?: 0
+        tryCatchQuery(preparedSql) {
+          val pub = stmt.execute()
+          val numRows = pub.awaitFirstOrNull()?.rowsUpdated?.awaitFirstOrNull() ?: 0L
+          emit(numRows)
+        }
       }
-    }
+    }.first()
 
   override suspend fun run(query: ControllerBatchAction, options: R2dbcExecutionOptions): List<Long> =
-    withConnection(options) {
+    flowWithConnection(options) {
       val conn = localConnection()
       // TODO this statement works very well with caching, should look into reusing statements across calls
-      accessStmtReturning(query.sql, conn, options, emptyList()) { stmt ->
-        query.params.forEach { batch ->
-          prepare(stmt, conn, batch)
-          stmt.add()
+      val preparedSql = changePlaceholders(query.sql)
+      accessStmtReturning(preparedSql, conn, options, emptyList()) { stmt ->
+        tryCatchQuery(preparedSql) {
+          val iter = query.params.iterator()
+          while (iter.hasNext()) {
+            val batch = iter.next()
+            prepare(stmt, conn, batch)
+            // We need to put a `add` after every batch except for the last one
+            if (iter.hasNext()) {
+              stmt.add()
+            }
+          }
+          val pub = stmt.execute()
+          // Here using the asFlow and connect actually makes sense because multiple results are expected
+          pub.asFlow().collect { result ->
+            val updated = result.rowsUpdated.awaitFirstOrNull() ?: 0
+            emit(updated)
+          }
         }
-        val results = mutableListOf<Long>()
-        val pub = stmt.execute()
-        // Here using the asFlow and connect actually makes sense because multiple results are expected
-        pub.asFlow().collect { result ->
-          val updated = result.rowsUpdated.awaitFirstOrNull() ?: 0
-          results.add(updated.toLong())
-        }
-        results
       }
+    }.toList()
+
+  private inline fun <T> tryCatchQuery(sql: String, op: () -> T): T =
+    try {
+      op()
+    } catch (e: Exception) {
+      if (e is ControllerError) throw e
+      else throw ControllerError("Error executing query: ${sql}", e)
     }
 
   override suspend fun <T> run(query: ControllerActionReturning<T>, options: R2dbcExecutionOptions): T =
@@ -127,24 +179,24 @@ class R2dbcController(
     stream(query, options).toList()
 
   override suspend fun <T> runRaw(query: ControllerQuery<T>, options: R2dbcExecutionOptions) =
-    withConnection(options) {
+    flowWithConnection(options) {
       val conn = localConnection()
-      val stmt = conn.createStatement(query.sql)
-      prepare(stmt, conn, query.params)
-      val results = mutableListOf<List<Pair<String, String?>>>()
-      val pub = stmt.execute()
-      // Each Result may contain rows; map them to name->string pairs for all columns
-
-      // convert the publisher into a suspeding function
-      pub.awaitFirstOrNull()?.map { row, meta ->
-        val cols = meta.columnMetadatas
-        val pairs = cols.mapIndexed { i, md ->
-          val name = md.name
-          val value = row.get(i, Any::class.java)
-          name to value?.toString()
+      val preparedSql = changePlaceholders(query.sql)
+      accessStmt(preparedSql, conn) { stmt ->
+        prepare(stmt, conn, query.params)
+        tryCatchQuery(preparedSql) {
+          val pub = stmt.execute()
+          val outputFlow =
+            pub.awaitFirstOrNull()?.map { row, meta ->
+              val cols = meta.columnMetadatas
+              cols.mapIndexed { i, md ->
+                val name = md.name
+                val value = row.get(i, Any::class.java)
+                name to value?.toString()
+              }
+            }?.asFlow() ?: emptyFlow<List<Pair<String, String?>>>()
+          emitAll(outputFlow)
         }
-        pairs
-      }?.collect { rowPairs -> results.add(rowPairs) }
-      results
-    }
+      }
+    }.toList()
 }

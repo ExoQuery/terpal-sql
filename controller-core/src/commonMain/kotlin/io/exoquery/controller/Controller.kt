@@ -102,7 +102,10 @@ interface RequiresSession<Session, Stmt, ExecutionOpts> {
     } else {
       val session = newSession(executionOptions)
       try {
-        withContext(CoroutineSession(session, sessionKey) + Dispatchers.IO) { block() }
+        withContext(CoroutineSession(session, sessionKey) + Dispatchers.IO) {
+          val output = block()
+          output
+        }
       } finally { closeSession(session) }
     }
   }
