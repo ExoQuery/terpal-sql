@@ -12,7 +12,7 @@ import kotlinx.serialization.Serializable
 
 class InQuerySpec : FreeSpec({
   // Start EmbeddedPostgres and build an R2DBC ConnectionFactory from its port
-  val ep = TestDatabasesR2dbc.embeddedPostgres
+
   val cf = TestDatabasesR2dbc.postgres
   val ctx: R2dbcController by lazy { R2dbcController(connectionFactory = cf) }
 
@@ -32,8 +32,6 @@ class InQuerySpec : FreeSpec({
       """.trimIndent()
     )
   }
-
-  afterSpec { try { ep.close() } catch (_: Throwable) {} }
 
   @Serializable
   data class Person(val id: Int, val firstName: String, val lastName: String, val age: Int)

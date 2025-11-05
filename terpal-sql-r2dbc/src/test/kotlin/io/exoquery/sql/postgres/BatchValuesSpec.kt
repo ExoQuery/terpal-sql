@@ -8,7 +8,7 @@ import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe
 
 class BatchValuesSpec: FreeSpec ({
-  val ep = TestDatabasesR2dbc.embeddedPostgres
+
   val cf = TestDatabasesR2dbc.postgres
   val ctx: R2dbcController by lazy { R2dbcController(connectionFactory = cf) }
 
@@ -16,7 +16,6 @@ class BatchValuesSpec: FreeSpec ({
 
   beforeSpec { SchemaInitR2dbc.ensureApplied(ctx) }
 
-  afterSpec { try { ep.close() } catch (_: Throwable) {} }
 
   beforeEach {
     runActions("TRUNCATE TABLE Product RESTART IDENTITY CASCADE")

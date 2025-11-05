@@ -12,7 +12,7 @@ import io.exoquery.controller.r2dbc.R2dbcController
 class BasicQuerySpec : FreeSpec({
 
   // Start EmbeddedPostgres and build an R2DBC ConnectionFactory from its port
-  val ep = TestDatabasesR2dbc.embeddedPostgres
+
   val cf = TestDatabasesR2dbc.postgres
   val ctx: R2dbcController by lazy { R2dbcController(connectionFactory = cf) }
 
@@ -37,10 +37,6 @@ class BasicQuerySpec : FreeSpec({
     )
   }
 
-  afterSpec {
-    // Ensure EmbeddedPostgres is closed after tests
-    try { ep.close() } catch (_: Throwable) {}
-  }
 
   "SELECT Person - simple" {
     @Serializable

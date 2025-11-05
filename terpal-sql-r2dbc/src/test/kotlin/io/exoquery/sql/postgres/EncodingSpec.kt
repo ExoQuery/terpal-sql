@@ -11,14 +11,13 @@ import io.exoquery.controller.r2dbc.R2dbcController
 import io.exoquery.sql.TestDatabasesR2dbc
 
 class EncodingSpec: FreeSpec({
-  val ep = TestDatabasesR2dbc.embeddedPostgres
+
   val cf = TestDatabasesR2dbc.postgres
   val ctx: R2dbcController by lazy { R2dbcController(encodingConfig = encodingConfig, connectionFactory = cf) }
 
   suspend fun runActions(actions: String) = ctx.runActions(actions)
 
   beforeSpec { SchemaInitR2dbc.ensureApplied(ctx) }
-  afterSpec { try { ep.close() } catch (_: Throwable) {} }
 
   beforeEach {
     // The main table used across many tests
