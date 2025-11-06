@@ -15,7 +15,7 @@ import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.reactive.awaitFirstOrNull
 import kotlinx.coroutines.reactive.collect
 
-open class R2dbcController(
+abstract class R2dbcController(
   override val encodingConfig: R2dbcEncodingConfig = R2dbcEncodingConfig.Default(),
   override val connectionFactory: ConnectionFactory
 ):
@@ -35,24 +35,7 @@ open class R2dbcController(
   override val allEncoders: Set<SqlEncoder<Connection, Statement, out Any>> by lazy { encodingApi.computeEncoders() + encodingConfig.additionalEncoders }
   override val allDecoders: Set<SqlDecoder<Connection, Row, out Any>> by lazy { encodingApi.computeDecoders() + encodingConfig.additionalDecoders }
 
-  private fun changePlaceholders(sql: String): String {
-    // R2DBC uses $1, $2... for placeholders
-    val sb = StringBuilder()
-    var paramIndex = 1
-    var i = 0
-    while (i < sql.length) {
-      val c = sql[i]
-      if (c == '?') {
-        sb.append('$').append(paramIndex)
-        paramIndex++
-        i++
-      } else {
-        sb.append(c)
-        i++
-      }
-    }
-    return sb.toString()
-  }
+  protected open fun changePlaceholders(sql: String): String = sql
 
   override fun extractColumnInfo(row: Row): List<ColumnInfo>? {
     val meta = row.metadata
@@ -170,7 +153,11 @@ open class R2dbcController(
     try {
       op()
     } catch (e: Exception) {
+      val abortClass = "kotlinx.coroutines.flow.internal.AbortFlowException"
+      // Don’t wrap Flow’s internal short-circuiting
+      if (e.javaClass.name == abortClass) throw e
       if (e is ControllerError) throw e
+      if (e is kotlinx.coroutines.CancellationException) throw e
       else throw ControllerError("Error executing query: ${sql}", e)
     }
 

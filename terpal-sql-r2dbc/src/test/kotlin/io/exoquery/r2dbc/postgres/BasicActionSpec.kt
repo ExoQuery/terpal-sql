@@ -7,13 +7,14 @@ import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.serialization.Serializable
 import io.exoquery.controller.r2dbc.R2dbcController
+import io.exoquery.controller.r2dbc.R2dbcControllers
 import io.exoquery.r2dbc.TestDatabasesR2dbc
 
 class BasicActionSpec : FreeSpec({
   // Start EmbeddedPostgres and build an R2DBC ConnectionFactory from its port
 
   val cf = TestDatabasesR2dbc.postgres
-  val ctx: R2dbcController by lazy { R2dbcController(connectionFactory = cf) }
+  val ctx: R2dbcController by lazy { R2dbcControllers.Postgres(connectionFactory = cf) }
 
   suspend fun runActions(actions: String) = ctx.runActions(actions)
 

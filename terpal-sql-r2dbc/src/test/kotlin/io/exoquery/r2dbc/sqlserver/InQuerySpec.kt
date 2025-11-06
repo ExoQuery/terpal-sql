@@ -1,9 +1,9 @@
-package io.exoquery.r2dbc.postgres
+package io.exoquery.r2dbc.sqlserver
 
-import io.exoquery.controller.runActions
-import io.exoquery.controller.runOn
 import io.exoquery.controller.r2dbc.R2dbcController
 import io.exoquery.controller.r2dbc.R2dbcControllers
+import io.exoquery.controller.runActions
+import io.exoquery.controller.runOn
 import io.exoquery.r2dbc.TestDatabasesR2dbc
 import io.exoquery.sql.Params
 import io.exoquery.sql.Sql
@@ -12,28 +12,27 @@ import io.kotest.matchers.shouldBe
 import kotlinx.serialization.Serializable
 
 class InQuerySpec : FreeSpec({
-  // Start EmbeddedPostgres and build an R2DBC ConnectionFactory from its port
 
-  val cf = TestDatabasesR2dbc.postgres
-  val ctx: R2dbcController by lazy { R2dbcControllers.Postgres(connectionFactory = cf) }
+  val cf = TestDatabasesR2dbc.sqlServer
+  val ctx: R2dbcController by lazy { R2dbcControllers.SqlServer(connectionFactory = cf) }
 
   suspend fun runActions(actions: String) = ctx.runActions(actions)
+
+  @Serializable
+  data class Person(val id: Int, val firstName: String, val lastName: String, val age: Int)
 
   beforeSpec {
     runActions(
       """
-      DELETE FROM Person;
+      TRUNCATE TABLE Person; DBCC CHECKIDENT ('Person', RESEED, 1);
       DELETE FROM Address;
-      INSERT INTO Person (id, firstName, lastName, age) VALUES (1, 'Joe', 'Bloggs', 111);
-      INSERT INTO Person (id, firstName, lastName, age) VALUES (2, 'Jim', 'Roogs', 222);
-      INSERT INTO Person (id, firstName, lastName, age) VALUES (3, 'Jill', 'Doogs', 222);
+      INSERT INTO Person (firstName, lastName, age) VALUES ('Joe', 'Bloggs', 111);
+      INSERT INTO Person (firstName, lastName, age) VALUES ('Jim', 'Roogs', 222);
+      INSERT INTO Person (firstName, lastName, age) VALUES ('Jill', 'Doogs', 222);
       INSERT INTO Address (ownerId, street, zip) VALUES (1, '123 Main St', '12345');
       """.trimIndent()
     )
   }
-
-  @Serializable
-  data class Person(val id: Int, val firstName: String, val lastName: String, val age: Int)
 
   "Person IN (names) - simple" {
     val sql = Sql("SELECT id, firstName, lastName, age FROM Person WHERE firstName IN ${Params("Joe", "Jim")}").queryOf<Person>()

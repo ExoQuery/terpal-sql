@@ -39,4 +39,18 @@ object TestDatabasesR2dbc {
         .build()
     )
   }
+
+  val sqlServer: ConnectionFactory by lazy {
+    // Matches docker-compose and setup scripts
+    ConnectionFactories.get(
+      ConnectionFactoryOptions.builder()
+        .option(ConnectionFactoryOptions.DRIVER, "mssql")
+        .option(ConnectionFactoryOptions.HOST, "localhost")
+        .option(ConnectionFactoryOptions.PORT, 31433)
+        .option(ConnectionFactoryOptions.DATABASE, "exoquery_test")
+        .option(ConnectionFactoryOptions.USER, "sa")
+        .option(ConnectionFactoryOptions.PASSWORD, "ExoQueryRocks!")
+        .build()
+    )
+  }
 }

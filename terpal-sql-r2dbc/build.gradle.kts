@@ -57,6 +57,8 @@ kotlin {
 
         // R2DBC Postgres driver
         api("org.postgresql:r2dbc-postgresql:1.0.5.RELEASE")
+        // R2DBC SQL Server driver
+        api("io.r2dbc:r2dbc-mssql:1.0.2.RELEASE")
       }
     }
     val jvmTest by getting {

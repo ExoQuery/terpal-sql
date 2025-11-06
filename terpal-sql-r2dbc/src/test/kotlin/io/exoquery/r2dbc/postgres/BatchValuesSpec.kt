@@ -1,6 +1,7 @@
 package io.exoquery.r2dbc.postgres
 
 import io.exoquery.controller.r2dbc.R2dbcController
+import io.exoquery.controller.r2dbc.R2dbcControllers
 import io.exoquery.controller.runActions
 import io.exoquery.controller.runOn
 import io.exoquery.r2dbc.Ex1_BatchInsertNormal
@@ -14,7 +15,7 @@ import io.kotest.matchers.shouldBe
 class BatchValuesSpec: FreeSpec ({
 
   val cf = TestDatabasesR2dbc.postgres
-  val ctx: R2dbcController by lazy { R2dbcController(connectionFactory = cf) }
+  val ctx: R2dbcController by lazy { R2dbcControllers.Postgres(connectionFactory = cf) }
 
   suspend fun runActions(actions: String) = ctx.runActions(actions)
 

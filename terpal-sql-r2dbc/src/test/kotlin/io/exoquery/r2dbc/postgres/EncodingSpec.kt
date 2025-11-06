@@ -7,6 +7,7 @@ import io.exoquery.controller.runActions
 import io.kotest.core.spec.style.FreeSpec
 import java.time.ZoneId
 import io.exoquery.controller.r2dbc.R2dbcController
+import io.exoquery.controller.r2dbc.R2dbcControllers
 import io.exoquery.r2dbc.TestDatabasesR2dbc
 import io.exoquery.r2dbc.encodingdata.JavaTestEntity
 import io.exoquery.r2dbc.encodingdata.SimpleTimeEntity
@@ -17,7 +18,7 @@ import io.exoquery.r2dbc.encodingdata.verify
 class EncodingSpec: FreeSpec({
 
   val cf = TestDatabasesR2dbc.postgres
-  val ctx: R2dbcController by lazy { R2dbcController(encodingConfig = encodingConfig, connectionFactory = cf) }
+  val ctx: R2dbcController by lazy { R2dbcControllers.Postgres(connectionFactory = cf) }
 
   suspend fun runActions(actions: String) = ctx.runActions(actions)
 

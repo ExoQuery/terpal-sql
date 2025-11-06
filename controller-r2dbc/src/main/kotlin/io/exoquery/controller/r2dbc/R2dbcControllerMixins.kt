@@ -66,8 +66,13 @@ interface HasSessionR2dbc: RequiresSession<Connection, Statement, R2dbcExecution
   override suspend fun <R> accessStmt(sql: String, conn: Connection, block: suspend (Statement) -> R): R =
     try {
       block(conn.createStatement(sql))
-    } catch (ex: Throwable) {
-      throw ControllerError("Error preparing statement: $sql", ex)
+    } catch (e: Throwable) {
+      val abortClass = "kotlinx.coroutines.flow.internal.AbortFlowException"
+      // Don’t wrap Flow’s internal short-circuiting
+      if (e.javaClass.name == abortClass) throw e
+      if (e is ControllerError) throw e
+      if (e is kotlinx.coroutines.CancellationException) throw e
+      else throw ControllerError("Error executing query: ${sql}", e)
     }
 
   override suspend fun <R> accessStmtReturning(sql: String, conn: Connection, options: R2dbcExecutionOptions, returningColumns: List<String>, block: suspend (Statement) -> R): R =
