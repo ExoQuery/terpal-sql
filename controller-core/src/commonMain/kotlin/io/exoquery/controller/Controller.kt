@@ -149,7 +149,7 @@ interface RequiresTransactionality<Session, Stmt, ExecutionOpts>: RequiresSessio
       existingTransaction.incomplete ->
         withContext(coroutineContext) { block() }
 
-      else -> error("Attempted to start new transaction within: $existingTransaction")
+      else -> throw ControllerError("Attempted to start new transaction within: $existingTransaction")
     }
   }
 }

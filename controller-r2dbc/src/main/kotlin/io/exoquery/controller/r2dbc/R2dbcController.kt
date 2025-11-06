@@ -51,14 +51,12 @@ abstract class R2dbcController(
       val preparedSql = changePlaceholders(act.sql)
       accessStmt(preparedSql, conn) { stmt ->
         prepare(stmt, conn, act.params)
-        tryCatchQuery(preparedSql) {
-          val pub = stmt.execute()
-          val outputFlow = pub.awaitFirstOrNull()?.map { row, meta ->
-            val resultMaker = act.resultMaker.makeExtractor(QueryDebugInfo(act.sql))
-            PubResult(resultMaker(conn, row))
-          }?.asFlow()?.map { it.value } ?: emptyFlow<T>()
-          emitAll(outputFlow)
-        }
+        val pub = stmt.execute()
+        val outputFlow = pub.awaitFirstOrNull()?.map { row, meta ->
+          val resultMaker = act.resultMaker.makeExtractor(QueryDebugInfo(act.sql))
+          PubResult(resultMaker(conn, row))
+        }?.asFlow()?.map { it.value } ?: emptyFlow<T>()
+        emitAll(outputFlow)
       }
     }
 
@@ -70,15 +68,13 @@ abstract class R2dbcController(
       act.params.forEach { params ->
         accessStmtReturning(preparedSql, conn, options, act.returningColumns) { stmt ->
           prepare(stmt, conn, params)
-          tryCatchQuery(preparedSql) {
-            val pub = stmt.execute().awaitFirstOrNull()
-            val outputFlow = pub?.map { row, _ ->
-              val resultMaker = act.resultMaker.makeExtractor(QueryDebugInfo(act.sql))
-              PubResult(resultMaker(conn, row))
-            }?.asFlow()?.map { it.value } ?: emptyFlow<T>()
-            // Need to actually emit the flow into the surrounding flow that holds the connection
-            emitAll(outputFlow)
-          }
+          val pub = stmt.execute().awaitFirstOrNull()
+          val outputFlow = pub?.map { row, _ ->
+            val resultMaker = act.resultMaker.makeExtractor(QueryDebugInfo(act.sql))
+            PubResult(resultMaker(conn, row))
+          }?.asFlow()?.map { it.value } ?: emptyFlow<T>()
+          // Need to actually emit the flow into the surrounding flow that holds the connection
+          emitAll(outputFlow)
         }
       }
     }
@@ -89,15 +85,13 @@ abstract class R2dbcController(
       val preparedSql = changePlaceholders(act.sql)
       accessStmtReturning(preparedSql, conn, options, act.returningColumns) { stmt ->
         prepare(stmt, conn, act.params)
-        tryCatchQuery(preparedSql) {
-          val pub = stmt.execute().awaitFirstOrNull()
-          val outputFlow = pub?.map { row, _ ->
-            val resultMaker = act.resultMaker.makeExtractor(QueryDebugInfo(act.sql))
-            PubResult(resultMaker(conn, row))
-          }?.asFlow()?.map { it.value } ?: emptyFlow<T>()
-          // Need to actually emit the flow into the surrounding flow that holds the connection
-          emitAll(outputFlow)
-        }
+        val pub = stmt.execute().awaitFirstOrNull()
+        val outputFlow = pub?.map { row, _ ->
+          val resultMaker = act.resultMaker.makeExtractor(QueryDebugInfo(act.sql))
+          PubResult(resultMaker(conn, row))
+        }?.asFlow()?.map { it.value } ?: emptyFlow<T>()
+        // Need to actually emit the flow into the surrounding flow that holds the connection
+        emitAll(outputFlow)
       }
     }
 
@@ -115,11 +109,9 @@ abstract class R2dbcController(
       accessStmt(preparedSql, conn) { stmt ->
         prepare(stmt, conn, act.params)
         // Execute and sum rowsUpdated across possibly multiple results
-        tryCatchQuery(preparedSql) {
-          val pub = stmt.execute()
-          val numRows = pub.awaitFirstOrNull()?.rowsUpdated?.awaitFirstOrNull() ?: 0L
-          emit(numRows)
-        }
+        val pub = stmt.execute()
+        val numRows = pub.awaitFirstOrNull()?.rowsUpdated?.awaitFirstOrNull() ?: 0L
+        emit(numRows)
       }
     }.first()
 
@@ -129,37 +121,24 @@ abstract class R2dbcController(
       // TODO this statement works very well with caching, should look into reusing statements across calls
       val preparedSql = changePlaceholders(query.sql)
       accessStmtReturning(preparedSql, conn, options, emptyList()) { stmt ->
-        tryCatchQuery(preparedSql) {
-          val iter = query.params.iterator()
-          while (iter.hasNext()) {
-            val batch = iter.next()
-            prepare(stmt, conn, batch)
-            // We need to put a `add` after every batch except for the last one
-            if (iter.hasNext()) {
-              stmt.add()
-            }
+        val iter = query.params.iterator()
+        while (iter.hasNext()) {
+          val batch = iter.next()
+          prepare(stmt, conn, batch)
+          // We need to put a `add` after every batch except for the last one
+          if (iter.hasNext()) {
+            stmt.add()
           }
-          val pub = stmt.execute()
-          // Here using the asFlow and connect actually makes sense because multiple results are expected
-          pub.asFlow().collect { result ->
-            val updated = result.rowsUpdated.awaitFirstOrNull() ?: 0
-            emit(updated)
-          }
+        }
+        val pub = stmt.execute()
+        // Here using the asFlow and connect actually makes sense because multiple results are expected
+        pub.asFlow().collect { result ->
+          val updated = result.rowsUpdated.awaitFirstOrNull() ?: 0
+          emit(updated)
         }
       }
     }.toList()
 
-  private inline fun <T> tryCatchQuery(sql: String, op: () -> T): T =
-    try {
-      op()
-    } catch (e: Exception) {
-      val abortClass = "kotlinx.coroutines.flow.internal.AbortFlowException"
-      // Don’t wrap Flow’s internal short-circuiting
-      if (e.javaClass.name == abortClass) throw e
-      if (e is ControllerError) throw e
-      if (e is kotlinx.coroutines.CancellationException) throw e
-      else throw ControllerError("Error executing query: ${sql}", e)
-    }
 
   override suspend fun <T> run(query: ControllerActionReturning<T>, options: R2dbcExecutionOptions): T =
     stream(query, options).toList().first()
@@ -173,19 +152,17 @@ abstract class R2dbcController(
       val preparedSql = changePlaceholders(query.sql)
       accessStmt(preparedSql, conn) { stmt ->
         prepare(stmt, conn, query.params)
-        tryCatchQuery(preparedSql) {
-          val pub = stmt.execute()
-          val outputFlow =
-            pub.awaitFirstOrNull()?.map { row, meta ->
-              val cols = meta.columnMetadatas
-              cols.mapIndexed { i, md ->
-                val name = md.name
-                val value = row.get(i, Any::class.java)
-                name to value?.toString()
-              }
-            }?.asFlow() ?: emptyFlow<List<Pair<String, String?>>>()
-          emitAll(outputFlow)
-        }
+        val pub = stmt.execute()
+        val outputFlow =
+          pub.awaitFirstOrNull()?.map { row, meta ->
+            val cols = meta.columnMetadatas
+            cols.mapIndexed { i, md ->
+              val name = md.name
+              val value = row.get(i, Any::class.java)
+              name to value?.toString()
+            }
+          }?.asFlow() ?: emptyFlow<List<Pair<String, String?>>>()
+        emitAll(outputFlow)
       }
     }.toList()
 }

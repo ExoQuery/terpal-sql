@@ -27,10 +27,10 @@ interface HasTransactionalityR2dbc: RequiresTransactionality<Connection, Stateme
       val transaction = CoroutineTransaction()
       try {
         val result = withContext(transaction) { block() }
-        commitTransaction()
+        commitTransaction().awaitFirstOrNull()
         return result
       } catch (ex: Throwable) {
-        rollbackTransaction()
+        rollbackTransaction().awaitFirstOrNull()
         throw ex
       } finally {
         transaction.complete()
@@ -39,14 +39,14 @@ interface HasTransactionalityR2dbc: RequiresTransactionality<Connection, Stateme
   }
 }
 
-internal inline fun <T> Connection.runWithManualCommit(block: Connection.() -> T): T {
+internal suspend inline fun <T> Connection.runWithManualCommit(block: Connection.() -> T): T {
   val before = this.isAutoCommit
 
   return try {
-    this.setAutoCommit(false)
+    this.setAutoCommit(false).awaitFirstOrNull()
     this.run(block)
   } finally {
-    this.setAutoCommit(before)
+    this.setAutoCommit(before).awaitFirstOrNull()
   }
 }
 
