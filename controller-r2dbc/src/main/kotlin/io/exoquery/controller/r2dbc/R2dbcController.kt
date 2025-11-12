@@ -13,7 +13,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.reactive.awaitFirstOrNull
-import kotlinx.coroutines.reactive.collect
 
 abstract class R2dbcController(
   override val encodingConfig: R2dbcEncodingConfig = R2dbcEncodingConfig.Default(),
@@ -25,12 +24,13 @@ abstract class R2dbcController(
   HasTransactionalityR2dbc
 {
   override fun DefaultOpts(): R2dbcExecutionOptions = R2dbcExecutionOptions.Default()
+  override fun dbTypeIsRelevant(): Boolean = false
 
   override val encodingApi: R2dbcSqlEncoding =
     object: JavaSqlEncoding<Connection, Statement, Row>,
       BasicEncoding<Connection, Statement, Row> by R2dbcBasicEncoding,
       JavaTimeEncoding<Connection, Statement, Row> by R2dbcTimeEncoding,
-      JavaUuidEncoding<Connection, Statement, Row> by R2dbcUuidEncoding {}
+      JavaUuidEncoding<Connection, Statement, Row> by R2dbcUuidEncodingNative {}
 
   override val allEncoders: Set<SqlEncoder<Connection, Statement, out Any>> by lazy { encodingApi.computeEncoders() + encodingConfig.additionalEncoders }
   override val allDecoders: Set<SqlDecoder<Connection, Row, out Any>> by lazy { encodingApi.computeDecoders() + encodingConfig.additionalDecoders }

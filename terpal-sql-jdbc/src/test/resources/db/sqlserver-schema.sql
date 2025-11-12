@@ -68,9 +68,9 @@ CREATE TABLE EncodingTestEntity(
 
 CREATE TABLE JavaTestEntity(
     bigDecimalMan DECIMAL(5,2),
-    javaUtilDateMan DATETIME,
+    javaUtilDateMan DATETIMEOFFSET, -- java.util.Date i.e. legacy date with time zone
     uuidMan VARCHAR(255),
     bigDecimalOpt DECIMAL(5,2),
-    javaUtilDateOpt DATETIME,
+    javaUtilDateOpt DATETIMEOFFSET, -- java.util.Date i.e. legacy date with time zone
     uuidOpt VARCHAR(255)
 );

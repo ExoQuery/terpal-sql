@@ -39,8 +39,13 @@ interface WithEncoding<Session, Stmt, ResultRow> {
   val startingStatementIndex: StartingIndex get() = StartingIndex.Zero // default for JDBC is 1 so this needs to be overrideable
   val startingResultRowIndex: StartingIndex get() = StartingIndex.Zero // default for JDBC is 1 so this needs to be overrideable
 
+  /**
+   * Strictly for error reporting purposes. Some databases have types that are relevant to encoding/decoding that the encoder should show when an error occurs.
+   */
+  fun dbTypeIsRelevant(): Boolean = true
+
   fun createEncodingContext(session: Session, stmt: Stmt) =
-    EncodingContext(session, stmt, encodingConfig.timezone)
+    EncodingContext(session, stmt, encodingConfig.timezone, startingStatementIndex, dbTypeIsRelevant())
   fun createDecodingContext(session: Session, row: ResultRow, debugInfo: QueryDebugInfo?) =
     DecodingContext(session, row, encodingConfig.timezone, startingResultRowIndex, catchRethrowColumnInfoExtractError { extractColumnInfo(row) }, debugInfo)
 

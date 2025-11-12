@@ -76,9 +76,10 @@ fun SerialDescriptor.verifyColumns(columns: List<ColumnInfo>): Unit {
 
 sealed interface StartingIndex {
   val value: Int
+  val description: String
 
-  object Zero: StartingIndex { override val value: Int = 0 }
-  object One: StartingIndex { override val value: Int = 1 }
+  object Zero: StartingIndex { override val value: Int = 0; override val description: String = "zero-based" }
+  object One: StartingIndex { override val value: Int = 1; override val description: String = "one-based" }
 }
 
 sealed interface RowDecoderType {
@@ -120,7 +121,7 @@ class RowDecoder<Session, Row> private constructor(
     RowDecoder(ctx, this.serializersModule, initialRowIndex, api, decoders, type, json, debugMode, endCallback)
 
   // helper to get column names
-  fun colName(index: Int) = ctx.columnInfos?.get(index)?.name ?: "<UNKNOWN>"
+  fun colName(index: Int) = ctx.columnInfoSafe(index)?.name ?: "<UNKNOWN>"
 
   var rowIndex: Int = initialRowIndex
   var classIndex: Int = 0
@@ -128,7 +129,7 @@ class RowDecoder<Session, Row> private constructor(
   fun nextRowIndex(desc: SerialDescriptor, descIndex: Int, note: String = ""): Int {
     val curr = rowIndex
     if (debugMode) {
-      println("[RowDecoder] Get Row ${ctx.columnInfo(rowIndex)}, Index: ${curr} - (${descIndex}) ${desc.getElementDescriptor(descIndex)} - (Preview:${api.preview(rowIndex, ctx.row)})" + (if (note != "") " - ${note}" else ""))
+      println("[RowDecoder] Get Row ${ctx.columnInfoSafe(rowIndex)}, Index: ${curr} - (${descIndex}) ${desc.getElementDescriptor(descIndex)} - (Preview:${api.preview(rowIndex, ctx.row)})" + (if (note != "") " - ${note}" else ""))
     }
     rowIndex += 1
     return curr
@@ -137,7 +138,7 @@ class RowDecoder<Session, Row> private constructor(
   fun nextRowIndex(note: String = ""): Int {
     val curr = rowIndex
     if (debugMode) {
-      println("[RowDecoder] Get Next Row Index ${ctx.columnInfo(rowIndex)?.name} - (Preview:${api.preview(rowIndex, ctx.row)})" + (if (note != "") " - ${note}" else ""))
+      println("[RowDecoder] Get Next Row Index ${ctx.columnInfoSafe(rowIndex)?.name} - (Preview:${api.preview(rowIndex, ctx.row)})" + (if (note != "") " - ${note}" else ""))
     }
     rowIndex += 1
     return curr
@@ -390,7 +391,7 @@ class RowDecoder<Session, Row> private constructor(
         }
 
       else ->
-        throw IllegalArgumentException("Unsupported kind: `${desc.kind}` at index: ${index} (info:${ctx.columnInfos?.get(index)})")
+        throw IllegalArgumentException("Unsupported kind: `${desc.kind}` at (${ctx.startingIndex.description}) index: ${index} (info:${ctx.columnInfos?.get(index)})")
     }
   }
 
@@ -418,7 +419,7 @@ class RowDecoder<Session, Row> private constructor(
       element != null -> element
       //now: element == null must be true
       descriptor.getElementDescriptor(index).isNullable -> null as T
-      else -> throw IllegalArgumentException("Error at column ${ctx.columnInfos?.get(index)}. Found null element at index ${index} of descriptor ${descriptor.getElementDescriptor(index)} (of ${descriptor}) where null values are not allowed.")
+      else -> throw IllegalArgumentException("Error at column ${ctx.columnInfos?.get(index)}. Found null element at (${ctx.startingIndex.description}) index ${index} of descriptor ${descriptor.getElementDescriptor(index)} (of ${descriptor}) where null values are not allowed.")
     }
   }
 

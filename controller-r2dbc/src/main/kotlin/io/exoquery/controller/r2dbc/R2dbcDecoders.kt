@@ -4,12 +4,6 @@ import io.exoquery.controller.DecoderAny
 import io.exoquery.controller.SqlDecoder
 import io.r2dbc.spi.Connection
 import io.r2dbc.spi.Row
-import kotlinx.datetime.toKotlinInstant
-import kotlinx.datetime.toKotlinLocalDate
-import kotlinx.datetime.toKotlinLocalDateTime
-import kotlinx.datetime.toKotlinLocalTime
-import java.time.*
-import java.util.*
 import kotlin.reflect.KClass
 
 class R2dbcDecoderAny<T: Any>(
@@ -51,7 +45,7 @@ object R2dbcDecoders {
     R2dbcTimeEncoding.JOffsetTimeDecoder,
     R2dbcTimeEncoding.JOffsetDateTimeDecoder,
     R2dbcTimeEncoding.JDateDecoder,
-    R2dbcUuidEncoding.JUuidDecoder,
+    R2dbcUuidEncodingNative.JUuidDecoder,
 
     R2dbcAdditionalEncoding.BigDecimalDecoder
   )

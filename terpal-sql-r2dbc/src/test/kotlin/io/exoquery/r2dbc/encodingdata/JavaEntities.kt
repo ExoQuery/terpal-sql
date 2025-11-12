@@ -51,11 +51,19 @@ fun insert(e: JavaTestEntity): ControllerAction {
   return Sql("INSERT INTO JavaTestEntity VALUES (${e.bigDecimalMan}, ${e.javaUtilDateMan}, ${wrap(e.uuidMan)}, ${e.bigDecimalOpt}, ${e.javaUtilDateOpt}, ${wrap(e.uuidOpt)})").action()
 }
 
+
+
+
 fun verify(e: JavaTestEntity, expected: JavaTestEntity) {
-  e.bigDecimalMan shouldBeEqualIgnoringScale expected.bigDecimalMan
-  e.javaUtilDateMan shouldBeEqual expected.javaUtilDateMan
-  e.uuidMan shouldBeEqual expected.uuidMan
-  e.bigDecimalOpt shouldBeEqualIgnoringScaleNullable expected.bigDecimalOpt
-  e.javaUtilDateOpt shouldBeEqualNullable expected.javaUtilDateOpt
-  e.uuidOpt shouldBeEqualNullable expected.uuidOpt
+  fun catchRewrapAssert(msg: String, assertFun: () -> Unit) =
+    try { assertFun() } catch (e: java.lang.AssertionError) {
+      throw java.lang.AssertionError(msg, e)
+    }
+
+  catchRewrapAssert("Error Comparing: bigDecimalMan") { e.bigDecimalMan shouldBeEqualIgnoringScale expected.bigDecimalMan }
+  catchRewrapAssert("Error Comparing: javaUtilDateMan") { e.javaUtilDateMan shouldBeEqual expected.javaUtilDateMan }
+  catchRewrapAssert("Error Comparing: uuidMan") { e.uuidMan shouldBeEqual expected.uuidMan }
+  catchRewrapAssert("Error Comparing: bigDecimalOpt") { e.bigDecimalOpt shouldBeEqualIgnoringScaleNullable expected.bigDecimalOpt }
+  catchRewrapAssert("Error Comparing: javaUtilDateOpt") { e.javaUtilDateOpt shouldBeEqualNullable expected.javaUtilDateOpt }
+  catchRewrapAssert("Error Comparing: uuidOpt") { e.uuidOpt shouldBeEqualNullable expected.uuidOpt }
 }
