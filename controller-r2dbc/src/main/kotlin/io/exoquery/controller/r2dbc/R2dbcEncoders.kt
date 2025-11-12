@@ -92,8 +92,47 @@ object R2dbcBasicEncoding: BasicEncoding<Connection, Statement, Row> {
 
 private fun kotlinx.datetime.TimeZone.toJava(): TimeZone = TimeZone.getTimeZone(this.toJavaZoneId())
 
-object R2dbcTimeEncoding: JavaTimeEncoding<Connection, Statement, Row> {
-  private const val NA = 0
+object R2dbcTimeEncoding: R2dbcTimeEncodingBase()
+
+object R2dbcTimeEncodingSqlServer: R2dbcTimeEncodingBase() {
+  // java.util.Date -> bind as OffsetDateTime (supported by SQL Server and Postgres)
+  override val JDateEncoder: SqlEncoder<Connection, Statement, Date> =
+    R2dbcEncoderAny(NA, Date::class) { ctx, v, i ->
+      val odt = OffsetDateTime.ofInstant(Instant.ofEpochMilli(v.time), ZoneOffset.UTC)
+      ctx.stmt.bind(i, odt)
+    }
+
+  override val JDateDecoder: SqlDecoder<Connection, Row, Date> =
+    R2dbcDecoderAny(Date::class) { ctx, i ->
+      ctx.row.get(i, OffsetDateTime::class.java)?.toInstant()?.let { Date.from(it) }
+    }
+
+  // SQL Server does not support Instant binding, so bind as OffsetDateTime in UTC
+  override val InstantEncoder: SqlEncoder<Connection, Statement, kotlinx.datetime.Instant> =
+    R2dbcEncoderAny(NA, kotlinx.datetime.Instant::class) { ctx, v, i ->
+      val odt = OffsetDateTime.ofInstant(v.toJavaInstant(), ZoneOffset.UTC)
+      ctx.stmt.bind(i, odt)
+    }
+
+  override val InstantDecoder: SqlDecoder<Connection, Row, kotlinx.datetime.Instant> =
+    R2dbcDecoderAny(kotlinx.datetime.Instant::class) { ctx, i ->
+      ctx.row.get(i, OffsetDateTime::class.java)?.toInstant()?.toKotlinInstant()
+    }
+
+  override val JInstantEncoder: SqlEncoder<Connection, Statement, Instant> =
+    R2dbcEncoderAny(NA, Instant::class) { ctx, v, i ->
+      val odt = OffsetDateTime.ofInstant(v, ZoneOffset.UTC)
+      ctx.stmt.bind(i, odt)
+    }
+
+  override val JInstantDecoder: SqlDecoder<Connection, Row, Instant> =
+    R2dbcDecoderAny(Instant::class) { ctx, i ->
+      ctx.row.get(i, OffsetDateTime::class.java)?.toInstant()
+    }
+}
+
+open class R2dbcTimeEncodingBase: JavaTimeEncoding<Connection, Statement, Row> {
+  protected val NA = 0
 
   // KMP datetime -> convert to java.time before binding
   override val LocalDateEncoder: SqlEncoder<Connection, Statement, kotlinx.datetime.LocalDate> =
@@ -129,10 +168,6 @@ object R2dbcTimeEncoding: JavaTimeEncoding<Connection, Statement, Row> {
   override val JOffsetDateTimeEncoder: SqlEncoder<Connection, Statement, OffsetDateTime> =
     R2dbcEncoderAny(NA, OffsetDateTime::class) { ctx, v, i -> ctx.stmt.bind(i, v) }
 
-  // java.util.Date -> bind as Instant (supported type)
-  override val JDateEncoder: SqlEncoder<Connection, Statement, Date> =
-    R2dbcEncoderAny(NA, Date::class) { ctx, v, i -> ctx.stmt.bind(i, Instant.ofEpochMilli(v.getTime())) }
-
   // KMP datetime decoders via java.time
   override val LocalDateDecoder: SqlDecoder<Connection, Row, kotlinx.datetime.LocalDate> =
     R2dbcDecoderAny(kotlinx.datetime.LocalDate::class) { ctx, i -> ctx.row.get(i, LocalDate::class.java)?.toKotlinLocalDate() }
@@ -159,8 +194,16 @@ object R2dbcTimeEncoding: JavaTimeEncoding<Connection, Statement, Row> {
   override val JOffsetDateTimeDecoder: SqlDecoder<Connection, Row, OffsetDateTime> =
     R2dbcDecoderAny(OffsetDateTime::class) { ctx, i -> ctx.row.get(i, OffsetDateTime::class.java) }
 
-  // java.util.Date from Instant
-  override val JDateDecoder: SqlDecoder<Connection, Row, Date> =
+
+  /** java.util.Date -> bind as Instant (supported type)
+   * original behavior is to assume the field actually supports timestamp with timezone
+   */
+  open override val JDateEncoder: SqlEncoder<Connection, Statement, Date> =
+    R2dbcEncoderAny(NA, Date::class) { ctx, v, i -> ctx.stmt.bind(i, Instant.ofEpochMilli(v.getTime())) }
+  /** java.util.Date from Instant
+   * original behavior is to assume the field actually supports timestamp with timezone
+   */
+  open override val JDateDecoder: SqlDecoder<Connection, Row, Date> =
     R2dbcDecoderAny(Date::class) { ctx, i -> ctx.row.get(i, Instant::class.java)?.let { Date.from(it) } }
 }
 
