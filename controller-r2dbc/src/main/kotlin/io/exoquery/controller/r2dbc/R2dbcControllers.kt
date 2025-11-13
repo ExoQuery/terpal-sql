@@ -52,4 +52,19 @@ object R2dbcControllers {
     override protected fun changePlaceholders(sql: String): String =
       changePlaceholdersIn(sql) { index -> "@Param${index + startingStatementIndex.value}" }
   }
+
+  class Mysql(
+    encodingConfig: R2dbcEncodingConfig = R2dbcEncodingConfig.Default(),
+    override val connectionFactory: ConnectionFactory
+  ): R2dbcController(encodingConfig, connectionFactory) {
+
+    override val encodingApi: R2dbcSqlEncoding =
+      object: JavaSqlEncoding<Connection, Statement, Row>,
+        BasicEncoding<Connection, Statement, Row> by R2dbcBasicEncoding,
+        JavaTimeEncoding<Connection, Statement, Row> by R2dbcTimeEncoding,
+        JavaUuidEncoding<Connection, Statement, Row> by R2dbcUuidEncodingString {}
+
+    // MySQL R2DBC uses '?' positional parameters, so no change
+    override fun changePlaceholders(sql: String): String = sql
+  }
 }

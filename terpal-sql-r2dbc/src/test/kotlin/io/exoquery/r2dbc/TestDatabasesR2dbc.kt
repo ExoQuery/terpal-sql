@@ -53,4 +53,20 @@ object TestDatabasesR2dbc {
         .build()
     )
   }
+
+  val mysql: ConnectionFactory by lazy {
+    // Matches docker-compose and setup scripts for MySQL
+    ConnectionFactories.get(
+      ConnectionFactoryOptions.builder()
+        .option(ConnectionFactoryOptions.DRIVER, "mysql")
+        .option(ConnectionFactoryOptions.HOST, "localhost")
+        .option(ConnectionFactoryOptions.PORT, 33306)
+        .option(ConnectionFactoryOptions.DATABASE, "exoquery_test")
+        .option(ConnectionFactoryOptions.USER, "root")
+        .option(ConnectionFactoryOptions.PASSWORD, "root")
+        // SSL disabled for local docker testing
+        // .option(Option.valueOf("sslMode"), "disable")
+        .build()
+    )
+  }
 }

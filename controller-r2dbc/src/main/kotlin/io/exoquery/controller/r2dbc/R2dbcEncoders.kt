@@ -240,7 +240,7 @@ object R2dbcUuidEncodingString: JavaUuidEncoding<Connection, Statement, Row> {
   private const val NA = 0
 
   override val JUuidEncoder: SqlEncoder<Connection, Statement, UUID> =
-    object: R2dbcEncoderAny<UUID>(NA, UUID::class, { ctx, v, i -> ctx.stmt.bind(i, v) }) {
+    object: R2dbcEncoderAny<UUID>(NA, UUID::class, { ctx, v, i -> ctx.stmt.bind(i, v.toString()) }) {
       /** The bindNull implementation for UUID must bind as String to satisfy
        * driver since the driver only cares about the Java type ultimately set for the column */
       override val setNull: (Int, Statement, Int) -> Unit =
