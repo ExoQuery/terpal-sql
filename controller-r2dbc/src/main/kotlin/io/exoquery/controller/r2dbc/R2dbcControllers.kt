@@ -42,7 +42,14 @@ object R2dbcControllers {
         JavaTimeEncoding<Connection, Statement, Row> by R2dbcTimeEncodingSqlServer,
         JavaUuidEncoding<Connection, Statement, Row> by R2dbcUuidEncodingString {}
 
+    /** Change the names of the variable params so they can be used by the SQL Server R2DBC driver
+     * The SQL Server R2DBC driver supports named-parameter binding i.e. row.bind("@firstName", value)
+     * as well as positional binding i.e. row.bind(0, value). When positional binding is done, the names
+     * of ther parameters in the SQL string are ignored. Since we are using positional binding,
+     * we can use any names we want so we want to choose names that are user friendly to debug.
+     * Therefore we choose @ParamX where X is the index-kind that the context actually uses.
+     */
     override protected fun changePlaceholders(sql: String): String =
-      changePlaceholdersIn(sql) { index -> "@Param${index + 1}" }
+      changePlaceholdersIn(sql) { index -> "@Param${index + startingStatementIndex.value}" }
   }
 }

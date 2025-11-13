@@ -24,6 +24,7 @@ abstract class R2dbcController(
   HasTransactionalityR2dbc
 {
   override fun DefaultOpts(): R2dbcExecutionOptions = R2dbcExecutionOptions.Default()
+  override fun dbTypeIsRelevant(): Boolean = false
 
   override val encodingApi: R2dbcSqlEncoding =
     object: JavaSqlEncoding<Connection, Statement, Row>,

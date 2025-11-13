@@ -132,7 +132,7 @@ class PreparedStatementElementEncoder<Session, Stmt>(
           serializer.serialize(this, value)
         else
           (serializer as? KSerializer<T>)?.nullable?.serialize(this, value)
-            ?: throw IllegalArgumentException("Cannot encode null value at index ${index} with the descriptor ${desc}. The serializer ${serializer} could not be converted into a KSerializer.")
+            ?: throw IllegalArgumentException("cannot encode null value at (${ctx.startingIndex.value}) index ${index} with the descriptor ${desc}. The serializer ${serializer} could not be converted into a KSerializer.")
       }
 
       else -> {

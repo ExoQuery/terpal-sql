@@ -131,6 +131,23 @@ object R2dbcTimeEncodingSqlServer: R2dbcTimeEncodingBase() {
     R2dbcDecoderAny(Instant::class) { ctx, i ->
       ctx.row.get(i, OffsetDateTime::class.java)?.toInstant()
     }
+
+  // Convert OffsetTime -> OffsetDateTime on a fixed date (SQL Server DATETIMEOFFSET)
+  override val JOffsetTimeEncoder: SqlEncoder<Connection, Statement, OffsetTime> =
+    object: R2dbcEncoderAny<OffsetTime>(NA, OffsetTime::class, { ctx, v, i ->
+      val odt = OffsetDateTime.of(LocalDate.of(1970, 1, 1), v.toLocalTime(), v.offset)
+      ctx.stmt.bind(i, odt)
+    }) {
+      /** The bindNull implementation for OffsetTime must bind as OffsetDateTime to satisfy
+       * driver since the driver only cares about the Java type ultimately set for the column */
+      override val setNull: (Int, Statement, Int) -> Unit =
+        { index, stmt, _ -> stmt.bindNull(index, OffsetDateTime::class.java) }
+    }
+
+  override val JOffsetTimeDecoder: SqlDecoder<Connection, Row, OffsetTime> =
+    R2dbcDecoderAny(OffsetTime::class) { ctx, i ->
+      ctx.row.get(i, OffsetDateTime::class.java)?.toOffsetTime()
+    }
 }
 
 open class R2dbcTimeEncodingBase: JavaTimeEncoding<Connection, Statement, Row> {

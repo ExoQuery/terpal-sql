@@ -76,9 +76,10 @@ fun SerialDescriptor.verifyColumns(columns: List<ColumnInfo>): Unit {
 
 sealed interface StartingIndex {
   val value: Int
+  val description: String
 
-  object Zero: StartingIndex { override val value: Int = 0 }
-  object One: StartingIndex { override val value: Int = 1 }
+  object Zero: StartingIndex { override val value: Int = 0; override val description: String = "zero-based" }
+  object One: StartingIndex { override val value: Int = 1; override val description: String = "one-based" }
 }
 
 sealed interface RowDecoderType {
@@ -390,7 +391,7 @@ class RowDecoder<Session, Row> private constructor(
         }
 
       else ->
-        throw IllegalArgumentException("Unsupported kind: `${desc.kind}` at index: ${index} (info:${ctx.columnInfos?.get(index)})")
+        throw IllegalArgumentException("Unsupported kind: `${desc.kind}` at (${ctx.startingIndex.description}) index: ${index} (info:${ctx.columnInfos?.get(index)})")
     }
   }
 
@@ -418,7 +419,7 @@ class RowDecoder<Session, Row> private constructor(
       element != null -> element
       //now: element == null must be true
       descriptor.getElementDescriptor(index).isNullable -> null as T
-      else -> throw IllegalArgumentException("Error at column ${ctx.columnInfos?.get(index)}. Found null element at index ${index} of descriptor ${descriptor.getElementDescriptor(index)} (of ${descriptor}) where null values are not allowed.")
+      else -> throw IllegalArgumentException("Error at column ${ctx.columnInfos?.get(index)}. Found null element at (${ctx.startingIndex.description}) index ${index} of descriptor ${descriptor.getElementDescriptor(index)} (of ${descriptor}) where null values are not allowed.")
     }
   }
 
