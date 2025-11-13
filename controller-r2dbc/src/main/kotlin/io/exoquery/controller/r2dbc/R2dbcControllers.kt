@@ -4,8 +4,6 @@ import io.exoquery.controller.BasicEncoding
 import io.exoquery.controller.JavaSqlEncoding
 import io.exoquery.controller.JavaTimeEncoding
 import io.exoquery.controller.JavaUuidEncoding
-import io.exoquery.controller.SqlDecoder
-import io.exoquery.controller.SqlEncoder
 import io.r2dbc.spi.Connection
 import io.r2dbc.spi.ConnectionFactory
 import io.r2dbc.spi.Row
@@ -27,7 +25,7 @@ object R2dbcControllers {
       object: JavaSqlEncoding<Connection, Statement, Row>,
         BasicEncoding<Connection, Statement, Row> by R2dbcBasicEncoding,
         JavaTimeEncoding<Connection, Statement, Row> by R2dbcTimeEncoding,
-        JavaUuidEncoding<Connection, Statement, Row> by R2dbcUuidEncoding {}
+        JavaUuidEncoding<Connection, Statement, Row> by R2dbcUuidEncodingNative {}
 
     override protected fun changePlaceholders(sql: String): String =
       changePlaceholdersIn(sql) { index -> "$${index + 1}" }
@@ -42,7 +40,7 @@ object R2dbcControllers {
       object: JavaSqlEncoding<Connection, Statement, Row>,
         BasicEncoding<Connection, Statement, Row> by R2dbcBasicEncoding,
         JavaTimeEncoding<Connection, Statement, Row> by R2dbcTimeEncodingSqlServer,
-        JavaUuidEncoding<Connection, Statement, Row> by R2dbcUuidEncoding {}
+        JavaUuidEncoding<Connection, Statement, Row> by R2dbcUuidEncodingString {}
 
     override protected fun changePlaceholders(sql: String): String =
       changePlaceholdersIn(sql) { index -> "@Param${index + 1}" }
