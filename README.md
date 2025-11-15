@@ -85,7 +85,7 @@ dependencies {
     api("io.exoquery:terpal-sql-jdbc:2.0.0.PL-1.2.0")
     api("org.jetbrains.kotlinx:kotlinx-serialization-core:1.6.2")
     api("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
-    // Your databse driver for example postgres:
+    // Your database driver for example postgres:
     implementation("org.postgresql:postgresql:42.7.0")
 }
 ```
