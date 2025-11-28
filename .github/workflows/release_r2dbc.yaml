@@ -1,4 +1,4 @@
-name: Release
+name: Release R2DBC
 
 on:
   workflow_dispatch
