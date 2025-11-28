@@ -33,6 +33,17 @@ object Ex3_BatchReturnIds {
   val result = products.mapIndexed { i, p -> p.copy(id = i + 1) }
 }
 
+// TODO in upcoming Version-Bump, line up the  batch.actionReturning("col") on batch queries with regularAction.actionReturningIds("col")
+object Ex3_BatchReturnIdsExplicit {
+  val products = makeProducts(20)
+  val op =
+    SqlBatch { p: Product -> "INSERT INTO Product (description, sku) VALUES (${p.description}, ${p.sku})" }
+      .values(products.asSequence()).actionReturning<Long>("id")
+  val get = Sql("SELECT id, description, sku FROM Product").queryOf<Product>()
+  val opResult = (1..20).toList()
+  val result = products.mapIndexed { i, p -> p.copy(id = i + 1) }
+}
+
 object Ex4_BatchReturnRecord {
   val products = makeProducts(20)
   val op =

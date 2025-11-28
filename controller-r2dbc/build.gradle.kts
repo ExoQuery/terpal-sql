@@ -31,6 +31,7 @@ kotlin {
         implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactive:1.8.1")
         // R2DBC SPI only (no specific driver)
         api("io.r2dbc:r2dbc-spi:1.0.0.RELEASE")
+        // Need to pull in Postgres driver to use it's Json object for wrapping
         compileOnly("org.postgresql:r2dbc-postgresql:1.0.5.RELEASE")
       }
     }

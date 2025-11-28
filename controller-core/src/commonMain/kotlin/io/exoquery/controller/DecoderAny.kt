@@ -9,11 +9,19 @@ open class DecoderAny<T: Any, Session, Row>(
 ): SqlDecoder<Session, Row, T>() {
   override fun isNullable(): Boolean = false
   override fun decode(ctx: DecodingContext<Session, Row>, index: Int): T {
-    val value = f(ctx, index)
+    val value =
+      try {
+        f(ctx, index)
+      } catch (ex: Exception) {
+        val msg =
+          "Error decoding column at index $index for type ${type.simpleName}" +
+            (ctx.columnInfoSafe(index)?.let { " (${it.name}:${it.type})" } ?: "")
+        throw ControllerError.DecodingError(msg, ex)
+      }
     if (value == null && !isNullable()) {
       val msg =
         "Got null value for non-nullable column of type ${type.simpleName} at index $index" +
-          (ctx.columnInfo(index-1)?.let { " (${it.name}:${it.type})" } ?: "")
+          (ctx.columnInfoSafe(index)?.let { " (${it.name}:${it.type})" } ?: "")
 
       throw NullPointerException(msg)
     }

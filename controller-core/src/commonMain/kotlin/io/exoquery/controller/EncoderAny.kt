@@ -24,7 +24,8 @@ open class EncoderAny<T: Any, TypeId: Any, Session, Stmt>(
           else
             setNull(index, ctx.stmt, jdbcType)
         } catch (e: Throwable) {
-          throw EncodingException("Error encoding ${type} value: $value at index: $index (whose jdbc-type: ${jdbcType})", e)
+          val jdbcTypeInfo = if (ctx.dbTypeIsRelevant) " (whose database-type: ${jdbcType})" else ""
+          throw EncodingException("Error encoding ${type} value: $value at (${ctx.startingIndex.description}) index: $index${jdbcTypeInfo}", e)
         }
     }
 
