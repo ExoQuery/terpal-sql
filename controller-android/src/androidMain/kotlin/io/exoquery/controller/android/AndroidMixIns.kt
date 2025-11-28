@@ -78,31 +78,26 @@ interface HasTransactionalityAndroid: RequiresTransactionality<Connection, Suppo
   // methods that only have a reader connection but they are not used here.
   override suspend fun <T> runTransactionally(block: suspend CoroutineScope.() -> T): T {
     val session = coroutineContext.get(sessionKey)?.session ?: error("No connection found")
-    //println("------- Getting session from transactional run: ${session}")
     val transaction = CoroutineTransaction()
     try {
-
       when (walMode) {
         // When in WAL mode, we want readers to be able to read while the writer is writing
         WalMode.Enabled -> {
-          //println("------- Beginning non-exclusive transaction")
           session.value.session.beginTransactionNonExclusive()
         }
         else -> {
-          //println("------- Beginning transaction")
           session.value.session.beginTransaction()
         }
       }
       val result = withContext(transaction) { block() }
       // setting it successful makes it not rollback
-      //println("------- Marking transaction successful")
       session.value.session.setTransactionSuccessful()
+      session.value.session.endTransaction()
       return result
     } catch (ex: Throwable) {
+      session.value.session.endTransaction()
       throw ex
     } finally {
-      //println("------- Ending transaction")
-      session.value.session.endTransaction()
       transaction.complete()
     }
   }

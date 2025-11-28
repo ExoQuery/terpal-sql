@@ -75,12 +75,9 @@ interface HasTransactionalityNative: RequiresTransactionality<Connection, Statem
 
     val transaction = CoroutineTransaction()
     try {
-      //println("---------- Calling beginTransaction")
       session.value.session.beginTransaction()
-      //println("---------- About to run block")
       val result = withContext(transaction) { block() }
       // setting it successful makes it not rollback
-      //println("---------- Finished running block")
       session.value.session.setTransactionSuccessful()
       session.value.session.endTransaction()
       return result
