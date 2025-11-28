@@ -6,6 +6,7 @@ plugins {
   kotlin("multiplatform") version "2.2.0" apply false
   id("com.android.library") version "8.2.0" apply false
   id("org.jetbrains.dokka") version "1.9.10" apply false
+  id("functions")
 }
 
 repositories {
@@ -63,8 +64,7 @@ subprojects {
       maven {
         name = "Oss"
         setUrl {
-          val repositoryId = System.getenv("SONATYPE_REPOSITORY_ID") ?: error("Missing env variable: SONATYPE_REPOSITORY_ID")
-          "https://s01.oss.sonatype.org/service/local/staging/deployByRepositoryId/$repositoryId/"
+          "https://ossrh-staging-api.central.sonatype.com/service/local/staging/deploy/maven2/"
         }
         credentials {
           username = user
@@ -73,7 +73,7 @@ subprojects {
       }
       maven {
         name = "Snapshot"
-        setUrl { "https://s01.oss.sonatype.org/content/repositories/snapshots/" }
+        setUrl { "https://central.sonatype.com/repository/maven-snapshots/" }
         credentials {
           username = user
           password = pass
@@ -107,9 +107,9 @@ subprojects {
         }
 
         scm {
-          url.set("https://github.com/exoquery/decomat/tree/main")
-          connection.set("scm:git:git://github.com/ExoQuery/DecoMat.git")
-          developerConnection.set("scm:git:ssh://github.com:ExoQuery/DecoMat.git")
+          url.set("https://github.com/exoquery/terpal-sql/tree/main")
+          connection.set("scm:git:git://github.com/ExoQuery/terpal-sql.git")
+          developerConnection.set("scm:git:ssh://github.com:ExoQuery/terpal-sql.git")
         }
       }
     }
@@ -155,20 +155,6 @@ subprojects {
     // Task ':compileTestKotlin<platform>' uses this output of task ':sign<platform>Publication' without declaring an explicit or implicit dependency
     tasks.findByName("compileTestKotlin$pubName")?.let {
       mustRunAfter(it)
-    }
-  }
-
-// Was having odd issues happening in CI releases like this:
-// e.g. Task ':pprint-kotlin-core:publish<AndroidNativeArm32>PublicationToOssRepository' uses this output of task ':pprint-kotlin-core:sign<AndroidNativeArm64>Publication' without declaring an explicit or implicit dependency.
-// I tried a few things that caused other issues. Ultimately the working solution I got from here:
-// https://github.com/gradle/gradle/issues/26091#issuecomment-1722947958
-  tasks.withType<AbstractPublishToMaven>().configureEach {
-    val signingTasks = tasks.withType<Sign>()
-    mustRunAfter(signingTasks)
-
-    // Also, do not publish the decomat-examples project
-    onlyIf {
-      !this.project.name.contains("decomat-examples")
     }
   }
 }
