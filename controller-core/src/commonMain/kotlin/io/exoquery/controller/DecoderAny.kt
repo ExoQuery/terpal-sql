@@ -1,5 +1,6 @@
 package io.exoquery.controller
 
+import kotlin.jvm.JvmInline
 import kotlin.reflect.KClass
 
 open class DecoderAny<T: Any, Session, Row> @PublishedApi internal constructor(
@@ -45,11 +46,14 @@ open class DecoderAny<T: Any, Session, Row> @PublishedApi internal constructor(
    * Transforms this decoder into another decoder by applying the given function to the decoded value.
    * Alias for [map].
    */
-  inline fun <reified R: Any> transformInto(crossinline into: (T) -> R): DecoderAny<R, Session, Row> =
+  inline fun <reified R: Any> transformInto(crossinline into: MapContext<Session, Row>.(T) -> R): DecoderAny<R, Session, Row> =
     map(into)
 
-  inline fun <reified R: Any> map(crossinline into: (T) -> R): DecoderAny<R, Session, Row> =
-    DecoderAny<R, Session, Row>(R::class, this@DecoderAny.originalType, isNull) { ctx, index -> into(this.decode(ctx, index)) }
+  @JvmInline
+  final value class MapContext<Session, Row>(val ctx: DecodingContext<Session, Row>)
+
+  inline fun <reified R: Any> map(crossinline into: MapContext<Session, Row>.(T) -> R): DecoderAny<R, Session, Row> =
+    DecoderAny<R, Session, Row>(R::class, this@DecoderAny.originalType, isNull) { ctx, index -> into(MapContext(ctx), this.decode(ctx, index)) }
 
   override fun asNullable(): SqlDecoder<Session, Row, T?> =
     object: SqlDecoder<Session, Row, T?>() {

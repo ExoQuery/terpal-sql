@@ -5,7 +5,7 @@ import kotlin.test.assertEquals
 infix fun <T> T.shouldBe(other: T) = assertEquals(other, this)
 
 infix fun <A : Any> A.shouldBeEqual(expected: A): A {
-  assertEquals(this, expected)
+  assertEquals(expected, this)
   return this
 }
 

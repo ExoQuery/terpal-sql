@@ -5,6 +5,7 @@ import io.exoquery.controller.JavaTimeEncoding
 import io.exoquery.controller.JavaUuidEncoding
 import io.exoquery.controller.*
 import kotlinx.coroutines.flow.Flow
+import kotlinx.datetime.toJavaZoneId
 import java.sql.Connection
 import java.sql.PreparedStatement
 import java.sql.ResultSet
@@ -197,8 +198,21 @@ object JdbcControllers {
     override val encodingApi: JdbcSqlEncoding =
       object : JavaSqlEncoding<Connection, PreparedStatement, ResultSet>,
         BasicEncoding<Connection, PreparedStatement, ResultSet> by JdbcBasicEncoding,
-        JavaTimeEncoding<Connection, PreparedStatement, ResultSet> by JdbcTimeEncoding(),
+        JavaTimeEncoding<Connection, PreparedStatement, ResultSet> by SqlServerTimeEncoding,
         JavaUuidEncoding<Connection, PreparedStatement, ResultSet> by JdbcUuidStringEncoding {}
+
+    object SqlServerTimeEncoding: JdbcTimeEncoding() {
+      // Override java.util.Date encoding to use TIMESTAMP_WITH_TIMEZONE for DATETIMEOFFSET columns
+      override val JDateEncoder: JdbcEncoderAny<java.util.Date> = JdbcEncoderAny(Types.TIMESTAMP_WITH_TIMEZONE, java.util.Date::class) { ctx, v, i ->
+        val instant = v.toInstant()
+        val offsetDateTime = java.time.OffsetDateTime.ofInstant(instant, ctx.timeZone.toJavaZoneId())
+        ctx.stmt.setObject(i, offsetDateTime, Types.TIMESTAMP_WITH_TIMEZONE)
+      }
+      override val JDateDecoder: JdbcDecoderAny<java.util.Date> = JdbcDecoderAny(java.util.Date::class) { ctx, i ->
+        val offsetDateTime = ctx.row.getObject(i, java.time.OffsetDateTime::class.java)
+        java.util.Date.from(offsetDateTime.toInstant())
+      }
+    }
 
     override suspend fun <T> runActionReturningScoped(act: ControllerActionReturning<T>, options: JdbcExecutionOptions): Flow<T> =
       flowWithConnection(options) {

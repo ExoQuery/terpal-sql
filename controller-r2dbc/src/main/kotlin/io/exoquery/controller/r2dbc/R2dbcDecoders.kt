@@ -6,6 +6,8 @@ import io.r2dbc.spi.Connection
 import io.r2dbc.spi.Row
 import kotlin.reflect.KClass
 
+typealias R2dbcDecoder<T> = DecoderAny<T, Connection, Row>
+
 class R2dbcDecoderAny<T: Any>(
   override val type: KClass<T>,
   override val f: (R2dbcDecodingContext, Int) -> T?
@@ -21,7 +23,7 @@ class R2dbcDecoderAny<T: Any>(
 
 object R2dbcDecoders {
   @Suppress("UNCHECKED_CAST")
-  val decoders: Set<SqlDecoder<Connection, Row, out Any>> = setOf(
+  val decoders: Set<R2dbcDecoder<out Any>> = setOf(
     R2dbcBasicEncoding.BooleanDecoder,
     R2dbcBasicEncoding.ByteDecoder,
     R2dbcBasicEncoding.CharDecoder,
