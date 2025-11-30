@@ -1,12 +1,26 @@
 package io.exoquery.controller
 
+import kotlin.jvm.JvmInline
 import kotlin.reflect.KClass
 
-open class DecoderAny<T: Any, Session, Row>(
+open class DecoderAny<T: Any, Session, Row> @PublishedApi internal constructor(
   open override val type: KClass<T>,
+  /**
+   * The original type of this decoder at the time of its initial creation.
+   * This field remains unchanged through transformations like [map] and [transformInto].
+   * Used in R2DBC's get operation where the driver requires the actual Java class
+   * of the original type for proper type conversion.
+   */
+  open val originalType: KClass<*>,
   open val isNull: (Int, Row) -> Boolean,
   open val f: (DecodingContext<Session, Row>, Int) -> T?,
 ): SqlDecoder<Session, Row, T>() {
+
+  constructor(
+    type: KClass<T>,
+    isNull: (Int, Row) -> Boolean,
+    f: (DecodingContext<Session, Row>, Int) -> T?
+  ) : this(type, type, isNull, f)
   override fun isNullable(): Boolean = false
   override fun decode(ctx: DecodingContext<Session, Row>, index: Int): T {
     val value =
@@ -32,11 +46,14 @@ open class DecoderAny<T: Any, Session, Row>(
    * Transforms this decoder into another decoder by applying the given function to the decoded value.
    * Alias for [map].
    */
-  inline fun <reified R: Any> transformInto(crossinline into: (T) -> R): DecoderAny<R, Session, Row> =
+  inline fun <reified R: Any> transformInto(crossinline into: MapContext<Session, Row>.(T) -> R): DecoderAny<R, Session, Row> =
     map(into)
 
-  inline fun <reified R: Any> map(crossinline into: (T) -> R): DecoderAny<R, Session, Row> =
-    DecoderAny<R, Session, Row>(R::class, isNull) { ctx, index -> into(this.decode(ctx, index)) }
+  @JvmInline
+  final value class MapContext<Session, Row>(val ctx: DecodingContext<Session, Row>)
+
+  inline fun <reified R: Any> map(crossinline into: MapContext<Session, Row>.(T) -> R): DecoderAny<R, Session, Row> =
+    DecoderAny<R, Session, Row>(R::class, this@DecoderAny.originalType, isNull) { ctx, index -> into(MapContext(ctx), this.decode(ctx, index)) }
 
   override fun asNullable(): SqlDecoder<Session, Row, T?> =
     object: SqlDecoder<Session, Row, T?>() {

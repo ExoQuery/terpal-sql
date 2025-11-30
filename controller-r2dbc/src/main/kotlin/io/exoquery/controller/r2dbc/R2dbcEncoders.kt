@@ -2,6 +2,7 @@ package io.exoquery.controller.r2dbc
 
 import io.exoquery.controller.BasicEncoding
 import io.exoquery.controller.ControllerError
+import io.exoquery.controller.DecoderAny
 import io.exoquery.controller.EncoderAny
 import io.exoquery.controller.JavaTimeEncoding
 import io.exoquery.controller.JavaUuidEncoding
@@ -23,6 +24,8 @@ import java.time.*
 import java.util.*
 import kotlin.reflect.KClass
 
+typealias R2dbcEncoder<T> = EncoderAny<T, Int, Connection, Statement>
+
 // Note: R2DBC has no java.sql.Types. We keep an Int id for compatibility but do not use it.
 open class R2dbcEncoderAny<T: Any>(
   override val dataType: Int,
@@ -42,18 +45,10 @@ private const val NA = 0
 object R2dbcBasicEncoding: R2dbcBasicEncodingBase()
 
 object R2dbcBasicEncodingH2: R2dbcBasicEncodingBase() {
-  //override val IntEncoder: SqlEncoder<Connection, Statement, Int> =
-  //  object: R2dbcEncoderAny<Int>(NA, Int::class, { ctx, v, i -> ctx.stmt.bind(i, v.toLong()) }) {
-  //    /** The bindNull implementation for Int must bind as Long to satisfy
-  //     * driver since the driver only cares about the Java type ultimately set for the column */
-  //    override val setNull: (Int, Statement, Int) -> Unit =
-  //      { index, stmt, _ -> stmt.bindNull(index, java.lang.Long::class.java) }
-  //  }
-
-  override val ByteDecoder: SqlDecoder<Connection, Row, Byte> =
+  override val ByteDecoder: R2dbcDecoder<Byte> =
     R2dbcDecoderAny(Byte::class) { ctx, i -> ctx.row.get(i, java.lang.Short::class.java)?.toByte() }
 
-  override val FloatDecoder: SqlDecoder<Connection, Row, Float> =
+  override val FloatDecoder: R2dbcDecoder<Float> =
     R2dbcDecoderAny(Float::class) { ctx, i ->
       when (val value = ctx.row.get(i)) {
         null -> null
@@ -66,7 +61,7 @@ object R2dbcBasicEncodingH2: R2dbcBasicEncodingBase() {
       }
     }
 
-  override val IntDecoder: SqlDecoder<Connection, Row, Int> =
+  override val IntDecoder: R2dbcDecoder<Int> =
     R2dbcDecoderAny(Int::class) { ctx, i ->
       when (val value = ctx.row.get(i)) {
         null -> null
@@ -80,7 +75,7 @@ object R2dbcBasicEncodingH2: R2dbcBasicEncodingBase() {
       }
     }
 
-  override val LongDecoder: SqlDecoder<Connection, Row, Long> =
+  override val LongDecoder: R2dbcDecoder<Long> =
     R2dbcDecoderAny(Long::class) { ctx, i ->
       when (val value = ctx.row.get(i)) {
         null -> null
@@ -94,7 +89,7 @@ object R2dbcBasicEncodingH2: R2dbcBasicEncodingBase() {
       }
     }
 
-  override val ShortDecoder: SqlDecoder<Connection, Row, Short> =
+  override val ShortDecoder: R2dbcDecoder<Short> =
     R2dbcDecoderAny(Short::class) { ctx, i ->
       when (val value = ctx.row.get(i)) {
         null -> null
@@ -118,40 +113,40 @@ object R2dbcBasicEncodingH2: R2dbcBasicEncodingBase() {
 // This same logic applies to the ByteArrayDecoder as well.
 // More oracle crazy behavior that requires encoding/decoding booleans as ints (0/1).
 object R2dbcBasicEncodingOracle: R2dbcBasicEncodingBase() {
-  override val CharDecoder: SqlDecoder<Connection, Row, Char> =
+  override val CharDecoder: R2dbcDecoder<Char> =
     R2dbcDecoderAny(Char::class) { ctx, i -> ctx.row.get(i, String::class.java)?.let { it[0] } ?: Char.MIN_VALUE }
-  override val StringDecoder: SqlDecoder<Connection, Row, String> =
+  override val StringDecoder: R2dbcDecoder<String> =
     R2dbcDecoderAny(String::class) { ctx, i -> ctx.row.get(i, String::class.java) ?: "" }
-  override val ByteArrayDecoder: SqlDecoder<Connection, Row, ByteArray> =
+  override val ByteArrayDecoder: R2dbcDecoder<ByteArray> =
     R2dbcDecoderAny(ByteArray::class) { ctx, i -> ctx.row.get(i, ByteArray::class.java) ?: byteArrayOf() }
 
   // More oracle crazy behavior that requires encoding booleans as ints
-  //override val BooleanEncoder: SqlEncoder<Connection, Statement, Boolean> =
+  //override val BooleanEncoder: R2dbcEncoderAny<Boolean> =
   //  R2dbcEncoderAny(NA, Boolean::class) { ctx, v, i -> ctx.stmt.bind(i, if (v) 1 else 0) }
-  //override val BooleanDecoder: SqlDecoder<Connection, Row, Boolean> =
+  //override val BooleanDecoder: R2dbcDecoder<Boolean> =
   //  R2dbcDecoderAny(Boolean::class) { ctx, i -> ctx.row.get(i, java.lang.Integer::class.java)?.let { it == 1 } }
 }
 
 abstract class R2dbcBasicEncodingBase: BasicEncoding<Connection, Statement, Row> {
-  override val BooleanEncoder: SqlEncoder<Connection, Statement, Boolean> =
+  override val BooleanEncoder: R2dbcEncoderAny<Boolean> =
     R2dbcEncoderAny(NA, Boolean::class) { ctx, v, i -> ctx.stmt.bind(i, v) }
-  override val ByteEncoder: SqlEncoder<Connection, Statement, Byte> =
+  override val ByteEncoder: R2dbcEncoderAny<Byte> =
     R2dbcEncoderAny(NA, Byte::class) { ctx, v, i -> ctx.stmt.bind(i, v) }
-  override val CharEncoder: SqlEncoder<Connection, Statement, Char> =
+  override val CharEncoder: R2dbcEncoderAny<Char> =
     R2dbcEncoderAny(NA, Char::class) { ctx, v, i -> ctx.stmt.bind(i, v.toString()) }
-  override val DoubleEncoder: SqlEncoder<Connection, Statement, Double> =
+  override val DoubleEncoder: R2dbcEncoderAny<Double> =
     R2dbcEncoderAny(NA, Double::class) { ctx, v, i -> ctx.stmt.bind(i, v) }
-  override val FloatEncoder: SqlEncoder<Connection, Statement, Float> =
+  override val FloatEncoder: R2dbcEncoderAny<Float> =
     R2dbcEncoderAny(NA, Float::class) { ctx, v, i -> ctx.stmt.bind(i, v) }
-  override val IntEncoder: SqlEncoder<Connection, Statement, Int> =
+  override val IntEncoder: R2dbcEncoderAny<Int> =
     R2dbcEncoderAny(NA, Int::class) { ctx, v, i -> ctx.stmt.bind(i, v) }
-  override val LongEncoder: SqlEncoder<Connection, Statement, Long> =
+  override val LongEncoder: R2dbcEncoderAny<Long> =
     R2dbcEncoderAny(NA, Long::class) { ctx, v, i -> ctx.stmt.bind(i, v) }
-  override val ShortEncoder: SqlEncoder<Connection, Statement, Short> =
+  override val ShortEncoder: R2dbcEncoderAny<Short> =
     R2dbcEncoderAny(NA, Short::class) { ctx, v, i -> ctx.stmt.bind(i, v) }
-  override val StringEncoder: SqlEncoder<Connection, Statement, String> =
+  override val StringEncoder: R2dbcEncoderAny<String> =
     R2dbcEncoderAny(NA, String::class) { ctx, v, i -> ctx.stmt.bind(i, v) }
-  override val ByteArrayEncoder: SqlEncoder<Connection, Statement, ByteArray> =
+  override val ByteArrayEncoder: R2dbcEncoderAny<ByteArray> =
     R2dbcEncoderAny(NA, ByteArray::class) { ctx, v, i -> ctx.stmt.bind(i, v) }
 
   override fun preview(index: Int, row: Row): String? =
@@ -159,25 +154,25 @@ abstract class R2dbcBasicEncodingBase: BasicEncoding<Connection, Statement, Row>
   override fun isNull(index: Int, row: Row): Boolean =
     row.get(index) == null
 
-  override val BooleanDecoder: SqlDecoder<Connection, Row, Boolean> =
+  override val BooleanDecoder: R2dbcDecoder<Boolean> =
     R2dbcDecoderAny(Boolean::class) { ctx, i -> ctx.row.get(i, java.lang.Boolean::class.java)?.booleanValue() }
-  override val ByteDecoder: SqlDecoder<Connection, Row, Byte> =
+  override val ByteDecoder: R2dbcDecoder<Byte> =
     R2dbcDecoderAny(Byte::class) { ctx, i -> ctx.row.get(i, java.lang.Byte::class.java)?.toByte() }
-  override val CharDecoder: SqlDecoder<Connection, Row, Char> =
+  override val CharDecoder: R2dbcDecoder<Char> =
     R2dbcDecoderAny(Char::class) { ctx, i -> ctx.row.get(i, String::class.java)?.let { it[0] } ?: Char.MIN_VALUE }
-  override val DoubleDecoder: SqlDecoder<Connection, Row, Double> =
+  override val DoubleDecoder: R2dbcDecoder<Double> =
     R2dbcDecoderAny(Double::class) { ctx, i -> ctx.row.get(i, java.lang.Double::class.java)?.toDouble() }
-  override val FloatDecoder: SqlDecoder<Connection, Row, Float> =
+  override val FloatDecoder: R2dbcDecoder<Float> =
     R2dbcDecoderAny(Float::class) { ctx, i -> ctx.row.get(i, java.lang.Float::class.java)?.toFloat() }
-  override val IntDecoder: SqlDecoder<Connection, Row, Int> =
+  override val IntDecoder: R2dbcDecoder<Int> =
     R2dbcDecoderAny(Int::class) { ctx, i -> ctx.row.get(i, java.lang.Integer::class.java)?.toInt() }
-  override val LongDecoder: SqlDecoder<Connection, Row, Long> =
+  override val LongDecoder: R2dbcDecoder<Long> =
     R2dbcDecoderAny(Long::class) { ctx, i -> ctx.row.get(i, java.lang.Long::class.java)?.toLong() }
-  override val ShortDecoder: SqlDecoder<Connection, Row, Short> =
+  override val ShortDecoder: R2dbcDecoder<Short> =
     R2dbcDecoderAny(Short::class) { ctx, i -> ctx.row.get(i, java.lang.Short::class.java)?.toShort() }
-  override val StringDecoder: SqlDecoder<Connection, Row, String> =
+  override val StringDecoder: R2dbcDecoder<String> =
     R2dbcDecoderAny(String::class) { ctx, i -> ctx.row.get(i, String::class.java) }
-  override val ByteArrayDecoder: SqlDecoder<Connection, Row, ByteArray> =
+  override val ByteArrayDecoder: R2dbcDecoder<ByteArray> =
     R2dbcDecoderAny(ByteArray::class) { ctx, i -> ctx.row.get(i, ByteArray::class.java) }
 }
 
@@ -189,81 +184,62 @@ object R2dbcTimeEncodingH2: R2dbcTimeEncodingBase() {
   /** java.util.Date -> bind as Instant (supported type)
    * original behavior is to assume the field actually supports timestamp with timezone
    */
-  override val JDateEncoder: SqlEncoder<Connection, Statement, Date> =
-    object: R2dbcEncoderAny<Date>(NA, Date::class, { ctx, v, i ->
-      ctx.stmt.bind(i, Instant.ofEpochMilli(v.time).atZone(ZoneId.systemDefault()).toLocalDateTime())
-    }) {
-      override val setNull: (Int, Statement, Int) -> Unit =
-        { index, stmt, _ -> stmt.bindNull(index, LocalDateTime::class.java) }
+  override val JDateEncoder: R2dbcEncoder<Date> =
+    JLocalDateTimeEncoder.contramap { v: Date ->
+      Instant.ofEpochMilli(v.time).atZone(ZoneId.systemDefault()).toLocalDateTime()
     }
 
   /** java.util.Date from LocalDateTime
    * H2 R2DBC doesn't support Instant directly for TIMESTAMP columns, so we decode via LocalDateTime
    */
-  override val JDateDecoder: SqlDecoder<Connection, Row, Date> =
-    R2dbcDecoderAny(Date::class) { ctx, i ->
-      ctx.row.get(i, LocalDateTime::class.java)?.let {
-        Date.from(it.atZone(ZoneId.systemDefault()).toInstant())
-      }
+  override val JDateDecoder: R2dbcDecoder<Date> =
+    JLocalDateTimeDecoder.map { localDateTime ->
+      Date.from(localDateTime.atZone(ZoneId.systemDefault()).toInstant())
     }
 }
 
 object R2dbcTimeEncodingSqlServer: R2dbcTimeEncodingBase() {
   // java.util.Date -> bind as OffsetDateTime (supported by SQL Server and Postgres)
-  override val JDateEncoder: SqlEncoder<Connection, Statement, Date> =
-    object: R2dbcEncoderAny<Date>(NA, Date::class, { ctx, v, i ->
-      val odt = OffsetDateTime.ofInstant(Instant.ofEpochMilli(v.time), ctx.timeZone.toJavaZoneId())
-      ctx.stmt.bind(i, odt)
-    }) {
-      /** The bindNull implementation for Date must bind as OffsetDateTime to satisfy
-       * driver since the driver only cares about the Java type ultimately set for the column */
-      override val setNull: (Int, Statement, Int) -> Unit =
-        { index, stmt, _ -> stmt.bindNull(index, OffsetDateTime::class.java) }
+  override val JDateEncoder: R2dbcEncoder<Date> =
+    JOffsetDateTimeEncoder.contramap { v: Date ->
+      OffsetDateTime.ofInstant(Instant.ofEpochMilli(v.time), ctx.timeZone.toJavaZoneId())
     }
 
-  override val JDateDecoder: SqlDecoder<Connection, Row, Date> =
-    R2dbcDecoderAny(Date::class) { ctx, i ->
-      ctx.row.get(i, OffsetDateTime::class.java)?.toInstant()?.let { Date.from(it) }
+  override val JDateDecoder: R2dbcDecoder<Date> =
+    JOffsetDateTimeDecoder.map { odt: OffsetDateTime ->
+      Date.from(odt.toInstant())
     }
 
   // SQL Server does not support Instant binding, so bind as OffsetDateTime in UTC
-  override val InstantEncoder: SqlEncoder<Connection, Statement, kotlinx.datetime.Instant> =
-    R2dbcEncoderAny(NA, kotlinx.datetime.Instant::class) { ctx, v, i ->
-      val odt = OffsetDateTime.ofInstant(v.toJavaInstant(), ZoneOffset.UTC)
-      ctx.stmt.bind(i, odt)
+  override val InstantEncoder: R2dbcEncoder<kotlinx.datetime.Instant> =
+    JOffsetDateTimeEncoder.contramap { v: kotlinx.datetime.Instant ->
+      OffsetDateTime.ofInstant(v.toJavaInstant(), ZoneOffset.UTC)
     }
 
-  override val InstantDecoder: SqlDecoder<Connection, Row, kotlinx.datetime.Instant> =
-    R2dbcDecoderAny(kotlinx.datetime.Instant::class) { ctx, i ->
-      ctx.row.get(i, OffsetDateTime::class.java)?.toInstant()?.toKotlinInstant()
+  override val InstantDecoder: R2dbcDecoder<kotlinx.datetime.Instant> =
+    JOffsetDateTimeDecoder.map { odt: OffsetDateTime ->
+      odt.toInstant().toKotlinInstant()
     }
 
-  override val JInstantEncoder: SqlEncoder<Connection, Statement, Instant> =
-    R2dbcEncoderAny(NA, Instant::class) { ctx, v, i ->
-      val odt = OffsetDateTime.ofInstant(v, ZoneOffset.UTC)
-      ctx.stmt.bind(i, odt)
+  override val JInstantEncoder: R2dbcEncoder<Instant> =
+    JOffsetDateTimeEncoder.contramap { v: Instant ->
+      OffsetDateTime.ofInstant(v, ZoneOffset.UTC)
     }
 
-  override val JInstantDecoder: SqlDecoder<Connection, Row, Instant> =
-    R2dbcDecoderAny(Instant::class) { ctx, i ->
-      ctx.row.get(i, OffsetDateTime::class.java)?.toInstant()
+  override val JInstantDecoder: R2dbcDecoder<Instant> =
+    JOffsetDateTimeDecoder.map { odt: OffsetDateTime ->
+      odt.toInstant()
     }
 
   // Convert OffsetTime -> OffsetDateTime on a fixed date (SQL Server DATETIMEOFFSET)
-  override val JOffsetTimeEncoder: SqlEncoder<Connection, Statement, OffsetTime> =
-    object: R2dbcEncoderAny<OffsetTime>(NA, OffsetTime::class, { ctx, v, i ->
-      val odt = OffsetDateTime.of(LocalDate.of(1970, 1, 1), v.toLocalTime(), v.offset)
-      ctx.stmt.bind(i, odt)
-    }) {
-      /** The bindNull implementation for OffsetTime must bind as OffsetDateTime to satisfy
-       * driver since the driver only cares about the Java type ultimately set for the column */
-      override val setNull: (Int, Statement, Int) -> Unit =
-        { index, stmt, _ -> stmt.bindNull(index, OffsetDateTime::class.java) }
+  override val JOffsetTimeEncoder: R2dbcEncoder<OffsetTime> =
+    JOffsetDateTimeEncoder.contramap { v: OffsetTime ->
+      OffsetDateTime.of(LocalDate.of(1970, 1, 1), v.toLocalTime(), v.offset)
     }
 
-  override val JOffsetTimeDecoder: SqlDecoder<Connection, Row, OffsetTime> =
-    R2dbcDecoderAny(OffsetTime::class) { ctx, i ->
-      ctx.row.get(i, OffsetDateTime::class.java)?.toOffsetTime()
+  override val JOffsetTimeDecoder: R2dbcDecoder<OffsetTime> =
+    JOffsetDateTimeDecoder.map { odt: OffsetDateTime ->
+      odt.toOffsetTime()
     }
 }
 
@@ -272,159 +248,145 @@ object R2dbcTimeEncodingSqlServer: R2dbcTimeEncodingBase() {
 object R2dbcTimeEncodingOracle: R2dbcTimeEncodingBase() {
   // Oracle supports binding via a OffsetDateTime but ironically, it's TIMESTAMP does not have a TimeZone. Therefore
   // when the row.get happens the OffsetDateTime translates as UTC! The simplest way to deal with that is setting it initially to UTC
-  override val JDateEncoder: SqlEncoder<Connection, Statement, Date> =
-    object: R2dbcEncoderAny<Date>(NA, Date::class, { ctx, v, i ->
-      val odt = OffsetDateTime.ofInstant(Instant.ofEpochMilli(v.time), ZoneOffset.UTC)
-      ctx.stmt.bind(i, odt)
-    }) {
-      /** The bindNull implementation for Date must bind as OffsetDateTime to satisfy
-       * driver since the driver only cares about the Java type ultimately set for the column */
-      override val setNull: (Int, Statement, Int) -> Unit =
-        { index, stmt, _ -> stmt.bindNull(index, OffsetDateTime::class.java) }
+  override val JDateEncoder: R2dbcEncoder<Date> =
+    JOffsetDateTimeEncoder.contramap { v: Date ->
+      OffsetDateTime.ofInstant(Instant.ofEpochMilli(v.time), ZoneOffset.UTC)
     }
 
-  override val JDateDecoder: SqlDecoder<Connection, Row, Date> =
-    R2dbcDecoderAny(Date::class) { ctx, i ->
-      ctx.row.get(i, OffsetDateTime::class.java)?.toInstant()?.let { Date.from(it) }
+  override val JDateDecoder: R2dbcDecoder<Date> =
+    JOffsetDateTimeDecoder.map { odt: OffsetDateTime ->
+      Date.from(odt.toInstant())
     }
 
-  // SQL Server does not support Instant binding, so bind as OffsetDateTime in UTC
-  override val InstantEncoder: SqlEncoder<Connection, Statement, kotlinx.datetime.Instant> =
-    R2dbcEncoderAny(NA, kotlinx.datetime.Instant::class) { ctx, v, i ->
-      val odt = OffsetDateTime.ofInstant(v.toJavaInstant(), ZoneOffset.UTC)
-      ctx.stmt.bind(i, odt)
+  // Oracle does not support Instant binding, so bind as OffsetDateTime in UTC
+  override val InstantEncoder: R2dbcEncoder<kotlinx.datetime.Instant> =
+    JOffsetDateTimeEncoder.contramap { v: kotlinx.datetime.Instant ->
+      OffsetDateTime.ofInstant(v.toJavaInstant(), ZoneOffset.UTC)
     }
 
-  override val InstantDecoder: SqlDecoder<Connection, Row, kotlinx.datetime.Instant> =
-    R2dbcDecoderAny(kotlinx.datetime.Instant::class) { ctx, i ->
-      ctx.row.get(i, OffsetDateTime::class.java)?.toInstant()?.toKotlinInstant()
+  override val InstantDecoder: R2dbcDecoder<kotlinx.datetime.Instant> =
+    JOffsetDateTimeDecoder.map { odt: OffsetDateTime ->
+      odt.toInstant().toKotlinInstant()
     }
 
   // Oracle R2DBC does not support ZonedDateTime directly, convert to OffsetDateTime
-  override val JZonedDateTimeEncoder: SqlEncoder<Connection, Statement, ZonedDateTime> =
-    object: R2dbcEncoderAny<ZonedDateTime>(NA, ZonedDateTime::class, { ctx, v, i ->
-      ctx.stmt.bind(i, v.toOffsetDateTime())
-    }) {
-      override val setNull: (Int, Statement, Int) -> Unit =
-        { index, stmt, _ -> stmt.bindNull(index, OffsetDateTime::class.java) }
+  override val JZonedDateTimeEncoder: R2dbcEncoder<ZonedDateTime> =
+    JOffsetDateTimeEncoder.contramap { v: ZonedDateTime ->
+      v.toOffsetDateTime()
     }
 
-  override val JZonedDateTimeDecoder: SqlDecoder<Connection, Row, ZonedDateTime> =
-    R2dbcDecoderAny(ZonedDateTime::class) { ctx, i ->
-      ctx.row.get(i, OffsetDateTime::class.java)?.toZonedDateTime()
+  override val JZonedDateTimeDecoder: R2dbcDecoder<ZonedDateTime> =
+    JOffsetDateTimeDecoder.map { odt: OffsetDateTime ->
+      odt.toZonedDateTime()
     }
 
-  override val JInstantEncoder: SqlEncoder<Connection, Statement, Instant> =
-    R2dbcEncoderAny(NA, Instant::class) { ctx, v, i ->
-      val odt = OffsetDateTime.ofInstant(v, ZoneOffset.UTC)
-      ctx.stmt.bind(i, odt)
+  override val JInstantEncoder: R2dbcEncoder<Instant> =
+    JOffsetDateTimeEncoder.contramap { v: Instant ->
+      OffsetDateTime.ofInstant(v, ZoneOffset.UTC)
     }
 
-  override val JInstantDecoder: SqlDecoder<Connection, Row, Instant> =
-    R2dbcDecoderAny(Instant::class) { ctx, i ->
-      ctx.row.get(i, OffsetDateTime::class.java)?.toInstant()
+  override val JInstantDecoder: R2dbcDecoder<Instant> =
+    JOffsetDateTimeDecoder.map { odt: OffsetDateTime ->
+      odt.toInstant()
     }
 }
 
 abstract class R2dbcTimeEncodingBase: JavaTimeEncoding<Connection, Statement, Row> {
 
   // KMP datetime -> convert to java.time before binding
-  override val LocalDateEncoder: SqlEncoder<Connection, Statement, kotlinx.datetime.LocalDate> =
+  override val LocalDateEncoder: R2dbcEncoder<kotlinx.datetime.LocalDate> =
     R2dbcEncoderAny(NA, kotlinx.datetime.LocalDate::class) { ctx, v, i ->
       ctx.stmt.bind(i, v.toJavaLocalDate())
     }
-  override val LocalDateTimeEncoder: SqlEncoder<Connection, Statement, kotlinx.datetime.LocalDateTime> =
+  override val LocalDateTimeEncoder: R2dbcEncoder<kotlinx.datetime.LocalDateTime> =
     R2dbcEncoderAny(NA, kotlinx.datetime.LocalDateTime::class) { ctx, v, i ->
       ctx.stmt.bind(i, v.toJavaLocalDateTime())
     }
-  override val LocalTimeEncoder: SqlEncoder<Connection, Statement, kotlinx.datetime.LocalTime> =
+  override val LocalTimeEncoder: R2dbcEncoder<kotlinx.datetime.LocalTime> =
     R2dbcEncoderAny(NA, kotlinx.datetime.LocalTime::class) { ctx, v, i ->
       ctx.stmt.bind(i, v.toJavaLocalTime())
     }
-  override val InstantEncoder: SqlEncoder<Connection, Statement, kotlinx.datetime.Instant> =
+  override val InstantEncoder: R2dbcEncoder<kotlinx.datetime.Instant> =
     R2dbcEncoderAny(NA, kotlinx.datetime.Instant::class) { ctx, v, i ->
       ctx.stmt.bind(i, v.toJavaInstant())
     }
 
   // Java time types can be bound directly
-  override val JLocalDateEncoder: SqlEncoder<Connection, Statement, LocalDate> =
+  override val JLocalDateEncoder: R2dbcEncoder<LocalDate> =
     R2dbcEncoderAny(NA, LocalDate::class) { ctx, v, i -> ctx.stmt.bind(i, v) }
-  override val JLocalTimeEncoder: SqlEncoder<Connection, Statement, LocalTime> =
+  override val JLocalTimeEncoder: R2dbcEncoder<LocalTime> =
     R2dbcEncoderAny(NA, LocalTime::class) { ctx, v, i -> ctx.stmt.bind(i, v) }
-  override val JLocalDateTimeEncoder: SqlEncoder<Connection, Statement, LocalDateTime> =
+  override val JLocalDateTimeEncoder: R2dbcEncoder<LocalDateTime> =
     R2dbcEncoderAny(NA, LocalDateTime::class) { ctx, v, i -> ctx.stmt.bind(i, v) }
-  override val JZonedDateTimeEncoder: SqlEncoder<Connection, Statement, ZonedDateTime> =
+  override val JZonedDateTimeEncoder: R2dbcEncoder<ZonedDateTime> =
     R2dbcEncoderAny(NA, ZonedDateTime::class) { ctx, v, i -> ctx.stmt.bind(i, v) }
-  override val JInstantEncoder: SqlEncoder<Connection, Statement, Instant> =
+  override val JInstantEncoder: R2dbcEncoder<Instant> =
     R2dbcEncoderAny(NA, Instant::class) { ctx, v, i -> ctx.stmt.bind(i, v) }
-  override val JOffsetTimeEncoder: SqlEncoder<Connection, Statement, OffsetTime> =
+  override val JOffsetTimeEncoder: R2dbcEncoder<OffsetTime> =
     R2dbcEncoderAny(NA, OffsetTime::class) { ctx, v, i -> ctx.stmt.bind(i, v) }
-  override val JOffsetDateTimeEncoder: SqlEncoder<Connection, Statement, OffsetDateTime> =
+  override val JOffsetDateTimeEncoder: R2dbcEncoder<OffsetDateTime> =
     R2dbcEncoderAny(NA, OffsetDateTime::class) { ctx, v, i -> ctx.stmt.bind(i, v) }
 
   // KMP datetime decoders via java.time
-  override val LocalDateDecoder: SqlDecoder<Connection, Row, kotlinx.datetime.LocalDate> =
+  override val LocalDateDecoder: R2dbcDecoder<kotlinx.datetime.LocalDate> =
     R2dbcDecoderAny(kotlinx.datetime.LocalDate::class) { ctx, i -> ctx.row.get(i, LocalDate::class.java)?.toKotlinLocalDate() }
-  override val LocalDateTimeDecoder: SqlDecoder<Connection, Row, kotlinx.datetime.LocalDateTime> =
+  override val LocalDateTimeDecoder: R2dbcDecoder<kotlinx.datetime.LocalDateTime> =
     R2dbcDecoderAny(kotlinx.datetime.LocalDateTime::class) { ctx, i -> ctx.row.get(i, LocalDateTime::class.java)?.toKotlinLocalDateTime() }
-  override val LocalTimeDecoder: SqlDecoder<Connection, Row, kotlinx.datetime.LocalTime> =
+  override val LocalTimeDecoder: R2dbcDecoder<kotlinx.datetime.LocalTime> =
     R2dbcDecoderAny(kotlinx.datetime.LocalTime::class) { ctx, i -> ctx.row.get(i, LocalTime::class.java)?.toKotlinLocalTime() }
-  override val InstantDecoder: SqlDecoder<Connection, Row, kotlinx.datetime.Instant> =
+  override val InstantDecoder: R2dbcDecoder<kotlinx.datetime.Instant> =
     R2dbcDecoderAny(kotlinx.datetime.Instant::class) { ctx, i -> ctx.row.get(i, OffsetDateTime::class.java)?.toInstant()?.toKotlinInstant() }
 
   // Java time decoders
-  override val JLocalDateDecoder: SqlDecoder<Connection, Row, LocalDate> =
+  override val JLocalDateDecoder: R2dbcDecoder<LocalDate> =
     R2dbcDecoderAny(LocalDate::class) { ctx, i -> ctx.row.get(i, LocalDate::class.java) }
-  override val JLocalTimeDecoder: SqlDecoder<Connection, Row, LocalTime> =
+  override val JLocalTimeDecoder: R2dbcDecoder<LocalTime> =
     R2dbcDecoderAny(LocalTime::class) { ctx, i -> ctx.row.get(i, LocalTime::class.java) }
-  override val JLocalDateTimeDecoder: SqlDecoder<Connection, Row, LocalDateTime> =
+  override val JLocalDateTimeDecoder: R2dbcDecoder<LocalDateTime> =
     R2dbcDecoderAny(LocalDateTime::class) { ctx, i -> ctx.row.get(i, LocalDateTime::class.java) }
-  override val JZonedDateTimeDecoder: SqlDecoder<Connection, Row, ZonedDateTime> =
+  override val JZonedDateTimeDecoder: R2dbcDecoder<ZonedDateTime> =
     R2dbcDecoderAny(ZonedDateTime::class) { ctx, i -> ctx.row.get(i, OffsetDateTime::class.java)?.toZonedDateTime() }
-  override val JInstantDecoder: SqlDecoder<Connection, Row, Instant> =
+  override val JInstantDecoder: R2dbcDecoder<Instant> =
     R2dbcDecoderAny(Instant::class) { ctx, i -> ctx.row.get(i, OffsetDateTime::class.java)?.toInstant() }
-  override val JOffsetTimeDecoder: SqlDecoder<Connection, Row, OffsetTime> =
+  override val JOffsetTimeDecoder: R2dbcDecoder<OffsetTime> =
     R2dbcDecoderAny(OffsetTime::class) { ctx, i -> ctx.row.get(i, OffsetTime::class.java) }
-  override val JOffsetDateTimeDecoder: SqlDecoder<Connection, Row, OffsetDateTime> =
+  override val JOffsetDateTimeDecoder: R2dbcDecoder<OffsetDateTime> =
     R2dbcDecoderAny(OffsetDateTime::class) { ctx, i -> ctx.row.get(i, OffsetDateTime::class.java) }
 
 
   /** java.util.Date -> bind as Instant (supported type)
    * original behavior is to assume the field actually supports timestamp with timezone
    */
-  open override val JDateEncoder: SqlEncoder<Connection, Statement, Date> =
+  open override val JDateEncoder: R2dbcEncoder<Date> =
     R2dbcEncoderAny(NA, Date::class) { ctx, v, i -> ctx.stmt.bind(i, Instant.ofEpochMilli(v.getTime())) }
   /** java.util.Date from Instant
    * original behavior is to assume the field actually supports timestamp with timezone
    */
-  open override val JDateDecoder: SqlDecoder<Connection, Row, Date> =
+  open override val JDateDecoder: R2dbcDecoder<Date> =
     R2dbcDecoderAny(Date::class) { ctx, i -> ctx.row.get(i, Instant::class.java)?.let { Date.from(it) } }
 }
 
 object R2dbcUuidEncodingNative: JavaUuidEncoding<Connection, Statement, Row> {
   private const val NA = 0
 
-  override val JUuidEncoder: SqlEncoder<Connection, Statement, UUID> =
+  override val JUuidEncoder: R2dbcEncoder<UUID> =
     R2dbcEncoderAny(NA, UUID::class) { ctx, v, i -> ctx.stmt.bind(i, v) }
 
-  override val JUuidDecoder: SqlDecoder<Connection, Row, UUID> =
+  override val JUuidDecoder: R2dbcDecoder<UUID> =
     R2dbcDecoderAny(UUID::class) { ctx, i -> ctx.row.get(i, UUID::class.java) }
 }
 
 object R2dbcUuidEncodingString: JavaUuidEncoding<Connection, Statement, Row> {
   private const val NA = 0
 
-  override val JUuidEncoder: SqlEncoder<Connection, Statement, UUID> =
-    object: R2dbcEncoderAny<UUID>(NA, UUID::class, { ctx, v, i -> ctx.stmt.bind(i, v.toString()) }) {
-      /** The bindNull implementation for UUID must bind as String to satisfy
-       * driver since the driver only cares about the Java type ultimately set for the column */
-      override val setNull: (Int, Statement, Int) -> Unit =
-        { index, stmt, _ -> stmt.bindNull(index, String::class.java) }
+  override val JUuidEncoder: R2dbcEncoder<UUID> =
+    R2dbcBasicEncoding.StringEncoder.contramap { v: UUID ->
+      v.toString()
     }
 
-  override val JUuidDecoder: SqlDecoder<Connection, Row, UUID> =
-    R2dbcDecoderAny(UUID::class) { ctx, i ->
-      ctx.row.get(i, String::class.java)?.let { UUID.fromString(it) }
+  override val JUuidDecoder: R2dbcDecoder<UUID> =
+    R2dbcBasicEncoding.StringDecoder.map { s: String ->
+      UUID.fromString(s)
     }
 }
 
@@ -439,7 +401,7 @@ object R2dbcAdditionalEncoding {
 
 object R2dbcEncoders {
   @Suppress("UNCHECKED_CAST")
-  val encoders: Set<SqlEncoder<Connection, Statement, out Any>> = setOf(
+  val encoders: Set<R2dbcEncoder<out Any>> = setOf(
     R2dbcBasicEncoding.BooleanEncoder,
     R2dbcBasicEncoding.ByteEncoder,
     R2dbcBasicEncoding.CharEncoder,

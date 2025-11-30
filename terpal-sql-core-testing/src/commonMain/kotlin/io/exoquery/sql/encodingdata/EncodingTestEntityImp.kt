@@ -58,28 +58,33 @@ fun insert(e: EncodingTestEntityImp): ControllerAction {
 }
 
 fun verify(e1: EncodingTestEntityImp, e2: EncodingTestEntityImp, oracleStrings: Boolean = false) {
-  e1.stringMan.value shouldBeEqualEmptyNullable e2.stringMan.value
-  e1.booleanMan shouldBeEqual e2.booleanMan
-  e1.byteMan shouldBeEqual e2.byteMan
-  e1.shortMan shouldBeEqual e2.shortMan
-  e1.intMan shouldBeEqual e2.intMan
-  e1.long shouldBeEqual e2.long
-  e1.floatMan shouldBeEqual e2.floatMan
-  e1.double shouldBeEqual e2.double
-  e1.byteArrayMan.toList() shouldBeEqual e2.byteArrayMan.toList()
-  e1.customMan shouldBeEqual e2.customMan
+  fun catchRewrapAssert(msg: String, assertFun: () -> Unit) =
+    try { assertFun() } catch (e: AssertionError) {
+      throw AssertionError(msg, e)
+    }
 
-  if (!oracleStrings) e1.stringOpt shouldBeEqualNullable e2.stringOpt
-  else e1.stringOpt?.value shouldBeEqualEmptyNullable(e2.stringOpt?.value)
-  e1.booleanOpt shouldBeEqualNullable e2.booleanOpt
-  e1.byteOpt shouldBeEqualNullable e2.byteOpt
-  e1.shortOpt shouldBeEqualNullable e2.shortOpt
-  e1.intOpt shouldBeEqualNullable e2.intOpt
-  e1.longOpt shouldBeEqualNullable e2.longOpt
-  e1.floatOpt shouldBeEqualNullable(e2.floatOpt)
-  e1.doubleOpt shouldBeEqualNullable(e2.doubleOpt)
-  (e1.byteArrayOpt?.toList() ?: emptyList()) shouldBeEqualNullable (e2.byteArrayOpt?.toList() ?: emptyList())
-  e1.customOpt shouldBeEqualNullable e2.customOpt
+  catchRewrapAssert("Error Comparing: stringMan.value") { e1.stringMan.value shouldBeEqualEmptyNullable e2.stringMan.value }
+  catchRewrapAssert("Error Comparing: booleanMan") { e1.booleanMan shouldBeEqual e2.booleanMan }
+  catchRewrapAssert("Error Comparing: byteMan") { e1.byteMan shouldBeEqual e2.byteMan }
+  catchRewrapAssert("Error Comparing: shortMan") { e1.shortMan shouldBeEqual e2.shortMan }
+  catchRewrapAssert("Error Comparing: intMan") { e1.intMan shouldBeEqual e2.intMan }
+  catchRewrapAssert("Error Comparing: long") { e1.long shouldBeEqual e2.long }
+  catchRewrapAssert("Error Comparing: floatMan") { e1.floatMan shouldBeEqual e2.floatMan }
+  catchRewrapAssert("Error Comparing: double") { e1.double shouldBeEqual e2.double }
+  catchRewrapAssert("Error Comparing: byteArrayMan") { e1.byteArrayMan.toList() shouldBeEqual e2.byteArrayMan.toList() }
+  catchRewrapAssert("Error Comparing: customMan") { e1.customMan shouldBeEqual e2.customMan }
+
+  if (!oracleStrings) catchRewrapAssert("Error Comparing: stringOpt") { e1.stringOpt shouldBeEqualNullable e2.stringOpt }
+  else catchRewrapAssert("Error Comparing: stringOpt.value") { e1.stringOpt?.value shouldBeEqualEmptyNullable(e2.stringOpt?.value) }
+  catchRewrapAssert("Error Comparing: booleanOpt") { e1.booleanOpt shouldBeEqualNullable e2.booleanOpt }
+  catchRewrapAssert("Error Comparing: byteOpt") { e1.byteOpt shouldBeEqualNullable e2.byteOpt }
+  catchRewrapAssert("Error Comparing: shortOpt") { e1.shortOpt shouldBeEqualNullable e2.shortOpt }
+  catchRewrapAssert("Error Comparing: intOpt") { e1.intOpt shouldBeEqualNullable e2.intOpt }
+  catchRewrapAssert("Error Comparing: longOpt") { e1.longOpt shouldBeEqualNullable e2.longOpt }
+  catchRewrapAssert("Error Comparing: floatOpt") { e1.floatOpt shouldBeEqualNullable(e2.floatOpt) }
+  catchRewrapAssert("Error Comparing: doubleOpt") { e1.doubleOpt shouldBeEqualNullable(e2.doubleOpt) }
+  catchRewrapAssert("Error Comparing: byteArrayOpt") { (e1.byteArrayOpt?.toList() ?: emptyList()) shouldBeEqualNullable (e2.byteArrayOpt?.toList() ?: emptyList()) }
+  catchRewrapAssert("Error Comparing: customOpt") { e1.customOpt shouldBeEqualNullable e2.customOpt }
 }
 
 @Serializable
