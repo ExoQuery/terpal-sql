@@ -18,10 +18,12 @@ jobs:
               :controller-jdbc:publishAllPublicationsToOss
               :controller-native:publishAllPublicationsToOss
               :controller-android:publishAllPublicationsToOss
+              :controller-r2dbc:publishAllPublicationsToOss
               :terpal-sql-core:publishAllPublicationsToOss
               :terpal-sql-jdbc:publishAllPublicationsToOss
               :terpal-sql-native:publishAllPublicationsToOss
               :terpal-sql-android:publishAllPublicationsToOss
+              :terpal-sql-r2dbc:publishAllPublicationsToOss
             platform: linux
           - os: macOS-latest
             # (Need to do >- or for some reason it preserves a newline after all the entries)
@@ -46,7 +48,6 @@ jobs:
               :controller-native:publishWatchosX64PublicationToOss
               :controller-native:publishWatchosArm32PublicationToOss
               :controller-native:publishWatchosArm64PublicationToOss
-              :controller-r2dbc:publishAllPublicationsToOss
               :terpal-sql-core:publishMacosX64PublicationToOss
               :terpal-sql-core:publishMacosArm64PublicationToOss
               :terpal-sql-core:publishIosX64PublicationToOss
@@ -67,7 +68,6 @@ jobs:
               :terpal-sql-native:publishWatchosX64PublicationToOss
               :terpal-sql-native:publishWatchosArm32PublicationToOss
               :terpal-sql-native:publishWatchosArm64PublicationToOss
-              :terpal-sql-r2dbc:publishAllPublicationsToOss
             platform: mac
           - os: windows-latest
             publish_command:  >-
