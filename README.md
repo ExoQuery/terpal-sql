@@ -119,7 +119,7 @@ Notes:
 * Date/Time types: kotlin x datetime (LocalDate, LocalTime, LocalDateTime, Instant) and java.time (LocalDate, LocalTime, LocalDateTime, ZonedDateTime, Instant, OffsetTime, OffsetDateTime), plus java.util.Date.
 * java.util.UUID and java.math.BigDecimal are supported.
 * JSON columns are supported via SqlJson, with serialization/deserialization powered by Kotlin's kotlinx-serialization library.
-* Currently R2DBC support is only tested with PostgreSQL.
+* R2DBC support is available for PostgreSQL, MySQL, SQL Server, H2, and Oracle.
 
 Add the dependency to your build file:
 
@@ -522,9 +522,9 @@ data class Image(val id: Int, @Contextual val content: ByteContent)
 // Then we provide an encoder and decoder for it on the driver-level (i.e. JDBC) when creating the context:
 val ctx = object: TerpalDriver.Postgres(postgres.postgresDatabase) {
   override val additionalDecoders =
-    super.additionalDecoders + JdbcDecoderAny.fromFunction { ctx, i -> ByteContent(ctx.row.getBinaryStream(i)) }
+    super.additionalDecoders + JdbcDecoderAny { ctx, i -> ByteContent(ctx.row.getBinaryStream(i)) }
   override val additionalEncoders =
-    super.additionalEncoders + JdbcEncoderAny.fromFunction(Types.BLOB) { ctx, v: ByteContent, i -> ctx.stmt.setBinaryStream(i, v.bytes) }
+    super.additionalEncoders + JdbcEncoderAny(Types.BLOB) { ctx, v: ByteContent, i -> ctx.stmt.setBinaryStream(i, v.bytes) }
 }
 
 // We can then read the content:
@@ -537,6 +537,49 @@ Sql("INSERT INTO images (id, content) VALUES ($id, ${Param.contextual(data)})").
 ```
 
 Have a look at the [Contextual Column Clob](terpal-sql-jdbc/src/test/kotlin/io/exoquery/sql/examples/ContextualColumnCustom.kt) example for more details.
+
+#### Using map and contramap
+
+When working with custom encoders and decoders, you can use the `map` and `contramap` (a.k.a. `transformFrom`, `transformInto`) methods to bootstrap existing encoders/decoders rather than writing them from scratch.
+
+**Decoder `map`**: Transforms the decoded value after reading it from the database. Use this when you want to convert a database type into a custom type.
+
+**Encoder `contramap`**: Transforms the value before encoding it to the database. Use this when you want to convert a custom type into a database-compatible type.
+
+For example, suppose you have a custom `MyDateTime` type and want to store it as a `ZonedDateTime` in the database:
+
+```kotlin
+data class MyDateTime(val year: Int, val day: Int, val month: Int, val timeZone: TimeZone)
+
+@Serializable
+data class Customer(val id: Int, val firstName: String, val lastName: String, @Contextual val createdAt: MyDateTime)
+
+// Use contramap to transform MyDateTime -> ZonedDateTime before encoding
+val myDateTimeEncoder = JZonedDateTimeEncoder.contramap { md: MyDateTime ->
+  ZonedDateTime.of(md.year, md.month, md.day, 0, 0, 0, 0, md.timeZone.toZoneId())
+}
+
+// Use map to transform ZonedDateTime -> MyDateTime after decoding
+val myDateTimeDecoder = JZonedDateTimeDecoder.map { zd ->
+  MyDateTime(zd.year, zd.dayOfMonth, zd.monthValue, TimeZone.getTimeZone(zd.zone))
+}
+
+val ctx = JdbcControllers.Postgres(
+  dataSource,
+  JdbcEncodingConfig.Default(
+    setOf(myDateTimeEncoder),
+    setOf(myDateTimeDecoder)
+  )
+)
+
+// Now you can use MyDateTime directly
+Sql("INSERT INTO customers (first_name, last_name, created_at) VALUES ($firstName, $lastName, ${Param.ctx(myDateTime)})").action().runOn(ctx)
+val customers = Sql("SELECT * FROM customers").queryOf<Customer>().runOn(ctx)
+```
+
+The `map` and `contramap` methods preserve the `originalType` field, which is important for R2DBC drivers that need to know the actual Java class for proper type conversion.
+
+Aliases `transformInto` (for `map`) and `transformFrom` (for `contramap`) are also available for more readable code.
 
 ### Nested Data Classes
 
