@@ -95,7 +95,9 @@ interface HasTransactionalityAndroid: RequiresTransactionality<Connection, Suppo
       session.value.session.endTransaction()
       return result
     } catch (ex: Throwable) {
-      session.value.session.endTransaction()
+      if (session.value.session.inTransaction()) {
+        session.value.session.endTransaction()
+      }
       throw ex
     } finally {
       transaction.complete()
