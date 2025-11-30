@@ -1,0 +1,66 @@
+name: Release
+
+on:
+  workflow_dispatch
+
+jobs:
+  release:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ windows-latest ]
+        include:
+          - os: windows-latest
+            publish_command:  >-
+              :controller-core:publishMingwX64PublicationToOss
+              :controller-native:publishMingwX64PublicationToOss
+              :terpal-sql-core:publishMingwX64PublicationToOss
+              :terpal-sql-native:publishMingwX64PublicationToOss
+            platform: windows
+    env:
+      SONATYPE_USERNAME: ${{ secrets.ORG_GRADLE_PROJECT_SONATYPEUSERNAME }}
+      SONATYPE_PASSWORD: ${{ secrets.ORG_GRADLE_PROJECT_SONATYPEPASSWORD }}
+      NEW_SIGNING_KEY_ID_BASE64: ${{ secrets.NEW_SIGNING_KEY_ID_BASE64 }}
+      NEW_SIGNING_KEY_ID_BASE64_PASS: ${{ secrets.NEW_SIGNING_KEY_ID_BASE64_PASS }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'adopt'
+      - name: Validate Gradle wrapper
+        uses: gradle/actions/wrapper-validation@v3
+
+      - run: echo "*************** PublishCommand ${{ matrix.publish_command }}"
+
+      - name: 'Run Jdbc, Android, and Native-Linux Tests'
+        if: matrix.os == 'ubuntu-latest'
+        run: >-
+          docker compose build && docker compose run --rm --service-ports setup && 
+          ./gradlew build ${{ matrix.publish_command }} -Pplatform=${{ matrix.platform }} -PisCI -no-daemon --stacktrace
+
+      - name: 'Run MacOS Tests'
+        if: matrix.os == 'macOS-latest'
+        run: ./gradlew :terpal-sql-native:build  ${{ matrix.publish_command }} -Pplatform=${{ matrix.platform }} -PisCI -no-daemon --stacktrace
+
+      - name: 'Run windows tests'
+        if: matrix.os == 'windows-latest'
+        run: ./gradlew :terpal-sql-native:mingwX64Test  ${{ matrix.publish_command }} -Pplatform=${{ matrix.platform }} -PisCI -no-daemon --stacktrace
+
+  release_repos:
+    needs: [ release ]
+    runs-on: ubuntu-latest
+    env:
+      SONATYPE_USERNAME: ${{ secrets.ORG_GRADLE_PROJECT_SONATYPEUSERNAME }}
+      SONATYPE_PASSWORD: ${{ secrets.ORG_GRADLE_PROJECT_SONATYPEPASSWORD }}
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'adopt'
+      - name: Validate Gradle wrapper
+        uses: gradle/actions/wrapper-validation@v3
+      - run: ./gradlew publishSonatypeStaging
