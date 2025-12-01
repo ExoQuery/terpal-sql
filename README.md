@@ -398,34 +398,34 @@ try {
 }
 ```
 
-### How transactions work under the hood (coroutines-aware)
-
-Terpal controllers are implemented to be coroutine-first. Instead of relying on thread-local storage or
-manually passing a JDBC Connection (or driver session) around, Terpal attaches the current session and
-transaction state to the CoroutineContext. This makes the correct connection automatically available to
-all suspend functions that run within the same coroutine scope (and its children), even if those
-functions hop threads on Dispatchers.IO.
-
-Key pieces involved (from the controller core):
-- CoroutineSession(session, sessionKey): A CoroutineContext element that stores the current driver session
-  (e.g. a JDBC Connection). When you call ctx.withConnection { ... } or enter a ctx.transaction { ... },
-  Terpal installs a CoroutineSession into the context using withContext(... + Dispatchers.IO).
-- CoroutineTransaction: A CoroutineContext element that marks that a transaction is in progress. The
-  outer transaction installs this marker and is responsible for commit/rollback. Nested transactions
-  detect the marker and reuse the same connection and enclosing transaction, avoiding starting a second
-  physical transaction.
-
-Because these are regular CoroutineContext elements, the session/transaction information is propagated to
-child coroutines created with coroutineScope/withContext/launch within the same parent scope. No thread-local
-is required, and you never need to pass a Connection by hand.
-
-Practical implications:
-- Inside ctx.transaction { ... } you can call .run() directly on queries/actions without passing ctx; the
-  correct connection is discovered from the coroutine context.
-- Suspending and switching threads (e.g. to Dispatchers.IO) does not lose the connection—the context element
-  comes along for the ride.
-- Flows: When you stream results, Terpal uses flowOn with the same CoroutineSession so the same connection is
-  used consistently for the pipeline, and it is properly closed at completion.
+> ### How transactions work under the hood (coroutines-aware)
+> 
+> Terpal controllers are implemented to be coroutine-first. Instead of relying on thread-local storage or
+> manually passing a JDBC Connection (or driver session) around, Terpal attaches the current session and
+> transaction state to the CoroutineContext. This makes the correct connection automatically available to
+> all suspend functions that run within the same coroutine scope (and its children), even if those
+> functions hop threads on Dispatchers.IO.
+> 
+> Key pieces involved (from the controller core):
+> - CoroutineSession(session, sessionKey): A CoroutineContext element that stores the current driver session
+>   (e.g. a JDBC Connection). When you call ctx.withConnection { ... } or enter a ctx.transaction { ... },
+>   Terpal installs a CoroutineSession into the context using withContext(... + Dispatchers.IO).
+> - CoroutineTransaction: A CoroutineContext element that marks that a transaction is in progress. The
+>   outer transaction installs this marker and is responsible for commit/rollback. Nested transactions
+>   detect the marker and reuse the same connection and enclosing transaction, avoiding starting a second
+>   physical transaction.
+> 
+> Because these are regular CoroutineContext elements, the session/transaction information is propagated to
+> child coroutines created with coroutineScope/withContext/launch within the same parent scope. No thread-local
+> is required, and you never need to pass a Connection by hand.
+> 
+> Practical implications:
+> - Inside ctx.transaction { ... } you can call .run() directly on queries/actions without passing ctx; the
+>   correct connection is discovered from the coroutine context.
+> - Suspending and switching threads (e.g. to Dispatchers.IO) does not lose the connection—the context element
+>   comes along for the ride.
+> - Flows: When you stream results, Terpal uses flowOn with the same CoroutineSession so the same connection is
+>   used consistently for the pipeline, and it is properly closed at completion.
 
 ### Nested transactions
 
