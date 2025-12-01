@@ -9,6 +9,8 @@ import io.exoquery.sql.run
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 
 class TransactionSpec: FreeSpec({
@@ -60,6 +62,20 @@ class TransactionSpec: FreeSpec({
         }
       }
       select().runOn(ctx) shouldBe listOf(joe)
+    }
+    "child coroutines share the same transaction connection" {
+      val ann = Person(3, "Ann", "Smith", 333)
+      val bob = Person(4, "Bob", "Jones", 444)
+
+      ctx.transaction {
+        coroutineScope {
+          launch { insert(ann).run() }
+          launch { insert(bob).run() }
+        }
+        // Both launches used the same connection/transaction
+      }
+
+      select().runOn(ctx).toSet() shouldBe setOf(ann, bob)
     }
   }
 })
