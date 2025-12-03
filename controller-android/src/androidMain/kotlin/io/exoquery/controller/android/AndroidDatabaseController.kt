@@ -18,10 +18,10 @@ import kotlin.coroutines.coroutineContext
 import kotlin.experimental.ExperimentalTypeInference
 
 sealed interface WalMode {
-  object Enabled: WalMode
+  data object Enabled: WalMode
   /** A.k.a. The WAL "Compatibility" mode */
-  object Default: WalMode
-  object Disabled: WalMode
+  data object Default: WalMode
+  data object Disabled: WalMode
 }
 
 object UnusedOpts {}

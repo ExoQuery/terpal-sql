@@ -89,14 +89,31 @@ interface HasTransactionalityAndroid: RequiresTransactionality<Connection, Suppo
           session.value.session.beginTransaction()
         }
       }
-      val result = withContext(transaction) { block() }
+      val result =
+        try {
+          withContext(transaction) { block() }
+        } catch (e: IllegalStateException) {
+          throw IllegalStateException("Error executing block in transaction (wal-mode: ${walMode})", e)
+        }
       // setting it successful makes it not rollback
-      session.value.session.setTransactionSuccessful()
-      session.value.session.endTransaction()
+      try {
+        session.value.session.setTransactionSuccessful()
+      } catch (e: IllegalStateException) {
+        throw IllegalStateException("Error marking transaction successful  (wal-mode: ${walMode})", e)
+      }
+      try {
+        session.value.session.endTransaction()
+      } catch (e: IllegalStateException) {
+        throw IllegalStateException("Error ending transaction after success  (wal-mode: ${walMode})", e)
+      }
       return result
     } catch (ex: Throwable) {
       if (session.value.session.inTransaction()) {
-        session.value.session.endTransaction()
+        try {
+          session.value.session.endTransaction()
+        } catch (e: IllegalStateException) {
+          throw IllegalStateException("Error ending transaction after failure  (wal-mode: ${walMode})", e)
+        }
       }
       throw ex
     } finally {
