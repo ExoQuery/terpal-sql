@@ -12,6 +12,13 @@ CREATE TABLE Address (
     zip INT
 );
 
+CREATE TABLE Robot
+(
+    ownerId INT,
+    model   VARCHAR(255),
+    age     INT
+);
+
 CREATE TABLE Product(
     description VARCHAR(255),
     id BIGINT NOT NULL AUTO_INCREMENT,

@@ -11,6 +11,13 @@ CREATE TABLE Address (
     zip INT
 );
 
+CREATE TABLE Robot
+(
+    ownerId INT,
+    model   VARCHAR(255),
+    age     INT
+);
+
 CREATE TABLE Product(
     id INTEGER IDENTITY(1,1) PRIMARY KEY,
     description VARCHAR(255),
