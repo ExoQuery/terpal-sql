@@ -230,6 +230,7 @@ class AndroidDatabaseController internal constructor(
 
   protected fun wrap(stmt: SupportSQLiteStatement) = AndroidxStatementWrapper(stmt)
 
+  @OptIn(TerpalSqlInternal::class)
   suspend fun runActionScoped(sql: String, options: UnusedOpts, params: List<StatementParam<*>>): Long =
     withConnection(options) {
       val conn = localConnection()
@@ -375,10 +376,6 @@ class AndroidDatabaseController internal constructor(
 
   override suspend fun <T> stream(query: ControllerBatchActionReturning<T>, options: UnusedOpts): Flow<T> =
     throw IllegalArgumentException("Batch Queries are not supported in NativeContext.")
-
-  fun runRaw(sql: String, options: UnusedOpts = UnusedOpts) = runBlocking {
-    sql.split(";").forEach { if (it.trim().isNotEmpty()) runActionScoped(it, options, emptyList()) }
-  }
 
   override fun close() =
     this.pool.finalize()

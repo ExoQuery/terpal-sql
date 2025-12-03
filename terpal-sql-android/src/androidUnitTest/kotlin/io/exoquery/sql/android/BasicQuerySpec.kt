@@ -1,5 +1,7 @@
 package io.exoquery.sql.android
 
+import io.exoquery.controller.TerpalSqlUnsafe
+import io.exoquery.controller.runActionsUnsafe
 import io.exoquery.controller.runOn
 import io.exoquery.sql.Sql
 import io.exoquery.sql.encodingdata.shouldBe
@@ -16,8 +18,9 @@ class BasicQuerySpec {
   val ctx get() = TestDatabase.ctx
 
   @BeforeTest
-  fun clearTables() {
-    ctx.runRaw(
+  @OptIn(TerpalSqlUnsafe::class)
+  fun clearTables() = runBlocking {
+    ctx.runActionsUnsafe(
       """
       DELETE FROM Person;
       DELETE FROM Address;

@@ -1,8 +1,9 @@
 package io.exoquery.r2dbc.sqlserver
 
+import io.exoquery.controller.TerpalSqlUnsafe
 import io.exoquery.controller.r2dbc.R2dbcController
 import io.exoquery.controller.r2dbc.R2dbcControllers
-import io.exoquery.controller.runActions
+import io.exoquery.controller.runActionsUnsafe
 import io.exoquery.controller.runOn
 import io.exoquery.r2dbc.TestDatabasesR2dbc
 import io.exoquery.sql.Params
@@ -16,7 +17,8 @@ class InQuerySpec : FreeSpec({
   val cf = TestDatabasesR2dbc.sqlServer
   val ctx: R2dbcController by lazy { R2dbcControllers.SqlServer(connectionFactory = cf) }
 
-  suspend fun runActions(actions: String) = ctx.runActions(actions)
+  @OptIn(TerpalSqlUnsafe::class)
+  suspend fun runActions(actions: String) = ctx.runActionsUnsafe(actions)
 
   @Serializable
   data class Person(val id: Int, val firstName: String, val lastName: String, val age: Int)

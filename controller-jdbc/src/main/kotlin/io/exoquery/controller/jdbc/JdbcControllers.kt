@@ -219,7 +219,6 @@ object JdbcControllers {
         val conn = localConnection()
         when (act) {
           is ControllerActionReturning.Id -> {
-            // TODO error looks like it should be impossible!
             accessStmtReturning(act.sql, conn, options, act.returningColumns) { stmt ->
               prepare(stmt, conn, act.params)
               // This is another oddity in SQL Server where the statement needs to be executed before .getGeneratedKeys() can be called.

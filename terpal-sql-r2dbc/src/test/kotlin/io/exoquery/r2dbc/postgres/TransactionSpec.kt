@@ -1,8 +1,9 @@
 package io.exoquery.sql.postgres
 
+import io.exoquery.controller.TerpalSqlUnsafe
 import io.exoquery.controller.r2dbc.R2dbcController
 import io.exoquery.controller.r2dbc.R2dbcControllers
-import io.exoquery.controller.runActions
+import io.exoquery.controller.runActionsUnsafe
 import io.exoquery.controller.runOn
 import io.exoquery.controller.transaction
 import io.exoquery.r2dbc.TestDatabasesR2dbc
@@ -12,11 +13,12 @@ import io.kotest.core.spec.style.FreeSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.serialization.Serializable
 
+@OptIn(TerpalSqlUnsafe::class)
 class TransactionSpec: FreeSpec({
   val cf = TestDatabasesR2dbc.postgres
   val ctx: R2dbcController by lazy { R2dbcControllers.Postgres(connectionFactory = cf) }
   beforeEach {
-    ctx.runActions(
+    ctx.runActionsUnsafe(
       """
       DELETE FROM Person;
       DELETE FROM Address;

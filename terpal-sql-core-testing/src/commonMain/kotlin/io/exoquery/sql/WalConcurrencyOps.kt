@@ -1,7 +1,8 @@
 package io.exoquery.sql
 
 import io.exoquery.controller.ControllerTransactional
-import io.exoquery.controller.runActions
+import io.exoquery.controller.TerpalSqlUnsafe
+import io.exoquery.controller.runActionsUnsafe
 import io.exoquery.controller.runOn
 import io.exoquery.controller.transaction
 import kotlinx.atomicfu.atomic
@@ -13,8 +14,9 @@ import kotlin.test.assertEquals
 
 class WalConcurrencyOps<Session, Stmt, ExecutionOpts>(val ctx: ControllerTransactional<Session, Stmt, ExecutionOpts>) {
 
+  @OptIn(TerpalSqlUnsafe::class)
   fun clearTables(): Unit = runBlocking {
-    ctx.runActions(
+    ctx.runActionsUnsafe(
       """
       DELETE FROM MiscTest
       """
