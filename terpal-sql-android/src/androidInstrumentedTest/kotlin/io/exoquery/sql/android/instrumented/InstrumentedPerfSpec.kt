@@ -6,6 +6,8 @@ import app.cash.sqldelight.driver.android.AndroidSqliteDriver
 import io.exoquery.sql.PerfSchema
 import io.exoquery.sql.WallPerformanceTest
 import io.exoquery.controller.android.AndroidDatabaseController
+import io.exoquery.controller.TerpalSqlUnsafe
+import io.exoquery.controller.runActionsUnsafe
 import kotlinx.coroutines.runBlocking
 import org.junit.runner.RunWith
 import org.junit.Test
@@ -20,6 +22,7 @@ class InstrumentedPerfTest: InstrumentedSpec {
   data class TestConfig(val maxReaders: Int?, val poolingMode: AndroidDatabaseController.PoolingMode)
 
   @Test
+  @OptIn(TerpalSqlUnsafe::class)
   fun runTest() {
     val name = "perf_test.db"
     val basePath = "./"
@@ -37,9 +40,9 @@ class InstrumentedPerfTest: InstrumentedSpec {
         val driver = AndroidDatabaseController.fromApplicationContext(name, appContext, AndroidSqliteDriver.Callback(schema), poolingMode = poolingMode)
 
         println("------- Clearing Pref Table -------")
-        driver.runRaw(schema.clearQuery)
+        driver.runActionsUnsafe(schema.clearQuery)
         println("------- Reloading Pef Table Values -------")
-        driver.runRaw(schema.loadQuery)
+        driver.runActionsUnsafe(schema.loadQuery)
         messages.add(
           "[====== WAL Performance Test: ${conf} ======]" +
             WallPerformanceTest(driver, maxRow, 100, 1000, rand = random, maxReaders = conf.maxReaders).walPerfTest()

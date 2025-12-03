@@ -1,9 +1,10 @@
 package io.exoquery.r2dbc.sqlserver
 
+import io.exoquery.controller.TerpalSqlUnsafe
 import io.exoquery.sql.encodingdata.*
 import io.exoquery.sql.Sql
 import io.exoquery.controller.runOn
-import io.exoquery.controller.runActions
+import io.exoquery.controller.runActionsUnsafe
 import io.kotest.core.spec.style.FreeSpec
 import java.time.ZoneId
 import io.exoquery.controller.r2dbc.R2dbcController
@@ -11,7 +12,6 @@ import io.exoquery.controller.r2dbc.R2dbcControllers
 import io.exoquery.r2dbc.TestDatabasesR2dbc
 import io.exoquery.r2dbc.encodingdata.JavaTestEntity
 import io.exoquery.r2dbc.encodingdata.SimpleTimeEntity
-import io.exoquery.r2dbc.encodingdata.encodingConfig
 import io.exoquery.r2dbc.encodingdata.insert
 import io.exoquery.r2dbc.encodingdata.verify
 
@@ -20,7 +20,8 @@ class EncodingSpec: FreeSpec({
   val cf = TestDatabasesR2dbc.sqlServer
   val ctx: R2dbcController by lazy { R2dbcControllers.SqlServer(connectionFactory = cf) }
 
-  suspend fun runActions(actions: String) = ctx.runActions(actions)
+  @OptIn(TerpalSqlUnsafe::class)
+  suspend fun runActions(actions: String) = ctx.runActionsUnsafe(actions)
 
   beforeEach {
     // The main table used across many tests

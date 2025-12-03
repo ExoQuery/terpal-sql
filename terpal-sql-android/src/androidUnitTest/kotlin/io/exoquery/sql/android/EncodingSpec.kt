@@ -1,6 +1,7 @@
 package io.exoquery.sql.android
 
-import io.exoquery.controller.runActions
+import io.exoquery.controller.TerpalSqlUnsafe
+import io.exoquery.controller.runActionsUnsafe
 import io.exoquery.controller.runOn
 import io.exoquery.sql.Sql
 import io.exoquery.sql.android.encodingdata.JavaTestEntity
@@ -10,7 +11,6 @@ import io.exoquery.sql.android.encodingdata.insertTimeEntity
 import io.exoquery.sql.encodingdata.insert
 import io.exoquery.sql.encodingdata.EncodingTestEntity
 import io.exoquery.sql.encodingdata.KmpTestEntity
-import io.exoquery.sql.encodingdata.insertBatch
 import io.exoquery.sql.encodingdata.verify
 import kotlinx.coroutines.runBlocking
 import java.time.ZoneId
@@ -26,8 +26,9 @@ class EncodingSpec {
   val ctx = TestDatabase.ctx
 
   @BeforeTest
+  @OptIn(TerpalSqlUnsafe::class)
   fun setup(): Unit = runBlocking {
-    ctx.runActions("DELETE FROM EncodingTestEntity")
+    ctx.runActionsUnsafe("DELETE FROM EncodingTestEntity")
   }
 
   @Test

@@ -23,6 +23,11 @@ tasks.named { it == "mingwX64Test" }.configureEach { enabled = HostManager.hostI
 tasks.named { it == "linkDebugTestMingwX64" }.configureEach { enabled = HostManager.hostIsMingw }
 
 kotlin {
+  compilerOptions {
+    optIn.addAll(
+      "io.exoquery.controller.TerpalSqlInternal"
+    )
+  }
 
   val thisVersion = version
 

@@ -1,6 +1,7 @@
 package io.exoquery.r2dbc.mysql
 
-import io.exoquery.controller.runActions
+import io.exoquery.controller.TerpalSqlUnsafe
+import io.exoquery.controller.runActionsUnsafe
 import io.exoquery.controller.runOn
 import io.exoquery.controller.r2dbc.R2dbcController
 import io.exoquery.controller.r2dbc.R2dbcControllers
@@ -18,7 +19,8 @@ class InjectionSpec: FreeSpec({
   val cf = TestDatabasesR2dbc.mysql
   val ctx: R2dbcController by lazy { R2dbcControllers.Mysql(connectionFactory = cf) }
 
-  suspend fun runActions(actions: String) = ctx.runActions(actions)
+  @OptIn(TerpalSqlUnsafe::class)
+  suspend fun runActions(actions: String) = ctx.runActionsUnsafe(actions)
 
   beforeEach {
     runActions(

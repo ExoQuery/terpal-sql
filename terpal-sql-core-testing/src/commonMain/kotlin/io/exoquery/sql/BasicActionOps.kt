@@ -1,7 +1,8 @@
 package io.exoquery.sql
 
 import io.exoquery.controller.ControllerTransactional
-import io.exoquery.controller.runActions
+import io.exoquery.controller.TerpalSqlUnsafe
+import io.exoquery.controller.runActionsUnsafe
 import io.exoquery.controller.runOn
 import io.exoquery.sql.encodingdata.shouldBe
 import kotlinx.coroutines.runBlocking
@@ -10,8 +11,9 @@ import kotlinx.serialization.Serializable
 class BasicActionOps<Session, Stmt, ExecutionOpts>(
   val ctx: ControllerTransactional<Session, Stmt, ExecutionOpts>
 ) {
+  @OptIn(TerpalSqlUnsafe::class)
   fun clearTables(): Unit = runBlocking {
-    ctx.runActions(
+    ctx.runActionsUnsafe(
       """
       DELETE FROM Person;
       DELETE FROM Address;

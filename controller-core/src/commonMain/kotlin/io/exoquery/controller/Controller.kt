@@ -14,6 +14,7 @@ import org.intellij.lang.annotations.Language
 import kotlin.coroutines.AbstractCoroutineContextElement
 import kotlin.experimental.ExperimentalTypeInference
 
+@TerpalSqlInternal
 class CoroutineSession<Session>(val session: Session, val sessionKey: CoroutineContext.Key<CoroutineSession<Session>>) : AbstractCoroutineContextElement(sessionKey) {
   override fun toString() = "CoroutineSession($sessionKey)"
 }
@@ -22,7 +23,7 @@ class TerpalException(msg: String, cause: Throwable?): Exception(msg, cause) {
   constructor(msg: String): this(msg, null)
 }
 
-@OptIn(TerpalSqlInternal::class)
+@TerpalSqlInternal
 interface EncodingConfig<Session, Stmt, ResultRow> {
   val additionalEncoders: Set<SqlEncoder<Session, Stmt, out Any>>
   val additionalDecoders: Set<SqlDecoder<Session, ResultRow, out Any>>
@@ -33,7 +34,7 @@ interface EncodingConfig<Session, Stmt, ResultRow> {
   val debugMode: Boolean
 }
 
-@OptIn(TerpalSqlInternal::class)
+@TerpalSqlInternal
 interface WithEncoding<Session, Stmt, ResultRow> {
   val encodingConfig: EncodingConfig<Session, Stmt, ResultRow>
   val startingStatementIndex: StartingIndex get() = StartingIndex.Zero // default for JDBC is 1 so this needs to be overrideable
@@ -85,22 +86,34 @@ interface WithEncoding<Session, Stmt, ResultRow> {
     }
 }
 
-@OptIn(TerpalSqlInternal::class)
+@TerpalSqlInternal
 interface RequiresSession<Session, Stmt, ExecutionOpts> {
 
   // Methods that implementors need to provide
   val sessionKey: CoroutineContext.Key<CoroutineSession<Session>>
+
+  @TerpalSqlInternal
   abstract suspend fun newSession(executionOptions: ExecutionOpts): Session
+
+  @TerpalSqlInternal
   abstract suspend fun closeSession(session: Session): Unit
+
+  @TerpalSqlInternal
   abstract suspend fun isClosedSession(session: Session): Boolean
+
+  @TerpalSqlInternal
   suspend fun <R> accessStmt(sql: String, conn: Session, block: suspend (Stmt) -> R): R
+
+  @TerpalSqlInternal
   suspend fun <R> accessStmtReturning(sql: String, conn: Session, options: ExecutionOpts, returningColumns: List<String>, block: suspend (Stmt) -> R): R
 
+  @TerpalSqlInternal
   suspend fun CoroutineContext.hasOpenConnection(): Boolean {
     val session = get(sessionKey)?.session
     return session != null && !isClosedSession(session)
   }
 
+  @TerpalSqlInternal
   suspend fun <T> withConnection(executionOptions: ExecutionOpts, block: suspend CoroutineScope.() -> T): T {
     return if (coroutineContext.hasOpenConnection()) {
       withContext(coroutineContext + Dispatchers.IO) { block() }
@@ -115,7 +128,7 @@ interface RequiresSession<Session, Stmt, ExecutionOpts> {
     }
   }
 
-
+  @TerpalSqlInternal
   suspend fun localConnection() =
     coroutineContext.get(sessionKey)?.session ?: error("No connection detected in withConnection scope. This should be impossible.")
 
@@ -140,9 +153,11 @@ interface RequiresSession<Session, Stmt, ExecutionOpts> {
   }
 }
 
+@TerpalSqlInternal
 interface RequiresTransactionality<Session, Stmt, ExecutionOpts>: RequiresSession<Session, Stmt, ExecutionOpts> {
   abstract suspend fun <T> runTransactionally(block: suspend CoroutineScope.() -> T): T
 
+  @TerpalSqlInternal
   suspend fun <T> withTransactionScope(executionOptions: ExecutionOpts, block: suspend CoroutineScope.() -> T): T {
     val existingTransaction = coroutineContext[CoroutineTransaction]
 
@@ -159,31 +174,29 @@ interface RequiresTransactionality<Session, Stmt, ExecutionOpts>: RequiresSessio
   }
 }
 
-@OptIn(TerpalSqlInternal::class)
 interface ControllerVerbs<ExecutionOpts> {
   fun DefaultOpts(): ExecutionOpts
 
-  suspend fun <T> stream(query: ControllerQuery<T>, options: ExecutionOpts): Flow<T>
-  suspend fun <T> stream(query: ControllerBatchActionReturning<T>, options: ExecutionOpts): Flow<T>
-  suspend fun <T> stream(query: ControllerActionReturning<T>, options: ExecutionOpts): Flow<T>
-  suspend fun <T> run(query: ControllerQuery<T>, options: ExecutionOpts): List<T>
-  suspend fun run(query: ControllerAction, options: ExecutionOpts): Long
-  suspend fun run(query: ControllerBatchAction, options: ExecutionOpts): List<Long>
-  suspend fun <T> run(query: ControllerActionReturning<T>, options: ExecutionOpts): T
-  suspend fun <T> run(query: ControllerBatchActionReturning<T>, options: ExecutionOpts): List<T>
+  @TerpalSqlInternal suspend fun <T> stream(query: ControllerQuery<T>, options: ExecutionOpts): Flow<T>
+  @TerpalSqlInternal suspend fun <T> stream(query: ControllerBatchActionReturning<T>, options: ExecutionOpts): Flow<T>
+  @TerpalSqlInternal suspend fun <T> stream(query: ControllerActionReturning<T>, options: ExecutionOpts): Flow<T>
+  @TerpalSqlInternal suspend fun <T> run(query: ControllerQuery<T>, options: ExecutionOpts): List<T>
+  @TerpalSqlInternal suspend fun run(query: ControllerAction, options: ExecutionOpts): Long
+  @TerpalSqlInternal suspend fun run(query: ControllerBatchAction, options: ExecutionOpts): List<Long>
+  @TerpalSqlInternal suspend fun <T> run(query: ControllerActionReturning<T>, options: ExecutionOpts): T
+  @TerpalSqlInternal suspend fun <T> run(query: ControllerBatchActionReturning<T>, options: ExecutionOpts): List<T>
 
-  suspend fun <T> runRaw(query: ControllerQuery<T>, options: ExecutionOpts): List<List<Pair<String, String?>>>
+  @TerpalSqlInternal suspend fun <T> stream(query: ControllerQuery<T>): Flow<T> = stream(query, DefaultOpts())
+  @TerpalSqlInternal suspend fun <T> stream(query: ControllerBatchActionReturning<T>): Flow<T> = stream(query, DefaultOpts())
+  @TerpalSqlInternal suspend fun <T> stream(query: ControllerActionReturning<T>): Flow<T> = stream(query, DefaultOpts())
+  @TerpalSqlInternal suspend fun <T> run(query: ControllerQuery<T>): List<T> = run(query, DefaultOpts())
+  @TerpalSqlInternal suspend fun run(query: ControllerAction): Long = run(query, DefaultOpts())
+  @TerpalSqlInternal suspend fun run(query: ControllerBatchAction): List<Long> = run(query, DefaultOpts())
+  @TerpalSqlInternal suspend fun <T> run(query: ControllerActionReturning<T>): T = run(query, DefaultOpts())
+  @TerpalSqlInternal suspend fun <T> run(query: ControllerBatchActionReturning<T>): List<T> = run(query, DefaultOpts())
 
-  suspend fun <T> stream(query: ControllerQuery<T>): Flow<T> = stream(query, DefaultOpts())
-  suspend fun <T> stream(query: ControllerBatchActionReturning<T>): Flow<T> = stream(query, DefaultOpts())
-  suspend fun <T> stream(query: ControllerActionReturning<T>): Flow<T> = stream(query, DefaultOpts())
-  suspend fun <T> run(query: ControllerQuery<T>): List<T> = run(query, DefaultOpts())
-  suspend fun run(query: ControllerAction): Long = run(query, DefaultOpts())
-  suspend fun run(query: ControllerBatchAction): List<Long> = run(query, DefaultOpts())
-  suspend fun <T> run(query: ControllerActionReturning<T>): T = run(query, DefaultOpts())
-  suspend fun <T> run(query: ControllerBatchActionReturning<T>): List<T> = run(query, DefaultOpts())
-
-  suspend fun <T> runRaw(query: ControllerQuery<T>): List<List<Pair<String, String?>>> = runRaw(query, DefaultOpts())
+  @TerpalSqlInternal suspend fun <T> runRaw(query: ControllerQuery<T>, options: ExecutionOpts): List<List<Pair<String, String?>>>
+  @TerpalSqlInternal suspend fun <T> runRaw(query: ControllerQuery<T>): List<List<Pair<String, String?>>> = runRaw(query, DefaultOpts())
 }
 
 /**
@@ -191,16 +204,16 @@ interface ControllerVerbs<ExecutionOpts> {
  * This is a minimal set of semantics needed to support Sql-interpolated query executions. This makes minimal assumptions
  * about how the context functionality is composed. Typically implementations will want to start with ContextBase or ContextCannonical.
  */
-@OptIn(TerpalSqlInternal::class)
 interface Controller<ExecutionOpts>: ControllerVerbs<ExecutionOpts> {
 
 }
 
-@OptIn(TerpalSqlInternal::class)
-suspend fun Controller<*>.runActions(@Language("SQL") actions: String): List<Long> =
+@TerpalSqlUnsafe
+suspend fun Controller<*>.runActionsUnsafe(@Language("SQL") actions: String): Unit {
   actions.split(";").map { it.trim() }.filter { it.isNotEmpty() }.map { run(ControllerAction(it, listOf()), DefaultOpts()) }
+}
 
-@OptIn(TerpalSqlInternal::class)
+
 interface ControllerTransactional<Session, Stmt, ExecutionOpts>: Controller<ExecutionOpts>, RequiresSession<Session, Stmt, ExecutionOpts>, RequiresTransactionality<Session, Stmt, ExecutionOpts> {
   fun showStats(): String = ""
 }
@@ -210,7 +223,7 @@ interface ControllerTransactional<Session, Stmt, ExecutionOpts>: Controller<Exec
  * and encoders. The assumption here is that the same Session/Row/Result types used in the encoders are used in the session-handling.
  * If this is not the case use ContextBase.
  */
-@OptIn(TerpalSqlInternal::class)
+@TerpalSqlInternal
 interface ControllerCanonical<Session, Stmt, ResultRow, ExecutionOpts>: ControllerTransactional<Session, Stmt, ExecutionOpts>, RequiresSession<Session, Stmt, ExecutionOpts>, RequiresTransactionality<Session, Stmt, ExecutionOpts>, WithEncoding<Session, Stmt, ResultRow>
 
 suspend fun <T> ControllerQuery<T>.runOn(ctx: Controller<*>) = ctx.run(this)
@@ -218,6 +231,7 @@ suspend fun <T> ControllerQuery<T>.streamOn(ctx: Controller<*>) = ctx.stream(thi
 suspend fun <T> ControllerQuery<T>.runRawOn(ctx: Controller<*>) = ctx.runRaw(this)
 suspend fun ControllerAction.runOn(ctx: Controller<*>) = ctx.run(this)
 suspend fun <T> ControllerActionReturning<T>.runOn(ctx: Controller<*>) = ctx.run(this)
+suspend fun <T> ControllerActionReturning<T>.streamOn(ctx: Controller<*>) = ctx.stream(this)
 suspend fun ControllerBatchAction.runOn(ctx: Controller<*>) = ctx.run(this)
 suspend fun <T> ControllerBatchActionReturning<T>.runOn(ctx: Controller<*>) = ctx.run(this)
 suspend fun <T> ControllerBatchActionReturning<T>.streamOn(ctx: Controller<*>) = ctx.stream(this)

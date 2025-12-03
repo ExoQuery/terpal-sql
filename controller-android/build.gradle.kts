@@ -35,6 +35,12 @@ android {
 }
 
 kotlin {
+  compilerOptions {
+    optIn.addAll(
+      "io.exoquery.controller.TerpalSqlInternal"
+    )
+  }
+
   if (HostManager.hostIsLinux || !project.hasProperty("isCI")) {
 
     androidTarget {

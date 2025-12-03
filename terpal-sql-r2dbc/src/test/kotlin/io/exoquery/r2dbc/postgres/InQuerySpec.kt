@@ -1,6 +1,7 @@
 package io.exoquery.r2dbc.postgres
 
-import io.exoquery.controller.runActions
+import io.exoquery.controller.TerpalSqlUnsafe
+import io.exoquery.controller.runActionsUnsafe
 import io.exoquery.controller.runOn
 import io.exoquery.controller.r2dbc.R2dbcController
 import io.exoquery.controller.r2dbc.R2dbcControllers
@@ -17,7 +18,8 @@ class InQuerySpec : FreeSpec({
   val cf = TestDatabasesR2dbc.postgres
   val ctx: R2dbcController by lazy { R2dbcControllers.Postgres(connectionFactory = cf) }
 
-  suspend fun runActions(actions: String) = ctx.runActions(actions)
+  @OptIn(TerpalSqlUnsafe::class)
+  suspend fun runActions(actions: String) = ctx.runActionsUnsafe(actions)
 
   beforeSpec {
     runActions(

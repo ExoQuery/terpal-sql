@@ -13,6 +13,12 @@ repositories {
 }
 
 kotlin {
+  compilerOptions {
+    optIn.addAll(
+      "io.exoquery.controller.TerpalSqlInternal"
+    )
+  }
+
   jvmToolchain(17)
   jvm {
   }
