@@ -575,6 +575,48 @@ val customers: List<Customer> = Sql("SELECT * FROM customers").queryOf<Customer>
 
 There are several other ways to do this, have a look at the [Custom Serializers](https://github.com/Kotlin/kotlinx.serialization/blob/master/docs/serializers.md#custom-serializers) section kotlinx-serialization documentation for more information.
 
+### Contextual Serialization for BigDecimal and UUID
+
+When querying for types like `BigDecimal` or `UUID` directly (without wrapping them in a data class), you cannot use them as the direct result type in `queryOf<T>()`. This is because kotlinx-serialization requires all types to either be annotated with `@Serializable` or be marked as `@Contextual`, and these Java types cannot be annotated.
+
+For example, this will **fail**:
+```kotlin
+// This will throw: Serializer for class 'java.math.BigDecimal' is not found
+val total: BigDecimal = Sql("SELECT total FROM orders WHERE id = $id").queryOf<BigDecimal>().runOn(ctx)
+```
+
+The error you'll see:
+```
+kotlinx.serialization.SerializationException: Serializer for class 'java.math.BigDecimal' is not found.
+Please ensure that class is marked as '@Serializable' and that the serialization compiler plugin is applied.
+```
+
+**Why this happens:** Kotlin's serialization system uses compile-time code generation to create serializers for types marked `@Serializable`. For types that can't be annotated (like Java standard library classes), kotlinx-serialization provides a contextual serialization mechanism. However, this mechanism requires the type to be wrapped in a context that declares it as `@Contextual`.
+
+**Solution:** Wrap the return type in a data class and use a `@Contextual` annotation:
+
+```kotlin
+@Serializable
+data class BigDecimalWrapper(@Contextual val value: BigDecimal)
+
+// Now this works:
+val result: List<BigDecimalWrapper> =
+  Sql("SELECT total FROM orders WHERE id = $id").queryOf<BigDecimalWrapper>().runOn(ctx)
+val total: BigDecimal = result.first().value
+```
+
+The same applies for `UUID`:
+```kotlin
+@Serializable
+data class UuidWrapper(@Contextual val value: UUID)
+
+val result: List<UuidWrapper> =
+  Sql("SELECT user_id FROM sessions WHERE token = $token").queryOf<UuidWrapper>().runOn(ctx)
+val userId: UUID = result.first().value
+```
+
+Note that you can use `BigDecimal` and `UUID` directly as parameters in SQL queries without any wrapper since Terpal automatically handles encoding them (they're in the automatically-wrapped types list). The `@Contextual` wrapper is only needed when they appear as decoded result types.
+
 ### Custom Primitives
 
 In some situations, with a custom datatype you may need to control how it is encoded in the database driver.

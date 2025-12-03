@@ -6,6 +6,10 @@ import io.exoquery.sql.Sql
 import io.exoquery.controller.jdbc.JdbcControllers
 import io.exoquery.controller.runOn
 import io.kotest.core.spec.style.FreeSpec
+import io.kotest.matchers.bigdecimal.shouldBeEqualIgnoringScale
+import kotlinx.serialization.Contextual
+import kotlinx.serialization.Serializable
+import java.math.BigDecimal
 import java.time.ZoneId
 
 class EncodingSpec: FreeSpec({
@@ -64,6 +68,15 @@ class EncodingSpec: FreeSpec({
     insert(JavaTestEntity.regular).runOn(ctx)
     val actual = Sql("SELECT * FROM JavaTestEntity").queryOf<JavaTestEntity>().runOn(ctx).first()
     verify(actual, JavaTestEntity.regular)
+  }
+
+  "Single-Value Contextual Type" {
+    @Serializable
+    data class Wrapper(@Contextual val value: BigDecimal)
+    Sql("DELETE FROM JavaTestEntity").action().runOn(ctx)
+    insert(JavaTestEntity.regular).runOn(ctx)
+    val actual = Sql("SELECT bigDecimalMan FROM JavaTestEntity").queryOf<Wrapper>().runOn(ctx).first()
+    actual.value shouldBeEqualIgnoringScale JavaTestEntity.regular.bigDecimalMan
   }
 
   "Encode/Decode Additional Java Types - empty" {
