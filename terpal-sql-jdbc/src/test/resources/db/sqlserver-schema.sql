@@ -84,5 +84,5 @@ CREATE TABLE JavaTestEntity(
 
 CREATE TABLE JsonExample(
     id INT PRIMARY KEY,
-    value VARCHAR
+    value VARCHAR(255)
 );

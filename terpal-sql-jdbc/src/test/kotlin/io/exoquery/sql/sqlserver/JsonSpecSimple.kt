@@ -1,4 +1,4 @@
-package io.exoquery.sql.mysql
+package io.exoquery.sql.sqlserver
 
 import io.exoquery.controller.JsonValue
 import io.exoquery.controller.SqlJsonValue
@@ -11,9 +11,9 @@ import io.kotest.matchers.shouldBe
 import kotlinx.serialization.Serializable
 
 class JsonSpec: FreeSpec({
-  val ds = TestDatabases.mysql
+  val ds = TestDatabases.sqlServer
   val ctx by lazy {
-    JdbcControllers.Mysql(ds)
+    JdbcControllers.SqlServer(ds)
   }
 
   beforeEach {
@@ -32,8 +32,8 @@ class JsonSpec: FreeSpec({
       val je = Example(1, MyPerson("Alice", 30))
 
       "should encode in json (with explicit serializer) and decode" {
-        Sql("INSERT INTO JsonExample (id, value) VALUES (1, ${Param.withSer(je.value, MyPerson.serializer())})").action().runOn(ctx)
-        Sql("SELECT id, value FROM JsonExample").queryOf<Example>().runOn(ctx) shouldBe listOf(je)
+        Sql("INSERT INTO JsonExample (id, \"value\") VALUES (1, ${Param.withSer(je.value, MyPerson.serializer())})").action().runOn(ctx)
+        Sql("SELECT id, \"value\" FROM JsonExample").queryOf<Example>().runOn(ctx) shouldBe listOf(je)
       }
     }
 
@@ -45,8 +45,8 @@ class JsonSpec: FreeSpec({
       data class Example(val id: Int, @SqlJsonValue val value: MyPerson)
 
       val je = Example(1, MyPerson("Joe", 123))
-      Sql("""INSERT INTO JsonExample (id, value) VALUES (1, '{"name":"Joe", "age":123}')""").action().runOn(ctx)
-      val customers = Sql("SELECT id, value FROM JsonExample").queryOf<Example>().runOn(ctx)
+      Sql("""INSERT INTO JsonExample (id, "value") VALUES (1, '{"name":"Joe", "age":123}')""").action().runOn(ctx)
+      val customers = Sql("SELECT id, \"value\" FROM JsonExample").queryOf<Example>().runOn(ctx)
       customers shouldBe listOf(je)
     }
   }

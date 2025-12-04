@@ -104,8 +104,8 @@ object JdbcControllers {
 
     override val encodingConfig =
       encodingConfig.copy(
-        additionalEncoders = encodingConfig.additionalEncoders + JsonObjectEncoding.encoders,
-        additionalDecoders = encodingConfig.additionalDecoders + JsonObjectEncoding.decoders
+        additionalEncoders = encodingConfig.additionalEncoders + JsonTextEncoding.encoders,
+        additionalDecoders = encodingConfig.additionalDecoders + JsonTextEncoding.decoders
       )
 
     companion object { }

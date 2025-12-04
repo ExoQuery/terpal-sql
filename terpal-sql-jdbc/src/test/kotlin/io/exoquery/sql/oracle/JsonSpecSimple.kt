@@ -1,4 +1,4 @@
-package io.exoquery.sql.mysql
+package io.exoquery.sql.oracle
 
 import io.exoquery.controller.JsonValue
 import io.exoquery.controller.SqlJsonValue
@@ -11,9 +11,9 @@ import io.kotest.matchers.shouldBe
 import kotlinx.serialization.Serializable
 
 class JsonSpec: FreeSpec({
-  val ds = TestDatabases.mysql
+  val ds = TestDatabases.oracle
   val ctx by lazy {
-    JdbcControllers.Mysql(ds)
+    JdbcControllers.Oracle(ds)
   }
 
   beforeEach {
