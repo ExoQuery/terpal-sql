@@ -7,7 +7,7 @@ repositories {
     mavenLocal()
 }
 
-val controllerVersion = "4.3.0"
+val controllerVersion = "4.4.0"
 val pluginVersion = "2.0.0.PL"
 
 extra["controllerVersion"] = controllerVersion
