@@ -744,7 +744,8 @@ val people = Sql("SELECT * FROM people WHERE id IN ${Params.list(ids)}").queryOf
 > ```
 
 ### JSON Valued Columns
-> NOTE: This is currently only supported in Postgres
+> NOTE: Terpal-SQL supports JSON columns for all databases but only Postgres and MySQL have native JSON column types.
+> For other databases (e.g. SQLite) you can use TEXT or VARCHAR columns to store JSON data.
 
 #### Using the SqlJsonValue Annotation
 
