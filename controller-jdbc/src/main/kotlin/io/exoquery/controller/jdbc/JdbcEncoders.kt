@@ -64,8 +64,16 @@ open class JdbcBasicEncoding:
   override val ByteArrayDecoder: JdbcDecoderAny<ByteArray> = JdbcDecoderAny(ByteArray::class) { ctx, i -> ctx.row.getBytes(i) }
 }
 
-object AdditionalPostgresEncoding {
+object JsonObjectEncoding {
   val SqlJsonEncoder: JdbcEncoder<SqlJson> = JdbcEncoderAny(Types.OTHER, SqlJson::class) { ctx, v, i -> ctx.stmt.setObject(i, v.value, Types.OTHER) }
+  val SqlJsonDecoder: JdbcDecoder<SqlJson> = JdbcDecoderAny(SqlJson::class) { ctx, i -> SqlJson(ctx.row.getString(i)) }
+
+  val encoders = setOf(SqlJsonEncoder)
+  val decoders = setOf(SqlJsonDecoder)
+}
+
+object JsonTextEncoding {
+  val SqlJsonEncoder: JdbcEncoder<SqlJson> = JdbcEncoderAny(Types.VARCHAR, SqlJson::class) { ctx, v, i -> ctx.stmt.setObject(i, v.value, Types.VARCHAR) }
   val SqlJsonDecoder: JdbcDecoder<SqlJson> = JdbcDecoderAny(SqlJson::class) { ctx, i -> SqlJson(ctx.row.getString(i)) }
 
   val encoders = setOf(SqlJsonEncoder)

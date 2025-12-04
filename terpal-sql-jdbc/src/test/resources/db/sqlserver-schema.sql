@@ -81,3 +81,8 @@ CREATE TABLE JavaTestEntity(
     javaUtilDateOpt DATETIMEOFFSET, -- java.util.Date i.e. legacy date with time zone
     uuidOpt VARCHAR(255)
 );
+
+CREATE TABLE JsonExample(
+    id INT PRIMARY KEY,
+    value VARCHAR
+);

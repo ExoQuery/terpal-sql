@@ -32,8 +32,8 @@ object JdbcControllers {
     // Postgrees comes with its own default encoders, to exclude them need to override this property direct
     override val encodingConfig =
       encodingConfig.copy(
-        additionalEncoders = encodingConfig.additionalEncoders + AdditionalPostgresEncoding.encoders,
-        additionalDecoders = encodingConfig.additionalDecoders + AdditionalPostgresEncoding.decoders
+        additionalEncoders = encodingConfig.additionalEncoders + JsonObjectEncoding.encoders,
+        additionalDecoders = encodingConfig.additionalDecoders + JsonObjectEncoding.decoders
       )
 
     // Postgres does not support Types.TIME_WITH_TIMEZONE as a JDBC type but does have a `TIME WITH TIMEZONE` datatype this is puzzling.
@@ -59,8 +59,8 @@ object JdbcControllers {
 
     override val encodingConfig =
       encodingConfig.copy(
-        additionalEncoders = encodingConfig.additionalEncoders + AdditionalPostgresEncoding.encoders,
-        additionalDecoders = encodingConfig.additionalDecoders + AdditionalPostgresEncoding.decoders
+        additionalEncoders = encodingConfig.additionalEncoders + JsonObjectEncoding.encoders,
+        additionalDecoders = encodingConfig.additionalDecoders + JsonObjectEncoding.decoders
       )
 
     companion object { }
@@ -68,7 +68,7 @@ object JdbcControllers {
 
   open class H2(
     override val database: DataSource,
-    override val encodingConfig: JdbcEncodingConfig = JdbcEncodingConfig.Default
+    encodingConfig: JdbcEncodingConfig = JdbcEncodingConfig.Default
   ): JdbcController(database) {
     override val encodingApi: JdbcSqlEncoding =
       object: JavaSqlEncoding<Connection, PreparedStatement, ResultSet>,
@@ -76,12 +76,18 @@ object JdbcControllers {
         JavaTimeEncoding<Connection, PreparedStatement, ResultSet> by JdbcTimeEncoding(),
         JavaUuidEncoding<Connection, PreparedStatement, ResultSet> by JdbcUuidObjectEncoding {}
 
+    override val encodingConfig =
+      encodingConfig.copy(
+        additionalEncoders = encodingConfig.additionalEncoders + JsonTextEncoding.encoders,
+        additionalDecoders = encodingConfig.additionalDecoders + JsonTextEncoding.decoders
+      )
+
     companion object { }
   }
 
   open class Mysql(
     override val database: DataSource,
-    override val encodingConfig: JdbcEncodingConfig = JdbcEncodingConfig.Default
+    encodingConfig: JdbcEncodingConfig = JdbcEncodingConfig.Default
     ): JdbcController(database) {
     override val encodingApi: JdbcSqlEncoding =
       object : JavaSqlEncoding<Connection, PreparedStatement, ResultSet>,
@@ -95,18 +101,31 @@ object JdbcControllers {
       override val jdbcTypeOfOffsetTime     = Types.TIME
       override val jdbcTypeOfOffsetDateTime = Types.TIMESTAMP
     }
+
+    override val encodingConfig =
+      encodingConfig.copy(
+        additionalEncoders = encodingConfig.additionalEncoders + JsonObjectEncoding.encoders,
+        additionalDecoders = encodingConfig.additionalDecoders + JsonObjectEncoding.decoders
+      )
+
     companion object { }
   }
 
   open class Sqlite(
     override val database: DataSource,
-    override val encodingConfig: JdbcEncodingConfig = JdbcEncodingConfig.Default
+    encodingConfig: JdbcEncodingConfig = JdbcEncodingConfig.Default
   ): JdbcController(database) {
     override val encodingApi: JdbcSqlEncoding =
       object : JavaSqlEncoding<Connection, PreparedStatement, ResultSet>,
         BasicEncoding<Connection, PreparedStatement, ResultSet> by JdbcBasicEncoding,
         JavaTimeEncoding<Connection, PreparedStatement, ResultSet> by JdbcTimeEncodingLegacy,
         JavaUuidEncoding<Connection, PreparedStatement, ResultSet> by JdbcUuidStringEncoding {}
+
+    override val encodingConfig =
+      encodingConfig.copy(
+        additionalEncoders = encodingConfig.additionalEncoders + JsonTextEncoding.encoders,
+        additionalDecoders = encodingConfig.additionalDecoders + JsonTextEncoding.decoders
+      )
 
     protected override open suspend fun <T> runActionReturningScoped(act: ControllerActionReturning<T>, options: JdbcExecutionOptions): Flow<T> =
       flowWithConnection(options) {
@@ -159,13 +178,19 @@ object JdbcControllers {
 
   open class Oracle(
     override val database: DataSource,
-    override val encodingConfig: JdbcEncodingConfig = JdbcEncodingConfig.Default
+    encodingConfig: JdbcEncodingConfig = JdbcEncodingConfig.Default
   ): JdbcController(database) {
     override val encodingApi: JdbcSqlEncoding =
       object : JavaSqlEncoding<Connection, PreparedStatement, ResultSet>,
         BasicEncoding<Connection, PreparedStatement, ResultSet> by JdbcEncodingOracle,
         JavaTimeEncoding<Connection, PreparedStatement, ResultSet> by OracleTimeEncoding,
         JavaUuidEncoding<Connection, PreparedStatement, ResultSet> by JdbcUuidStringEncoding {}
+
+    override val encodingConfig =
+      encodingConfig.copy(
+        additionalEncoders = encodingConfig.additionalEncoders + JsonTextEncoding.encoders,
+        additionalDecoders = encodingConfig.additionalDecoders + JsonTextEncoding.decoders
+      )
 
     object OracleTimeEncoding: JdbcTimeEncoding() {
       // Normally it is Types.TIME by in that case Oracle truncates the milliseconds
@@ -193,13 +218,19 @@ object JdbcControllers {
 
   open class SqlServer(
     override val database: DataSource,
-    override val encodingConfig: JdbcEncodingConfig = JdbcEncodingConfig.Default
+    encodingConfig: JdbcEncodingConfig = JdbcEncodingConfig.Default
   ): JdbcController(database) {
     override val encodingApi: JdbcSqlEncoding =
       object : JavaSqlEncoding<Connection, PreparedStatement, ResultSet>,
         BasicEncoding<Connection, PreparedStatement, ResultSet> by JdbcBasicEncoding,
         JavaTimeEncoding<Connection, PreparedStatement, ResultSet> by SqlServerTimeEncoding,
         JavaUuidEncoding<Connection, PreparedStatement, ResultSet> by JdbcUuidStringEncoding {}
+
+    override val encodingConfig =
+      encodingConfig.copy(
+        additionalEncoders = encodingConfig.additionalEncoders + JsonTextEncoding.encoders,
+        additionalDecoders = encodingConfig.additionalDecoders + JsonTextEncoding.decoders
+      )
 
     object SqlServerTimeEncoding: JdbcTimeEncoding() {
       // Override java.util.Date encoding to use TIMESTAMP_WITH_TIMEZONE for DATETIMEOFFSET columns
