@@ -80,3 +80,8 @@ CREATE TABLE JavaTestEntity(
   javaUtilDateOpt TIMESTAMP,
   uuidOpt VARCHAR(36)
 );
+
+CREATE TABLE JsonExample(
+    id INT PRIMARY KEY,
+    value VARCHAR(255)
+);

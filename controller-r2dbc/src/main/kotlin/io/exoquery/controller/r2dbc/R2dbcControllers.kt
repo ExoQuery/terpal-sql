@@ -11,15 +11,15 @@ import io.r2dbc.spi.Row
 import io.r2dbc.spi.Statement
 
 object R2dbcControllers {
-  class Postgres(
+  open class Postgres(
     encodingConfig: R2dbcEncodingConfig = R2dbcEncodingConfig.Default(),
     override val connectionFactory: ConnectionFactory
   ): R2dbcController(encodingConfig,connectionFactory) {
 
     override val encodingConfig =
       encodingConfig.copy(
-        additionalEncoders = encodingConfig.additionalEncoders + R2dbcPostgresAdditionalEncoding.encoders,
-        additionalDecoders = encodingConfig.additionalDecoders + R2dbcPostgresAdditionalEncoding.decoders
+        additionalEncoders = encodingConfig.additionalEncoders + R2dbcJsonObjectEncoding.encoders,
+        additionalDecoders = encodingConfig.additionalDecoders + R2dbcJsonObjectEncoding.decoders
       )
 
     override val encodingApi: R2dbcSqlEncoding =
@@ -32,10 +32,16 @@ object R2dbcControllers {
       changePlaceholdersIn(sql) { index -> "$${index + 1}" }
   }
 
-  class SqlServer(
+  open class SqlServer(
     encodingConfig: R2dbcEncodingConfig = R2dbcEncodingConfig.Default(),
     override val connectionFactory: ConnectionFactory
   ): R2dbcController(encodingConfig,connectionFactory) {
+
+    override val encodingConfig =
+      encodingConfig.copy(
+        additionalEncoders = encodingConfig.additionalEncoders + R2dbcJsonTextEncoding.encoders,
+        additionalDecoders = encodingConfig.additionalDecoders + R2dbcJsonTextEncoding.decoders
+      )
 
     override val encodingApi: R2dbcSqlEncoding =
       object: JavaSqlEncoding<Connection, Statement, Row>,
@@ -54,10 +60,16 @@ object R2dbcControllers {
       changePlaceholdersIn(sql) { index -> "@Param${index + startingStatementIndex.value}" }
   }
 
-  class Mysql(
+  open class Mysql(
     encodingConfig: R2dbcEncodingConfig = R2dbcEncodingConfig.Default(),
     override val connectionFactory: ConnectionFactory
   ): R2dbcController(encodingConfig, connectionFactory) {
+
+    override val encodingConfig =
+      encodingConfig.copy(
+        additionalEncoders = encodingConfig.additionalEncoders + R2dbcJsonTextEncoding.encoders,
+        additionalDecoders = encodingConfig.additionalDecoders + R2dbcJsonTextEncoding.decoders
+      )
 
     override val encodingApi: R2dbcSqlEncoding =
       object: JavaSqlEncoding<Connection, Statement, Row>,
@@ -69,10 +81,16 @@ object R2dbcControllers {
     override fun changePlaceholders(sql: String): String = sql
   }
 
-  class H2(
+  open class H2(
     encodingConfig: R2dbcEncodingConfig = R2dbcEncodingConfig.Default(),
     override val connectionFactory: ConnectionFactory
   ): R2dbcController(encodingConfig, connectionFactory) {
+
+    override val encodingConfig =
+      encodingConfig.copy(
+        additionalEncoders = encodingConfig.additionalEncoders + R2dbcJsonTextEncoding.encoders,
+        additionalDecoders = encodingConfig.additionalDecoders + R2dbcJsonTextEncoding.decoders
+      )
 
     override val startingResultRowIndex: StartingIndex get() = StartingIndex.Zero
 
@@ -86,10 +104,16 @@ object R2dbcControllers {
       changePlaceholdersIn(sql) { index -> "$${index + 1}" }
   }
 
-  class Oracle(
+  open class Oracle(
     encodingConfig: R2dbcEncodingConfig = R2dbcEncodingConfig.Default(),
     override val connectionFactory: ConnectionFactory
   ): R2dbcController(encodingConfig, connectionFactory) {
+
+    override val encodingConfig =
+      encodingConfig.copy(
+        additionalEncoders = encodingConfig.additionalEncoders + R2dbcJsonTextEncoding.encoders,
+        additionalDecoders = encodingConfig.additionalDecoders + R2dbcJsonTextEncoding.decoders
+      )
 
     override val encodingApi: R2dbcSqlEncoding =
       object: JavaSqlEncoding<Connection, Statement, Row>,

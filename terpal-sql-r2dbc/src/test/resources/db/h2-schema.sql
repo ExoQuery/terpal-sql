@@ -74,3 +74,8 @@ CREATE TABLE IF NOT EXISTS JavaTestEntity(
     javaUtilDateOpt TIMESTAMP,
     uuidOpt UUID
 );
+
+CREATE TABLE IF NOT EXISTS JsonExample(
+    id IDENTITY,
+    "value" VARCHAR(255)
+);

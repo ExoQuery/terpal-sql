@@ -81,3 +81,8 @@ CREATE TABLE IF NOT EXISTS JavaTestEntity(
     javaUtilDateOpt BIGINT,
     uuidOpt VARCHAR(36)
 );
+
+CREATE TABLE JsonExample(
+    id INT PRIMARY KEY,
+    value VARCHAR
+);
