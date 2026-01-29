@@ -1,0 +1,45 @@
+# Since IntelliJ's comes with really good support for EditorConfig,
+# and most other editors also support it.
+
+# This is the top-most EditorConfig file
+root = true
+
+# Unix-style newlines with a newline ending every file
+[*]
+end_of_line = lf
+insert_final_newline = true
+charset = utf-8
+trim_trailing_whitespace = true
+
+#
+# Sections to make targeting as specific as we can while keeping it terse
+#
+
+[/**.kts]
+indent_style = space
+indent_size = 2
+
+[/**.kt]
+# For Kotlin 2 spaces is an override of the official style.
+indent_style = space
+indent_size = 2
+# Order all imports alphabetically in one block
+ij_kotlin_imports_layout = *
+
+
+[/**.sql]
+indent_style = space
+indent_size = 4
+
+
+[/**/*.html]
+indent_style = space
+indent_size = 2
+max_line_length = 999
+
+
+[*.md]
+indent_style = space
+indent_size = 2
+max_line_length = 999
+trim_trailing_whitespace = false
