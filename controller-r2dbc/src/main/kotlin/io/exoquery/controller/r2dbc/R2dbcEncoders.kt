@@ -119,6 +119,8 @@ object R2dbcBasicEncodingOracle: R2dbcBasicEncodingBase() {
     R2dbcDecoderAny(String::class) { ctx, i -> ctx.row.get(i, String::class.java) ?: "" }
   override val ByteArrayDecoder: R2dbcDecoder<ByteArray> =
     R2dbcDecoderAny(ByteArray::class) { ctx, i -> ctx.row.get(i, ByteArray::class.java) ?: byteArrayOf() }
+  override val EnumDecoder: R2dbcDecoder<String> =
+    R2dbcDecoderAny(String::class) { ctx, i -> ctx.row.get(i, String::class.java) ?: "" }
 
   // More oracle crazy behavior that requires encoding booleans as ints
   //override val BooleanEncoder: R2dbcEncoderAny<Boolean> =
@@ -148,6 +150,8 @@ abstract class R2dbcBasicEncodingBase: BasicEncoding<Connection, Statement, Row>
     R2dbcEncoderAny(NA, String::class) { ctx, v, i -> ctx.stmt.bind(i, v) }
   override val ByteArrayEncoder: R2dbcEncoderAny<ByteArray> =
     R2dbcEncoderAny(NA, ByteArray::class) { ctx, v, i -> ctx.stmt.bind(i, v) }
+  override val EnumEncoder: R2dbcEncoderAny<String> =
+    R2dbcEncoderAny(NA, String::class) { ctx, v, i -> ctx.stmt.bind(i, v) }
 
   override fun preview(index: Int, row: Row): String? =
     row.get(index)?.let { it.toString() }
@@ -174,6 +178,8 @@ abstract class R2dbcBasicEncodingBase: BasicEncoding<Connection, Statement, Row>
     R2dbcDecoderAny(String::class) { ctx, i -> ctx.row.get(i, String::class.java) }
   override val ByteArrayDecoder: R2dbcDecoder<ByteArray> =
     R2dbcDecoderAny(ByteArray::class) { ctx, i -> ctx.row.get(i, ByteArray::class.java) }
+  override val EnumDecoder: R2dbcDecoder<String> =
+    R2dbcDecoderAny(String::class) { ctx, i -> ctx.row.get(i, String::class.java) }
 }
 
 private fun kotlinx.datetime.TimeZone.toJava(): TimeZone = TimeZone.getTimeZone(this.toJavaZoneId())

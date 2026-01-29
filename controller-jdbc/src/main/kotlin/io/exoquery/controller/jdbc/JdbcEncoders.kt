@@ -44,6 +44,7 @@ open class JdbcBasicEncoding:
   override val ShortEncoder: JdbcEncoderAny<Short> = JdbcEncoderAny(Types.SMALLINT, Short::class) { ctx, v, i -> ctx.stmt.setShort(i, v) }
   override val StringEncoder: JdbcEncoderAny<String> = JdbcEncoderAny(Types.VARCHAR, String::class) { ctx, v, i -> ctx.stmt.setString(i, v) }
   override val ByteArrayEncoder: JdbcEncoderAny<ByteArray> = JdbcEncoderAny(Types.VARBINARY, ByteArray::class) { ctx, v, i -> ctx.stmt.setBytes(i, v) }
+  override val EnumEncoder: JdbcEncoderAny<String> = JdbcEncoderAny(Types.OTHER, String::class) { ctx, v, i -> ctx.stmt.setObject(i, v) }
 
 
   override fun preview(index: Int, row: ResultSet): String? = row.getObject(index)?.let { it.toString() }
@@ -62,6 +63,7 @@ open class JdbcBasicEncoding:
   override val ShortDecoder: JdbcDecoderAny<Short> = JdbcDecoderAny(Short::class) { ctx, i -> ctx.row.getShort(i) }
   override val StringDecoder: JdbcDecoderAny<String> = JdbcDecoderAny(String::class) { ctx, i -> ctx.row.getString(i) }
   override val ByteArrayDecoder: JdbcDecoderAny<ByteArray> = JdbcDecoderAny(ByteArray::class) { ctx, i -> ctx.row.getBytes(i) }
+  override val EnumDecoder: JdbcDecoderAny<String> = JdbcDecoderAny(String::class) { ctx, i -> ctx.row.getString(i) }
 }
 
 object JsonObjectEncoding {

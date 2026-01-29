@@ -390,6 +390,13 @@ class RowDecoder<Session, Row> private constructor(
           out
         }
 
+      desc.kind == SerialKind.ENUM -> {
+        validNullOrElse(desc, index) {
+          val out = alternateDeserializer.deserialize(this)
+          out
+        }
+      }
+
       else ->
         throw IllegalArgumentException("Unsupported kind: `${desc.kind}` at (${ctx.startingIndex.description}) index: ${index} (info:${ctx.columnInfos?.get(index)})")
     }
@@ -424,7 +431,22 @@ class RowDecoder<Session, Row> private constructor(
   }
 
   override fun decodeEnum(enumDescriptor: SerialDescriptor): Int {
-    TODO("Not yet implemented")
+    val stringValue = api.StringDecoder.decode(ctx, rowIndex)
+    nextRowIndex(enumDescriptor, rowIndex)
+
+    val enumIndex = (0 until enumDescriptor.elementsCount).firstOrNull { i ->
+      // This checks for any @SerialName annotation specified name on the enum value, otherwise matches the value's constant name.
+      enumDescriptor.getElementName(i) == stringValue
+    }
+
+    if (enumIndex == null) {
+      val enumValuesAsString = enumDescriptor.elementNames.joinToString(", ")
+      throw IllegalArgumentException(
+        "Unknown enum value '$stringValue' for ${enumDescriptor.serialName}. Valid values are: $enumValuesAsString"
+      )
+    }
+
+    return enumIndex
   }
 
 

@@ -53,8 +53,11 @@ class PreparedStatementElementEncoder<Session, Stmt>(
   override fun encodeShort(value: Short) = api.ShortEncoder.encode(ctx, value, index)
   override fun encodeString(value: String) = api.StringEncoder.encode(ctx, value, index)
 
-  override fun encodeEnum(enumDescriptor: SerialDescriptor, index: Int) =
-    TODO("Enum encoding not yet supported")
+  @Suppress("PARAMETER_NAME_CHANGED_ON_OVERRIDE") // Or they'd both be called `index`
+  @OptIn(ExperimentalSerializationApi::class)
+  override fun encodeEnum(enumDescriptor: SerialDescriptor, i: Int) =
+    api.EnumEncoder.encode(ctx, enumDescriptor.getElementName(i), index)
+
 
   /**
    * Since the assumption of this encoder is that it is created per every single value that needs to be inserted, we pass a serializer for that particular value
@@ -141,6 +144,8 @@ class PreparedStatementElementEncoder<Session, Stmt>(
         } else if (desc.kind is PrimitiveKind) {
           // if it is a primitive type then use the encoder defined in the serialization. Note that
           // if it is a wrappedType (e.g. NewTypeInt(value: Int) then this serializer will be the wrapped one
+          serializer.serialize(this, value)
+        } else if (desc.kind == SerialKind.ENUM) {
           serializer.serialize(this, value)
         }
         else {

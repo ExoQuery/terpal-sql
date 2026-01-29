@@ -157,6 +157,9 @@ object SqliteBasicEncoding: BasicEncoding<Unused, SqliteStatementWrapper, Sqlite
   override val ByteArrayEncoder: SqliteEncoderAny<ByteArray> = SqliteEncoderAny(SqliteFieldType.TYPE_BLOB, ByteArray::class) { ctx, value, index -> ctx.stmt.bindBytes(index, value) }
   override val ByteArrayDecoder: SqliteDecoderAny<ByteArray> = SqliteDecoderAny(ByteArray::class) { ctx, index -> ctx.row.getBytes(index) }
 
+  override val EnumEncoder: SqliteEncoderAny<String> = SqliteEncoderAny(SqliteFieldType.TYPE_TEXT, String::class) { ctx, value, index -> ctx.stmt.bindString(index, value) }
+  override val EnumDecoder: SqliteDecoderAny<String> = SqliteDecoderAny(String::class) { ctx, index -> ctx.row.getString(index) }
+
   override fun preview(index: Int, row: SqliteCursorWrapper): String? = row.getString(index)
   override fun isNull(index: Int, row: SqliteCursorWrapper): Boolean = row.isNull(index)
 }

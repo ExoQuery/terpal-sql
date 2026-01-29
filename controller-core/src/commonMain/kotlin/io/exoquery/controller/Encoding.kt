@@ -54,6 +54,7 @@ interface ApiEncoders<Session, Stmt> {
   val ShortEncoder: SqlEncoder<Session, Stmt, Short>
   val StringEncoder: SqlEncoder<Session, Stmt, String>
   val ByteArrayEncoder: SqlEncoder<Session, Stmt, ByteArray>
+  val EnumEncoder: SqlEncoder<Session, Stmt, String>
 }
 // Used by the RowDecoder
 interface ApiDecoders<Session, Row> {
@@ -67,6 +68,7 @@ interface ApiDecoders<Session, Row> {
   val ShortDecoder: SqlDecoder<Session, Row, Short>
   val StringDecoder: SqlDecoder<Session, Row, String>
   val ByteArrayDecoder: SqlDecoder<Session, Row, ByteArray>
+  val EnumDecoder: SqlDecoder<Session, Row, String>
 
   abstract fun isNull(index: Int, row: Row): Boolean
   abstract fun preview(index: Int, row: Row): String?
@@ -106,6 +108,7 @@ interface SqlEncoding<Session, Stmt, Row>:
       ShortEncoder,
       StringEncoder,
       ByteArrayEncoder,
+      EnumEncoder,
       LocalDateEncoder,
       LocalDateTimeEncoder,
       LocalTimeEncoder,
@@ -124,6 +127,7 @@ interface SqlEncoding<Session, Stmt, Row>:
       ShortDecoder,
       StringDecoder,
       ByteArrayDecoder,
+      EnumDecoder,
       LocalDateDecoder,
       LocalDateTimeDecoder,
       LocalTimeDecoder,
